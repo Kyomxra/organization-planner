@@ -37,6 +37,8 @@ export function useAuthFlow() {
 
     setResetEmail(loginEmail.trim());
     setVerificationCode('');
+    setNewPassword('');
+    setConfirmNewPassword('');
     setPasswordSheet('verify');
   };
 
@@ -82,11 +84,11 @@ export function useAuthFlow() {
   };
 
   const handleResendCode = () => {
-    showMessage('Code requested', 'A real resend action will be connected with the authentication backend.');
+    showMessage('Email delivery is not connected', 'This prototype cannot send a verification code yet.');
   };
 
   const handleVerifyCode = () => {
-    if (verificationCode.length !== 6) {
+    if (!/^\d{6}$/.test(verificationCode)) {
       showMessage('Incomplete code', 'Enter all six digits to continue.');
       return;
     }
@@ -111,6 +113,7 @@ export function useAuthFlow() {
       () => {
         setPasswordSheet('none');
         setLoginPassword('');
+        setVerificationCode('');
         setNewPassword('');
         setConfirmNewPassword('');
       },

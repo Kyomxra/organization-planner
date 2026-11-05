@@ -48,7 +48,7 @@ export function SignUpScreen({
             value={fullName}
             onChangeText={onFullNameChange}
             placeholder="Enter your name"
-            icon="♙"
+            icon="user"
             autoCapitalize="words"
             textContentType="name"
           />
@@ -57,7 +57,7 @@ export function SignUpScreen({
             value={email}
             onChangeText={onEmailChange}
             placeholder="Enter your email"
-            icon="✉"
+            icon="email"
             keyboardType="email-address"
           />
           <AuthTextField
@@ -65,7 +65,7 @@ export function SignUpScreen({
             value={password}
             onChangeText={onPasswordChange}
             placeholder="Enter your password"
-            icon="▣"
+            icon="lock"
             secureTextEntry
           />
           <AuthTextField
@@ -73,7 +73,7 @@ export function SignUpScreen({
             value={confirmPassword}
             onChangeText={onConfirmPasswordChange}
             placeholder="Re-enter your password"
-            icon="▣"
+            icon="lock"
             secureTextEntry
           />
           <PrimaryButton title="Create account" onPress={onCreateAccount} style={styles.submit} />

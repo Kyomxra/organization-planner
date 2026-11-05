@@ -35,7 +35,7 @@ export function ResetPasswordScreen({
         value={password}
         onChangeText={onPasswordChange}
         placeholder="Enter your new password"
-        icon="▣"
+        icon="lock"
         secureTextEntry
       />
       <AuthTextField
@@ -43,7 +43,7 @@ export function ResetPasswordScreen({
         value={confirmPassword}
         onChangeText={onConfirmPasswordChange}
         placeholder="Re-enter your password"
-        icon="▣"
+        icon="lock"
         secureTextEntry
       />
       <PrimaryButton title="Finish" onPress={onFinish} style={styles.action} />

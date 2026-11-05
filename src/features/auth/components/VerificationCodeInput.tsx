@@ -9,14 +9,22 @@ type VerificationCodeInputProps = {
 };
 
 export function VerificationCodeInput({ value, onChange, digits = 6 }: VerificationCodeInputProps) {
-  const refs = useRef<Array<TextInput | null>>([]);
+  const refs = useRef<Array<React.ElementRef<typeof TextInput> | null>>([]);
 
   const changeDigit = (index: number, input: string) => {
-    const digit = input.replace(/\D/g, '').slice(-1);
+    const enteredDigits = input.replace(/\D/g, '').slice(0, digits - index);
     const next = Array.from({ length: digits }, (_, digitIndex) => value[digitIndex] || '');
-    next[index] = digit;
+    if (enteredDigits.length === 0) {
+      next[index] = '';
+    } else {
+      for (let offset = 0; offset < enteredDigits.length; offset += 1) {
+        next[index + offset] = enteredDigits[offset];
+      }
+    }
     onChange(next.join('').slice(0, digits));
-    if (digit && index < digits - 1) refs.current[index + 1]?.focus();
+    if (enteredDigits.length > 0 && index < digits - 1) {
+      refs.current[Math.min(index + enteredDigits.length, digits - 1)]?.focus();
+    }
   };
 
   return (
@@ -33,8 +41,9 @@ export function VerificationCodeInput({ value, onChange, digits = 6 }: Verificat
             }
           }}
           keyboardType="number-pad"
-          maxLength={1}
+          maxLength={digits}
           selectTextOnFocus
+          textContentType="oneTimeCode"
           style={styles.box}
           textAlign="center"
           accessibilityLabel={`Verification digit ${index + 1}`}

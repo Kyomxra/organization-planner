@@ -30,7 +30,7 @@ export function AuthBottomSheet({ visible, title, onClose, children }: AuthBotto
       onRequestClose={onClose}
     >
       <View style={styles.modalRoot}>
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close dialog" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close dialog" />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoider}>
           <View style={styles.sheet}>
             <View style={styles.header}>

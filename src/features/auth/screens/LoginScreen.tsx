@@ -52,7 +52,7 @@ export function LoginScreen({
             value={email}
             onChangeText={onEmailChange}
             placeholder="Enter your email"
-            icon="✉"
+            icon="email"
             keyboardType="email-address"
           />
           <AuthTextField
@@ -60,7 +60,7 @@ export function LoginScreen({
             value={password}
             onChangeText={onPasswordChange}
             placeholder="Enter your password"
-            icon="▣"
+            icon="lock"
             secureTextEntry
           />
 

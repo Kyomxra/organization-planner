@@ -28,15 +28,22 @@ export function ForgotPasswordScreen({
   return (
     <AuthBottomSheet visible={visible} title="Reset Password" onClose={onClose}>
       <Text style={styles.heading}>Check your Email</Text>
-      <Text style={styles.description}>Enter the code sent to {email} to continue.</Text>
+      <Text style={styles.description}>
+        Enter the 6-digit demo code for {email}. Email delivery is not connected yet.
+      </Text>
       <VerificationCodeInput value={code} onChange={onCodeChange} />
       <View style={styles.resendRow}>
         <Text style={styles.resendText}>Didn't receive a code? </Text>
-        <TouchableOpacity onPress={onResend} accessibilityRole="button">
+        <TouchableOpacity onPress={onResend} accessibilityRole="button" accessibilityLabel="Resend verification code">
           <Text style={styles.link}>Resend</Text>
         </TouchableOpacity>
       </View>
-      <PrimaryButton title="Continue" onPress={onContinue} style={styles.action} />
+      <PrimaryButton
+        title="Continue"
+        onPress={onContinue}
+        disabled={code.length !== 6}
+        style={styles.action}
+      />
     </AuthBottomSheet>
   );
 }
