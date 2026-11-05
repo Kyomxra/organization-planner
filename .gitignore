@@ -1,31 +1,24 @@
-# dependencies
+# Dependencies
 node_modules/
 
-# Expo
+# Expo / React Native
 .expo/
 dist/
 web-build/
-expo-env.d.ts
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+*.orig.*
 
-# Native build outputs
-android/.gradle/
-android/app/build/
-ios/Pods/
-
-# Environment files and secrets
+# Environment secrets
 .env
 .env.*
 !.env.example
-
-# logs
-npm-debug.log*
-yarn-debug.log*
 
 # OS / editor
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
-
-# Tests / coverage
-coverage/

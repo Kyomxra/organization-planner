@@ -5,43 +5,21 @@ import { colors } from '../../../theme/colors';
 type BrandMarkProps = { size?: number };
 
 export function BrandMark({ size = 42 }: BrandMarkProps) {
-  const strokeWidth = Math.max(1.4, size * 0.035);
-
   return (
     <View style={[styles.mark, { width: size, height: size, borderRadius: size * 0.28 }]}>
       <View
         style={[
-          styles.orbitBack,
+          styles.orbit,
           {
-            width: size * 0.6,
-            height: size * 0.28,
+            width: size * 0.62,
+            height: size * 0.32,
             borderRadius: size,
-            borderWidth: strokeWidth,
+            borderWidth: Math.max(1.4, size * 0.045),
           },
         ]}
       />
-      <View
-        style={[
-          styles.planet,
-          {
-            width: size * 0.34,
-            height: size * 0.34,
-            borderRadius: size,
-            borderWidth: strokeWidth,
-          },
-        ]}
-      />
-      <View
-        style={[
-          styles.orbitFront,
-          {
-            width: size * 0.58,
-            height: strokeWidth,
-            borderRadius: strokeWidth,
-          },
-        ]}
-      />
-      <View style={[styles.orbitDot, { width: strokeWidth, height: strokeWidth, borderRadius: size }]} />
+      <View style={[styles.planet, { width: size * 0.13, height: size * 0.13, borderRadius: size }]} />
+      <View style={[styles.orbitDot, { width: size * 0.11, height: size * 0.11, borderRadius: size }]} />
     </View>
   );
 }
@@ -82,27 +60,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 },
     elevation: 4,
   },
-  orbitBack: {
+  orbit: {
     position: 'absolute',
     borderColor: '#FFFFFF',
     transform: [{ rotate: '-27deg' }],
   },
-  planet: {
-    position: 'absolute',
-    backgroundColor: colors.primary,
-    borderColor: '#FFFFFF',
-  },
-  orbitFront: {
-    position: 'absolute',
-    backgroundColor: '#FFFFFF',
-    transform: [{ rotate: '-24deg' }],
-    left: '14%',
-    top: '55%',
-  },
+  planet: { backgroundColor: '#FFFFFF' },
   orbitDot: {
     position: 'absolute',
-    right: '20%',
-    top: '39%',
+    right: '17%',
+    top: '28%',
     backgroundColor: '#FFFFFF',
   },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 30 },
