@@ -9,6 +9,8 @@ export function useAuthFlow() {
   const [splashDone, setSplashDone] = useState(false);
   const [mainScreen, setMainScreen] = useState<MainScreen>('login');
   const [passwordSheet, setPasswordSheet] = useState<PasswordSheet>('none');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState('Alex');
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -43,19 +45,18 @@ export function useAuthFlow() {
   };
 
   const handleSignIn = () => {
-    if (!isValidEmail(loginEmail)) {
+    if (loginEmail && !isValidEmail(loginEmail)) {
       showMessage('Check your email', 'Please enter a valid email address.');
       return;
     }
-    if (!loginPassword) {
-      showMessage('Password required', 'Please enter your password.');
-      return;
-    }
+    const name = loginEmail ? loginEmail.split('@')[0] : 'Alex';
+    setUserName(name.charAt(0).toUpperCase() + name.slice(1));
+    setIsAuthenticated(true);
+  };
 
-    showMessage(
-      'Login UI ready',
-      'This is currently a UI prototype. Connect an authentication backend before using real accounts.',
-    );
+  const handleSignOut = () => {
+    setIsAuthenticated(false);
+    setLoginPassword('');
   };
 
   const handleCreateAccount = () => {
@@ -147,8 +148,12 @@ export function useAuthFlow() {
     setNewPassword,
     confirmNewPassword,
     setConfirmNewPassword,
+    isAuthenticated,
+    setIsAuthenticated,
+    userName,
     openForgotPassword,
     handleSignIn,
+    handleSignOut,
     handleCreateAccount,
     handleVerifyCode,
     handleResendCode,

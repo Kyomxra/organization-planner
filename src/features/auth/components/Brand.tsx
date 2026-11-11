@@ -8,61 +8,50 @@ type BrandMarkProps = { size?: number };
 export function BrandMark({ size = 42 }: BrandMarkProps) {
   const id = React.useId().replace(/:/g, '');
   const backgroundId = `${id}-background`;
-  const glowId = `${id}-glow`;
-  const clipId = `${id}-clip`;
-  const planetClipId = `${id}-planet-clip`;
 
   return (
-    <View style={[styles.mark, { width: size, height: size, borderRadius: size * 0.28 }]}>
+    <View style={[styles.mark, { width: size, height: size, borderRadius: size * 0.32 }]}>
       <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityRole="image" accessibilityLabel="Orbit planet logo">
         <Defs>
-          <LinearGradient id={backgroundId} x1="0" y1="0" x2="80" y2="100" gradientUnits="userSpaceOnUse">
-            <Stop offset="0" stopColor="#5145E8" />
-            <Stop offset="1" stopColor="#382FA9" />
+          <LinearGradient id={backgroundId} x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor="#5447EA" />
+            <Stop offset="1" stopColor="#3C2FB3" />
           </LinearGradient>
-          <RadialGradient id={glowId} cx="75" cy="18" r="62" gradientUnits="userSpaceOnUse">
-            <Stop offset="0" stopColor="#8278FF" stopOpacity="0.5" />
-            <Stop offset="1" stopColor="#8278FF" stopOpacity="0" />
-          </RadialGradient>
-          <ClipPath id={clipId}>
-            <Rect width="100" height="100" rx="28" />
-          </ClipPath>
-          <ClipPath id={planetClipId}>
-            <Circle cx="50" cy="50" r="13" />
-          </ClipPath>
         </Defs>
-        <Rect width="100" height="100" rx="28" fill={`url(#${backgroundId})`} />
-        <G clipPath={`url(#${clipId})`}>
-          <Circle cx="75" cy="18" r="44" fill={`url(#${glowId})`} />
-          <Path
-            d="M 29 58 C 26 55, 33 50, 42 46 M 57 40 C 66 36, 73 33, 75 36 C 77 39, 72 43, 66 46"
-            fill="none"
-            stroke="#FFF"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <Circle
-            cx="50"
-            cy="50"
-            r="13"
-            fill={`url(#${backgroundId})`}
-            stroke="#FFF"
-            strokeWidth="2.2"
-          />
-          <G clipPath={`url(#${planetClipId})`}>
-            <Circle cx="75" cy="18" r="44" fill={`url(#${glowId})`} />
-          </G>
-          <Path
-            d="M 29 58 C 39 56, 51 50, 61 45"
-            fill="none"
-            stroke="#FFF"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-          />
-          <Circle cx="64" cy="51" r="0.9" fill="#FFF" />
-          <Circle cx="66" cy="48" r="0.75" fill="#FFF" />
-        </G>
+        <Rect width="100" height="100" rx="32" fill={`url(#${backgroundId})`} />
+        
+        {/* Planet top hemisphere arc */}
+        <Path
+          d="M 36.5 42.5 C 38.5 35 44 32.5 50.5 32.5 C 57.5 32.5 63 35.8 65 41"
+          fill="none"
+          stroke="#FFFFFF"
+          strokeWidth="3.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Small orbital highlight dot */}
+        <Circle cx="66" cy="45.5" r="1.3" fill="#FFFFFF" />
+
+        {/* Planet bottom hemisphere arc */}
+        <Path
+          d="M 64.5 53.5 C 62.5 61 57 64.5 50.5 64.5 C 43.5 64.5 38 60.5 36.5 55"
+          fill="none"
+          stroke="#FFFFFF"
+          strokeWidth="3.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Tilted Ring / Orbit: back loop and front swoop */}
+        <Path
+          d="M 33 51 C 24 53 18 56.5 21 58.5 C 25 61 35 60 48.5 56.5 C 63 53 74 48 78 45.5 C 81 43.5 78.5 41 72 40.5 C 65 40 56 42 47 45"
+          fill="none"
+          stroke="#FFFFFF"
+          strokeWidth="3.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </Svg>
     </View>
   );
