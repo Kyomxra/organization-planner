@@ -122,7 +122,7 @@ export function NewNoteScreen({ onBack, onSaveSuccess }: NewNoteScreenProps) {
         {/* Visible To / Audience Card */}
         <TouchableOpacity
           style={styles.visibleCard}
-          onPress={handleToggleAudience}
+          onPress={handleOpenAudienceModal}
           activeOpacity={0.85}
         >
           <View style={styles.eyeIconBox}>
@@ -147,7 +147,7 @@ export function NewNoteScreen({ onBack, onSaveSuccess }: NewNoteScreenProps) {
               <Path d="M5 8V6A5 5 0 0 1 15 6V8" stroke="#5A5D75" strokeWidth={1.8} fill="none" />
               <Rect x="4" y="8" width="12" height="9" rx="2" stroke="#5A5D75" strokeWidth={1.8} fill="none" />
             </Svg>
-            <Text style={styles.visiblePillText}>{audience}</Text>
+            <Text style={styles.visiblePillText}>{audienceText}</Text>
           </View>
 
           <Svg width={14} height={14} viewBox="0 0 20 20" style={styles.chevronIcon}>
@@ -155,6 +155,14 @@ export function NewNoteScreen({ onBack, onSaveSuccess }: NewNoteScreenProps) {
           </Svg>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Audience Modal */}
+      <NoteAudienceModal
+        visible={isAudienceModalOpen}
+        onClose={() => setIsAudienceModalOpen(false)}
+        selection={audienceSelection}
+        onSave={handleSaveAudience}
+      />
     </KeyboardAvoidingView>
   );
 }

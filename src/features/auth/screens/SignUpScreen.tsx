@@ -30,6 +30,11 @@ export function SignUpScreen({
   onCreateAccount,
   onSignIn,
 }: SignUpScreenProps) {
+  // Inline validation — only show errors once user has typed something
+  const passwordTooShort = password.length > 0 && password.length < 8;
+  const passwordMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
+
   return (
     <ScrollView
       style={styles.scroll}
@@ -67,6 +72,7 @@ export function SignUpScreen({
             placeholder="Enter your password"
             icon="lock"
             secureTextEntry
+            error={passwordTooShort ? 'Password should be at least 8 characters' : undefined}
           />
           <AuthTextField
             label="Password confirmation"
@@ -75,6 +81,7 @@ export function SignUpScreen({
             placeholder="Re-enter your password"
             icon="lock"
             secureTextEntry
+            error={passwordMismatch ? 'Password does not match' : undefined}
           />
           <PrimaryButton title="Create account" onPress={onCreateAccount} style={styles.submit} />
         </View>

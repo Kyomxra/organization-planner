@@ -19,13 +19,16 @@ import { InvitesModal } from '../features/organization/components/InvitesModal';
 import { DashboardHomeScreen } from '../features/dashboard/screens/DashboardHomeScreen';
 import { CalendarScreen } from '../features/calendar/screens/CalendarScreen';
 import { BudgetingScreen } from '../features/budgeting/screens/BudgetingScreen';
+import { RundownListScreen } from '../features/rundown/screens/RundownListScreen';
 import { RundownDetailsScreen } from '../features/rundown/screens/RundownDetailsScreen';
 import { EditRundownScreen } from '../features/rundown/screens/EditRundownScreen';
+import { SelectRundownScreen } from '../features/rundown/screens/SelectRundownScreen';
 import { NotesListScreen } from '../features/notes/screens/NotesListScreen';
 import { NewNoteScreen } from '../features/notes/screens/NewNoteScreen';
 import { NotificationScreen } from '../features/notifications/screens/NotificationScreen';
 import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
 import { showMessage } from '../features/auth/utils/feedback';
+import { Rundown } from '../features/rundown/types';
 
 type ActiveView =
   | 'org-list'
@@ -33,8 +36,10 @@ type ActiveView =
   | 'dashboard'
   | 'calendar'
   | 'budgeting'
+  | 'rundown-list'
   | 'rundown-details'
   | 'rundown-edit'
+  | 'rundown-select'
   | 'notes-list'
   | 'notes-new'
   | 'notifications'
@@ -46,6 +51,7 @@ export function RootFlow() {
   const [activeView, setActiveView] = useState<ActiveView>('org-list');
   const [isInvitesModalVisible, setIsInvitesModalVisible] = useState(false);
   const [previousView, setPreviousView] = useState<ActiveView>('dashboard');
+  const [selectedRundown, setSelectedRundown] = useState<Rundown | null>(null);
 
   const navigateTo = (view: ActiveView) => {
     setPreviousView(activeView);
@@ -150,7 +156,7 @@ export function RootFlow() {
           onBackToOrgList={() => setActiveView('org-list')}
           onOpenCalendar={() => setActiveView('calendar')}
           onOpenBudgeting={() => setActiveView('budgeting')}
-          onOpenRundown={() => navigateTo('rundown-details')}
+          onOpenRundown={() => navigateTo('rundown-list')}
           onOpenNotes={() => navigateTo('notes-list')}
           onOpenNotifications={() => navigateTo('notifications')}
           onOpenInvites={() => setIsInvitesModalVisible(true)}
@@ -169,7 +175,7 @@ export function RootFlow() {
               showMessage('Divisions', 'Divisions management is coming in the next update.');
             }
           }}
-          onOpenRundown={() => navigateTo('rundown-details')}
+          onOpenRundown={() => navigateTo('rundown-list')}
         />
       )}
 
@@ -178,19 +184,43 @@ export function RootFlow() {
         <BudgetingScreen onBack={() => setActiveView('dashboard')} />
       )}
 
-      {/* 2F. Rundown Details Screen */}
+      {/* 2F. Rundown List Screen */}
+      {activeView === 'rundown-list' && (
+        <RundownListScreen
+          onBack={() => setActiveView('dashboard')}
+          onOpenRundown={(rundown) => {
+            setSelectedRundown(rundown);
+            navigateTo('rundown-details');
+          }}
+          onCreateRundown={() => navigateTo('rundown-edit')}
+        />
+      )}
+
+      {/* 2G. Rundown Details Screen */}
       {activeView === 'rundown-details' && (
         <RundownDetailsScreen
-          onBack={() => setActiveView('dashboard')}
+          onBack={() => setActiveView('rundown-list')}
           onEdit={() => navigateTo('rundown-edit')}
         />
       )}
 
-      {/* 2G. Edit Rundown Screen */}
+      {/* 2H. Edit Rundown Screen */}
       {activeView === 'rundown-edit' && (
         <EditRundownScreen
           onBack={() => setActiveView('rundown-details')}
           onSave={() => setActiveView('rundown-details')}
+        />
+      )}
+
+      {/* 2I. Select Rundown Screen (attach to Calendar event) */}
+      {activeView === 'rundown-select' && (
+        <SelectRundownScreen
+          eventTitle={selectedRundown?.title ?? 'this event'}
+          onBack={() => setActiveView('calendar')}
+          onAttach={(_selected) => {
+            showMessage('Rundown Attached', 'The rundown has been linked to the event.');
+            setActiveView('calendar');
+          }}
         />
       )}
 
