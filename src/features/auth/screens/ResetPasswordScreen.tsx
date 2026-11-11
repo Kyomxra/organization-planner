@@ -29,7 +29,8 @@ export function ResetPasswordScreen({
 }: ResetPasswordScreenProps) {
   return (
     <AuthBottomSheet visible={visible} title="Reset Password" onClose={onClose}>
-      <Text style={styles.email}>{email}</Text>
+      <Text style={styles.heading}>Change Password</Text>
+      <Text style={styles.email}>{email || 'alex@organization.com'}</Text>
       <AuthTextField
         label="New password"
         value={password}
@@ -52,6 +53,7 @@ export function ResetPasswordScreen({
 }
 
 const styles = StyleSheet.create({
+  heading: { color: colors.text, fontSize: 18, fontWeight: '800', marginBottom: 4 },
   email: { color: colors.muted, fontSize: 11, marginBottom: 16 },
   action: { marginTop: 3 },
 });

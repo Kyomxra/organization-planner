@@ -11,6 +11,8 @@ import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
 import { ExpenseItem, IncomeItem } from '../types';
 import { TransactionDetailsModal } from '../components/TransactionDetailsModal';
+import { AddRevenueModal } from '../components/AddRevenueModal';
+import { AddExpenseModal } from '../components/AddExpenseModal';
 
 interface BudgetingScreenProps {
   onBack: () => void;
@@ -34,16 +36,18 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
   const [fromDate, setFromDate] = useState('01 Oct 2026');
   const [toDate, setToDate] = useState('31 Oct 2026');
   const [isReceiptModalVisible, setIsReceiptModalVisible] = useState(false);
+  const [isAddRevenueModalVisible, setIsAddRevenueModalVisible] = useState(false);
+  const [isAddExpenseModalVisible, setIsAddExpenseModalVisible] = useState(false);
 
   const subtotalIncome = incomes.reduce((acc, curr) => acc + curr.numericTotal, 0);
   const subtotalExpense = expenses.reduce((acc, curr) => acc + curr.numericTotal, 0);
 
   const handleAddIncome = () => {
-    showMessage('Add Income', 'Income entry form is ready.');
+    setIsAddRevenueModalVisible(true);
   };
 
   const handleAddExpense = () => {
-    showMessage('Add Expense', 'Expense entry form is ready.');
+    setIsAddExpenseModalVisible(true);
   };
 
   const handleSearchFilter = () => {
@@ -251,6 +255,46 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
       <TransactionDetailsModal
         visible={isReceiptModalVisible}
         onClose={() => setIsReceiptModalVisible(false)}
+      />
+
+      {/* Add Revenue Modal */}
+      <AddRevenueModal
+        visible={isAddRevenueModalVisible}
+        onClose={() => setIsAddRevenueModalVisible(false)}
+        onAdd={(newInc) => {
+          setIncomes((prev) => [
+            ...prev,
+            {
+              id: `inc-${Date.now()}`,
+              no: prev.length + 1,
+              date: newInc.date || '10 Oct',
+              from: newInc.from || 'Revenue',
+              total: newInc.total || '0',
+              numericTotal: newInc.numericTotal || 0,
+            },
+          ]);
+        }}
+      />
+
+      {/* Add Expense Modal */}
+      <AddExpenseModal
+        visible={isAddExpenseModalVisible}
+        onClose={() => setIsAddExpenseModalVisible(false)}
+        onAdd={(newExp) => {
+          setExpenses((prev) => [
+            ...prev,
+            {
+              id: `exp-${Date.now()}`,
+              no: prev.length + 1,
+              date: newExp.date || '10 Oct',
+              typeOfCost: newExp.typeOfCost || 'Expense',
+              total: newExp.total || '0',
+              numericTotal: newExp.numericTotal || 0,
+              hasReceipt: !!newExp.hasReceipt,
+              status: 'PENDING',
+            },
+          ]);
+        }}
       />
     </View>
   );

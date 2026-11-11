@@ -29,7 +29,7 @@ export function ForgotPasswordScreen({
     <AuthBottomSheet visible={visible} title="Reset Password" onClose={onClose}>
       <Text style={styles.heading}>Check your Email</Text>
       <Text style={styles.description}>
-        Enter the 6-digit demo code for {email}. Email delivery is not connected yet.
+        Enter the code we sent to {email || 'alex@organization.com'} to continue
       </Text>
       <VerificationCodeInput value={code} onChange={onCodeChange} />
       <View style={styles.resendRow}>
@@ -38,6 +38,7 @@ export function ForgotPasswordScreen({
           <Text style={styles.link}>Resend</Text>
         </TouchableOpacity>
       </View>
+      <Text style={styles.timerCountdown}>Resend <Text style={styles.timerHighlight}>00:59s</Text></Text>
       <PrimaryButton
         title="Continue"
         onPress={onContinue}
@@ -51,8 +52,10 @@ export function ForgotPasswordScreen({
 const styles = StyleSheet.create({
   heading: { color: colors.text, fontSize: 18, fontWeight: '800', marginBottom: 7 },
   description: { color: colors.muted, fontSize: 11, lineHeight: 17 },
-  resendRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 19 },
+  resendRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   resendText: { color: colors.muted, fontSize: 10 },
   link: { color: colors.primary, fontSize: 10, fontWeight: '800' },
+  timerCountdown: { textAlign: 'center', color: colors.muted, fontSize: 12, fontWeight: '600', marginBottom: 16 },
+  timerHighlight: { color: colors.primary, fontWeight: '800' },
   action: { marginTop: 2 },
 });

@@ -19,10 +19,26 @@ import { InvitesModal } from '../features/organization/components/InvitesModal';
 import { DashboardHomeScreen } from '../features/dashboard/screens/DashboardHomeScreen';
 import { CalendarScreen } from '../features/calendar/screens/CalendarScreen';
 import { BudgetingScreen } from '../features/budgeting/screens/BudgetingScreen';
+import { RundownDetailsScreen } from '../features/rundown/screens/RundownDetailsScreen';
 import { EditRundownScreen } from '../features/rundown/screens/EditRundownScreen';
+import { NotesListScreen } from '../features/notes/screens/NotesListScreen';
+import { NewNoteScreen } from '../features/notes/screens/NewNoteScreen';
+import { NotificationScreen } from '../features/notifications/screens/NotificationScreen';
+import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
 import { showMessage } from '../features/auth/utils/feedback';
 
-type ActiveView = 'org-list' | 'create-org' | 'dashboard' | 'calendar' | 'budgeting' | 'rundown';
+type ActiveView =
+  | 'org-list'
+  | 'create-org'
+  | 'dashboard'
+  | 'calendar'
+  | 'budgeting'
+  | 'rundown-details'
+  | 'rundown-edit'
+  | 'notes-list'
+  | 'notes-new'
+  | 'notifications'
+  | 'profile';
 
 export function RootFlow() {
   const auth = useAuthFlow();
@@ -113,13 +129,7 @@ export function RootFlow() {
           onOpenCreateOrg={() => setActiveView('create-org')}
           onOpenJoinOrg={() => org.setIsJoinModalVisible(true)}
           onOpenStatusModal={(item) => org.setStatusModalOrg(item)}
-          onOpenProfile={() => {
-            showMessage(
-              `Signed in as ${auth.userName}`,
-              'Would you like to switch accounts or sign out?',
-              () => auth.handleSignOut()
-            );
-          }}
+          onOpenProfile={() => setActiveView('profile')}
         />
       )}
 
@@ -140,19 +150,12 @@ export function RootFlow() {
           onBackToOrgList={() => setActiveView('org-list')}
           onOpenCalendar={() => setActiveView('calendar')}
           onOpenBudgeting={() => setActiveView('budgeting')}
-          onOpenRundown={() => navigateTo('rundown')}
+          onOpenRundown={() => navigateTo('rundown-details')}
+          onOpenNotes={() => navigateTo('notes-list')}
+          onOpenNotifications={() => navigateTo('notifications')}
           onOpenInvites={() => setIsInvitesModalVisible(true)}
-          onOpenDivisions={() => showMessage('Divisions', 'Divisions management is coming next.')}
-          onOpenProfile={() => {
-            showMessage(
-              `Signed in as ${auth.userName}`,
-              'Would you like to switch accounts or sign out?',
-              () => {
-                auth.handleSignOut();
-                setActiveView('org-list');
-              }
-            );
-          }}
+          onOpenDivisions={() => showMessage('Divisions', 'Divisions management is coming in the next update.')}
+          onOpenProfile={() => setActiveView('profile')}
         />
       )}
 
@@ -161,13 +164,12 @@ export function RootFlow() {
         <CalendarScreen
           onSwitchTab={(tab) => {
             if (tab === 'home') setActiveView('dashboard');
-            else if (tab === 'profile') {
-              showMessage(`Profile`, `Signed in as ${auth.userName}`);
-            } else if (tab === 'divisions') {
-              showMessage('Divisions', 'Divisions management is coming next.');
+            else if (tab === 'profile') setActiveView('profile');
+            else if (tab === 'divisions') {
+              showMessage('Divisions', 'Divisions management is coming in the next update.');
             }
           }}
-          onOpenRundown={() => navigateTo('rundown')}
+          onOpenRundown={() => navigateTo('rundown-details')}
         />
       )}
 
@@ -176,11 +178,53 @@ export function RootFlow() {
         <BudgetingScreen onBack={() => setActiveView('dashboard')} />
       )}
 
-      {/* 2F. Edit Rundown Screen */}
-      {activeView === 'rundown' && (
+      {/* 2F. Rundown Details Screen */}
+      {activeView === 'rundown-details' && (
+        <RundownDetailsScreen
+          onBack={() => setActiveView('dashboard')}
+          onEdit={() => navigateTo('rundown-edit')}
+        />
+      )}
+
+      {/* 2G. Edit Rundown Screen */}
+      {activeView === 'rundown-edit' && (
         <EditRundownScreen
+          onBack={() => setActiveView('rundown-details')}
+          onSave={() => setActiveView('rundown-details')}
+        />
+      )}
+
+      {/* 2H. Notes List Screen */}
+      {activeView === 'notes-list' && (
+        <NotesListScreen
+          onBack={() => setActiveView('dashboard')}
+          onOpenNewNote={() => navigateTo('notes-new')}
+        />
+      )}
+
+      {/* 2I. New Note Screen */}
+      {activeView === 'notes-new' && (
+        <NewNoteScreen
+          onBack={() => setActiveView('notes-list')}
+          onSaveSuccess={() => setActiveView('notes-list')}
+        />
+      )}
+
+      {/* 2J. Notifications Screen */}
+      {activeView === 'notifications' && (
+        <NotificationScreen onBack={() => setActiveView('dashboard')} />
+      )}
+
+      {/* 2K. Profile Screen */}
+      {activeView === 'profile' && (
+        <ProfileScreen
+          userName={auth.userName ? `${auth.userName} Morgan` : 'Alex Morgan'}
+          userEmail={auth.loginEmail || 'alex@organization.com'}
           onBack={() => setActiveView(previousView)}
-          onSave={() => setActiveView(previousView)}
+          onSignOut={() => {
+            auth.handleSignOut();
+            setActiveView('org-list');
+          }}
         />
       )}
 

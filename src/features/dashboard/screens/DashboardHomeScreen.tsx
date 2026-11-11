@@ -19,6 +19,8 @@ interface DashboardHomeScreenProps {
   onOpenInvites?: () => void;
   onOpenRundown?: () => void;
   onOpenBudgeting?: () => void;
+  onOpenNotes?: () => void;
+  onOpenNotifications?: () => void;
 }
 
 export function DashboardHomeScreen({
@@ -30,12 +32,18 @@ export function DashboardHomeScreen({
   onOpenInvites,
   onOpenRundown,
   onOpenBudgeting,
+  onOpenNotes,
+  onOpenNotifications,
 }: DashboardHomeScreenProps) {
   const [activeTab, setActiveTab] = useState<'home' | 'calendar' | 'divisions' | 'profile'>('home');
 
   const handleQuickAccess = (name: string) => {
     if (name === 'Rundown') {
       onOpenRundown?.();
+      return;
+    }
+    if (name === 'Notes') {
+      onOpenNotes?.();
       return;
     }
     showMessage(name, `${name} feature for ${organizationName} is ready for integration.`);
@@ -88,7 +96,7 @@ export function DashboardHomeScreen({
 
           <TouchableOpacity
             style={styles.headerIconBtn}
-            onPress={() => handleQuickAccess('Notifications')}
+            onPress={() => onOpenNotifications ? onOpenNotifications() : handleQuickAccess('Notifications')}
             hitSlop={8}
           >
             <Svg width={18} height={18} viewBox="0 0 24 24">

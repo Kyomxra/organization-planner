@@ -72,7 +72,11 @@ export function BrandHeader({ compact = false }: { compact?: boolean }) {
 export function SplashBrand() {
   return (
     <View style={styles.splashBrand}>
-      <BrandMark size={142} />
+      <View style={styles.concentricOuter}>
+        <View style={styles.concentricInner}>
+          <BrandMark size={130} />
+        </View>
+      </View>
       <Text style={styles.splashName}>Orbit</Text>
       <Text style={styles.splashTagline}>Organize. Connect. Grow.</Text>
     </View>
@@ -95,6 +99,25 @@ const styles = StyleSheet.create({
   brandName: { color: colors.text, fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
   tagline: { color: colors.muted, fontSize: 9, marginTop: 1, letterSpacing: 0.15 },
   splashBrand: { alignItems: 'center' },
+  concentricOuter: {
+    width: 230,
+    height: 230,
+    borderRadius: 115,
+    borderWidth: 1,
+    borderColor: 'rgba(81, 69, 232, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(81, 69, 232, 0.02)',
+  },
+  concentricInner: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    borderWidth: 1,
+    borderColor: 'rgba(81, 69, 232, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   splashName: { color: colors.text, fontSize: 27, fontWeight: '800', letterSpacing: -0.6, marginTop: 18 },
   splashTagline: { color: colors.muted, fontSize: 12, marginTop: 5 },
 });
