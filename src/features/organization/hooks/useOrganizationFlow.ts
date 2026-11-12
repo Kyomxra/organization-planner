@@ -45,7 +45,7 @@ export function useOrganizationFlow() {
       id: `org-${Date.now()}`,
       name: data.name,
       roleTitle: 'Executive Committee',
-      role: 'BPH',
+      role: 'Executive',
       memberCount: 1,
       status: 'Active',
       letter: data.name.charAt(0).toUpperCase() || 'O',

@@ -150,7 +150,7 @@ export function OrganizationListScreen({
                       <Circle cx="15" cy="7" r="2.2" fill="none" stroke={colors.muted} strokeWidth={1.4} />
                       <Path d="M14 12 C15.5 12.5, 17 13.5, 17 15" fill="none" stroke={colors.muted} strokeWidth={1.4} />
                     </Svg>
-                    <Text style={styles.memberCount}>{org.memberCount} anggota</Text>
+                    <Text style={styles.memberCount}>{org.memberCount} members</Text>
                   </View>
 
                   {/* Status Badge */}

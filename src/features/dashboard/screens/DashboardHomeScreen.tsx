@@ -19,6 +19,7 @@ interface DashboardHomeScreenProps {
   onOpenInvites?: () => void;
   onOpenRundown?: () => void;
   onOpenBudgeting?: () => void;
+  onOpenAddExpense?: () => void;
   onOpenNotes?: () => void;
   onOpenNotifications?: () => void;
 }
@@ -32,6 +33,7 @@ export function DashboardHomeScreen({
   onOpenInvites,
   onOpenRundown,
   onOpenBudgeting,
+  onOpenAddExpense,
   onOpenNotes,
   onOpenNotifications,
 }: DashboardHomeScreenProps) {
@@ -46,11 +48,27 @@ export function DashboardHomeScreen({
       onOpenNotes?.();
       return;
     }
+    if (name === 'Divisions') {
+      onOpenDivisions?.();
+      return;
+    }
+    if (name === 'Budgeting') {
+      onOpenBudgeting?.();
+      return;
+    }
     showMessage(name, `${name} feature for ${organizationName} is ready for integration.`);
   };
 
   const handleBudgetAction = (action: string) => {
-    if (action === 'View Details' || action === 'Pending Receipts') {
+    if (action === 'Add Expense') {
+      if (onOpenAddExpense) {
+        onOpenAddExpense();
+      } else {
+        onOpenBudgeting?.();
+      }
+      return;
+    }
+    if (action === 'View Details' || action === 'Pending Transactions') {
       onOpenBudgeting?.();
       return;
     }
@@ -200,10 +218,10 @@ export function DashboardHomeScreen({
             <Text style={styles.quickAccessLabel}>Notes</Text>
           </TouchableOpacity>
 
-          {/* 3. Menu 3 */}
+          {/* 3. Divisions */}
           <TouchableOpacity
             style={styles.quickAccessItem}
-            onPress={() => handleQuickAccess('Menu 3')}
+            onPress={() => handleQuickAccess('Divisions')}
             activeOpacity={0.75}
           >
             <View style={[styles.iconCircle, { backgroundColor: '#E6F4FF' }]}>
@@ -218,13 +236,13 @@ export function DashboardHomeScreen({
                 />
               </Svg>
             </View>
-            <Text style={styles.quickAccessLabel}>Menu 3</Text>
+            <Text style={styles.quickAccessLabel}>Divisions</Text>
           </TouchableOpacity>
 
-          {/* 4. Menu 4 */}
+          {/* 4. Budgeting */}
           <TouchableOpacity
             style={styles.quickAccessItem}
-            onPress={() => handleQuickAccess('Menu 4')}
+            onPress={() => handleQuickAccess('Budgeting')}
             activeOpacity={0.75}
           >
             <View style={[styles.iconCircle, { backgroundColor: '#FFEFEA' }]}>
@@ -235,7 +253,7 @@ export function DashboardHomeScreen({
                 <Rect x="3" y="14" width="7" height="7" rx="2" stroke="#E85845" strokeWidth={1.8} fill="none" />
               </Svg>
             </View>
-            <Text style={styles.quickAccessLabel}>Menu 4</Text>
+            <Text style={styles.quickAccessLabel}>Budgeting</Text>
           </TouchableOpacity>
         </View>
 
@@ -300,20 +318,20 @@ export function DashboardHomeScreen({
 
             <TouchableOpacity
               style={styles.addReceiptBtn}
-              onPress={() => handleBudgetAction('Add a Receipt')}
+              onPress={() => handleBudgetAction('Add Expense')}
               activeOpacity={0.85}
             >
               <Svg width={14} height={14} viewBox="0 0 20 20" style={styles.receiptIcon}>
                 <Path d="M10 4V16M4 10H16" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" />
               </Svg>
-              <Text style={styles.addReceiptBtnText}>Add a Receipt</Text>
+              <Text style={styles.addReceiptBtnText}>Add Expense</Text>
             </TouchableOpacity>
           </View>
 
           {/* Pending Verification Notice */}
           <TouchableOpacity
             style={styles.pendingNotice}
-            onPress={() => handleBudgetAction('Pending Receipts')}
+            onPress={() => handleBudgetAction('Pending Transactions')}
             activeOpacity={0.75}
           >
             <Svg width={14} height={14} viewBox="0 0 24 24" style={styles.warningIcon}>
@@ -321,7 +339,7 @@ export function DashboardHomeScreen({
               <Path d="M12 8V12M12 16H12.01" stroke="#E87A35" strokeWidth={2.4} strokeLinecap="round" />
             </Svg>
             <Text style={styles.pendingText}>
-              3 transaction receipts are pending verification
+              Pending transactions require review
             </Text>
             <Text style={styles.pendingChevron}>&gt;</Text>
           </TouchableOpacity>

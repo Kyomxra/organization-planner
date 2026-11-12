@@ -15,6 +15,9 @@ import { OrganizationStatusModal } from '../features/organization/components/Org
 import { JoinOrganizationModal } from '../features/organization/components/JoinOrganizationModal';
 import { OrganizationCreatedModal } from '../features/organization/components/OrganizationCreatedModal';
 import { InvitesModal } from '../features/organization/components/InvitesModal';
+import { mockDivisions, initialDivisionMembers } from '../features/organization/data/mockDivisions';
+import { DivisionManagementScreen } from '../features/organization/screens/DivisionManagementScreen';
+import { DivisionMember } from '../features/organization/types/division';
 
 import { DashboardHomeScreen } from '../features/dashboard/screens/DashboardHomeScreen';
 import { CalendarScreen } from '../features/calendar/screens/CalendarScreen';
@@ -34,8 +37,10 @@ type ActiveView =
   | 'org-list'
   | 'create-org'
   | 'dashboard'
+  | 'divisions'
   | 'calendar'
   | 'budgeting'
+  | 'budgeting-add-expense'
   | 'rundown-list'
   | 'rundown-details'
   | 'rundown-edit'
@@ -52,6 +57,8 @@ export function RootFlow() {
   const [isInvitesModalVisible, setIsInvitesModalVisible] = useState(false);
   const [previousView, setPreviousView] = useState<ActiveView>('dashboard');
   const [selectedRundown, setSelectedRundown] = useState<Rundown | null>(null);
+  const [divisionMembersByOrg, setDivisionMembersByOrg] = useState<Record<string, DivisionMember[]>>({});
+  const divisionMembers = divisionMembersByOrg[org.selectedOrg.id] ?? initialDivisionMembers;
 
   const navigateTo = (view: ActiveView) => {
     setPreviousView(activeView);
@@ -118,7 +125,7 @@ export function RootFlow() {
     );
   }
 
-  // 2. Authenticated Flow (POV BPH)
+  // 2. Authenticated Flow (Executive perspective)
   return (
     <View style={styles.root}>
       {/* 2A. Organizations List Screen */}
@@ -149,19 +156,40 @@ export function RootFlow() {
         />
       )}
 
-      {/* 2C. Dashboard Home Screen (POV BPH) */}
+      {/* 2C. Dashboard Home Screen (Executive perspective) */}
       {activeView === 'dashboard' && (
         <DashboardHomeScreen
           organizationName={org.selectedOrg.name}
           onBackToOrgList={() => setActiveView('org-list')}
           onOpenCalendar={() => setActiveView('calendar')}
           onOpenBudgeting={() => setActiveView('budgeting')}
+          onOpenAddExpense={() => setActiveView('budgeting-add-expense')}
           onOpenRundown={() => navigateTo('rundown-list')}
           onOpenNotes={() => navigateTo('notes-list')}
           onOpenNotifications={() => navigateTo('notifications')}
           onOpenInvites={() => setIsInvitesModalVisible(true)}
-          onOpenDivisions={() => showMessage('Divisions', 'Divisions management is coming in the next update.')}
+          onOpenDivisions={() => setActiveView('divisions')}
           onOpenProfile={() => setActiveView('profile')}
+        />
+      )}
+
+      {activeView === 'divisions' && (
+        <DivisionManagementScreen
+          organizationName={org.selectedOrg.name}
+          divisions={mockDivisions}
+          members={divisionMembers}
+          onBack={() => setActiveView('dashboard')}
+          onAssignMember={(memberId, divisionId) => {
+            setDivisionMembersByOrg((current) => {
+              const currentMembers = current[org.selectedOrg.id] ?? initialDivisionMembers;
+              return {
+                ...current,
+                [org.selectedOrg.id]: currentMembers.map((member) =>
+                  member.id === memberId ? { ...member, divisionId } : member
+                ),
+              };
+            });
+          }}
         />
       )}
 
@@ -171,17 +199,18 @@ export function RootFlow() {
           onSwitchTab={(tab) => {
             if (tab === 'home') setActiveView('dashboard');
             else if (tab === 'profile') setActiveView('profile');
-            else if (tab === 'divisions') {
-              showMessage('Divisions', 'Divisions management is coming in the next update.');
-            }
+            else if (tab === 'divisions') setActiveView('divisions');
           }}
           onOpenRundown={() => navigateTo('rundown-list')}
         />
       )}
 
       {/* 2E. Budgeting Screen */}
-      {activeView === 'budgeting' && (
-        <BudgetingScreen onBack={() => setActiveView('dashboard')} />
+      {(activeView === 'budgeting' || activeView === 'budgeting-add-expense') && (
+        <BudgetingScreen
+          onBack={() => setActiveView('dashboard')}
+          openAddExpense={activeView === 'budgeting-add-expense'}
+        />
       )}
 
       {/* 2F. Rundown List Screen */}

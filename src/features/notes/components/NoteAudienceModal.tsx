@@ -61,7 +61,7 @@ export function NoteAudienceModal({
         ...prev,
         isOnlyMe: false,
         isDivision: nextDiv,
-        selectedDivisions: nextDiv && prev.selectedDivisions.length === 0 ? ['Divisi A', 'Divisi C'] : prev.selectedDivisions,
+        selectedDivisions: nextDiv && prev.selectedDivisions.length === 0 ? ['Division A', 'Division C'] : prev.selectedDivisions,
       };
     });
   };
@@ -111,7 +111,14 @@ export function NoteAudienceModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.sheet}>
@@ -197,7 +204,7 @@ export function NoteAudienceModal({
                   <Text style={styles.divisionSelectorType}>Multi-select</Text>
                 </View>
                 <View style={styles.chipsRow}>
-                  {['Divisi A', 'Divisi B', 'Divisi C'].map((div) => {
+                  {['Division A', 'Division B', 'Division C'].map((div) => {
                     const isSelected = selection.selectedDivisions.includes(div);
                     return (
                       <TouchableOpacity
@@ -303,7 +310,7 @@ export function NoteAudienceModal({
               <View style={styles.warningCircle}>
                 <Text style={styles.warningExclamation}>!</Text>
               </View>
-              <Text style={styles.warningText}>Division, BPH, and Coordinators can be combined.</Text>
+              <Text style={styles.warningText}>Division, Executive, and Coordinators can be combined.</Text>
             </View>
 
             {/* Done button */}

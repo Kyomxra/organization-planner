@@ -27,6 +27,7 @@ export function AuthBottomSheet({ visible, title, onClose, children }: AuthBotto
       transparent
       animationType="slide"
       statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={onClose}
     >
       <View style={styles.modalRoot}>

@@ -1,4 +1,4 @@
-export type NoteAudience = 'All' | 'Private' | 'Division' | 'BPH' | 'Coordinators' | 'Members';
+export type NoteAudience = 'All' | 'Private' | 'Division' | 'Executive' | 'Coordinators' | 'Members';
 
 export interface NoteBadge {
   label: string;

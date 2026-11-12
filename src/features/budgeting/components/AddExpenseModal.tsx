@@ -23,7 +23,7 @@ interface AddExpenseModalProps {
 }
 
 export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProps) {
-  const [expenseType, setExpenseType] = useState('Meeting Consum');
+  const [expenseType, setExpenseType] = useState('Meeting Refreshments');
   const [date, setDate] = useState('10 Oct 2026');
   const [total, setTotal] = useState('');
   const [description, setDescription] = useState('');
@@ -35,9 +35,14 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
       return;
     }
     const num = parseInt(total.replace(/\D/g, ''), 10) || 0;
+    if (num <= 0) {
+      showMessage('Amount Required', 'Enter an expense amount greater than zero.');
+      return;
+    }
     onAdd({
       typeOfCost: expenseType.trim(),
-      date: '10 Oct',
+      date: date.split(' ').slice(0, 2).join(' '),
+      description: description.trim(),
       total: num > 0 ? num.toLocaleString('id-ID') : '0',
       numericTotal: num,
       hasReceipt: hasReceipt,
@@ -55,7 +60,14 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardWrap}>
@@ -85,7 +97,7 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
                   <TouchableOpacity
                     style={styles.dashedAddBtn}
                     onPress={() => {
-                      const types = ['Meeting Consum', 'Print Banner', 'Rent equipment', 'Logistics', 'Snacks'];
+                      const types = ['Meeting Refreshments', 'Print Banner', 'Equipment Rental', 'Logistics', 'Snacks'];
                       const next = types[(types.indexOf(expenseType) + 1) % types.length];
                       setExpenseType(next);
                     }}
@@ -132,7 +144,7 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
                     style={styles.fieldInput}
                     value={description}
                     onChangeText={setDescription}
-                    placeholder="Add revenue notes"
+                    placeholder="Add expense notes"
                     placeholderTextColor={colors.placeholder}
                   />
                 </View>
@@ -142,7 +154,7 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
               <View style={styles.receiptCard}>
                 <View style={styles.receiptHeader}>
                   <Text style={styles.receiptTitle}>Receipt</Text>
-                  <Text style={styles.receiptSubtext}>JPG, PNG • maks. 5 MB</Text>
+                  <Text style={styles.receiptSubtext}>JPG, PNG • max. 5 MB</Text>
                 </View>
 
                 <TouchableOpacity style={styles.dropzone} onPress={handlePickReceipt} activeOpacity={0.8}>

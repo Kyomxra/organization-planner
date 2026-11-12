@@ -5,7 +5,7 @@ export const initialOrganizations: OrganizationItem[] = [
     id: 'org-1',
     name: 'Organization A',
     roleTitle: 'Executive Committee',
-    role: 'BPH',
+    role: 'Executive',
     memberCount: 48,
     status: 'Active',
     letter: 'A',
@@ -17,7 +17,7 @@ export const initialOrganizations: OrganizationItem[] = [
   {
     id: 'org-2',
     name: 'Organization B',
-    roleTitle: 'Division B - Anggota',
+    roleTitle: 'Division B - Member',
     role: 'Participant',
     memberCount: 32,
     status: 'Active',

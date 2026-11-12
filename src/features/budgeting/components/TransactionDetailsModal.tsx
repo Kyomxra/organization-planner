@@ -12,20 +12,39 @@ import {
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
+import { ExpenseItem } from '../types';
 
 interface TransactionDetailsModalProps {
   visible: boolean;
   onClose: () => void;
-  onEdit?: () => void;
+  expense: ExpenseItem | null;
+  onApprove: () => void;
+  onReject: () => void;
 }
 
-export function TransactionDetailsModal({ visible, onClose, onEdit }: TransactionDetailsModalProps) {
+export function TransactionDetailsModal({
+  visible,
+  onClose,
+  expense,
+  onApprove,
+  onReject,
+}: TransactionDetailsModalProps) {
   const handleViewFull = () => {
-    showMessage('Receipt Preview', 'Viewing receipt: KEDAI KOPI SENJA\nTotal: Rp1.250.000\nDate: 10 Oct 2026');
+    showMessage(
+      'Receipt Preview',
+      `Viewing receipt: ${expense?.typeOfCost ?? 'Transaction'}\nTotal: Rp${expense?.total ?? '0'}\nDate: ${expense?.date ?? ''} 2026`
+    );
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.sheet}>
@@ -34,12 +53,8 @@ export function TransactionDetailsModal({ visible, onClose, onEdit }: Transactio
             <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={10}>
               <Text style={styles.closeIcon}>✕</Text>
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Transaction Details</Text>
-            <TouchableOpacity onPress={onClose} style={styles.saveCheckBtn} hitSlop={10}>
-              <Svg width={14} height={14} viewBox="0 0 20 20">
-                <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              </Svg>
-            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Review Transaction</Text>
+            <View style={styles.headerSpacer} />
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
@@ -53,12 +68,30 @@ export function TransactionDetailsModal({ visible, onClose, onEdit }: Transactio
                   </Svg>
                 </View>
                 <View>
-                  <Text style={styles.statusTitle}>Waiting for verifications</Text>
-                  <Text style={styles.statusSub}>Sent 10 Oct 2026 · 14.32</Text>
+                  <Text style={styles.statusTitle}>
+                    {expense?.status === 'PENDING'
+                      ? 'Waiting for review'
+                      : `Transaction ${expense?.status === 'APPROVED' ? 'approved' : 'rejected'}`}
+                  </Text>
+                  <Text style={styles.statusSub}>Submitted {expense?.date ?? ''} 2026</Text>
                 </View>
               </View>
-              <View style={styles.pendingBadge}>
-                <Text style={styles.pendingBadgeText}>PENDING</Text>
+              <View
+                style={[
+                  styles.pendingBadge,
+                  expense?.status === 'APPROVED' && styles.approvedBadge,
+                  expense?.status === 'REJECTED' && styles.rejectedBadge,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.pendingBadgeText,
+                    expense?.status === 'APPROVED' && styles.approvedBadgeText,
+                    expense?.status === 'REJECTED' && styles.rejectedBadgeText,
+                  ]}
+                >
+                  {expense?.status ?? 'PENDING'}
+                </Text>
               </View>
             </View>
 
@@ -67,8 +100,7 @@ export function TransactionDetailsModal({ visible, onClose, onEdit }: Transactio
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Expense Type</Text>
                 <View style={styles.expenseChip}>
-                  <Text style={styles.expenseChipText}>Consumption</Text>
-                  <Text style={styles.chipClose}>✕</Text>
+                  <Text style={styles.expenseChipText}>{expense?.typeOfCost ?? 'Expense'}</Text>
                 </View>
               </View>
 
@@ -77,7 +109,7 @@ export function TransactionDetailsModal({ visible, onClose, onEdit }: Transactio
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Date</Text>
                 <View style={styles.dateRow}>
-                  <Text style={styles.detailValue}>10 Oct 2026</Text>
+                  <Text style={styles.detailValue}>{expense?.date ?? ''} 2026</Text>
                   <Svg width={16} height={16} viewBox="0 0 24 24" style={styles.calIcon}>
                     <Rect x="3" y="4" width="18" height="18" rx="3" stroke={colors.primary} strokeWidth={2} fill="none" />
                     <Path d="M16 2V6M8 2V6M3 10H21" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
@@ -89,7 +121,7 @@ export function TransactionDetailsModal({ visible, onClose, onEdit }: Transactio
 
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Total (Rp)</Text>
-                <Text style={styles.detailValueBold}>1.250.000</Text>
+                <Text style={styles.detailValueBold}>{expense?.total ?? '0'}</Text>
               </View>
 
               <View style={styles.divider} />
@@ -97,7 +129,7 @@ export function TransactionDetailsModal({ visible, onClose, onEdit }: Transactio
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Description</Text>
                 <Text style={styles.detailDesc}>
-                  Konsumsi rapat persiapan Dies Natalis
+                  {expense?.description || 'No description provided.'}
                 </Text>
               </View>
             </View>
@@ -117,52 +149,41 @@ export function TransactionDetailsModal({ visible, onClose, onEdit }: Transactio
               {/* Realistic Paper Receipt Graphic Preview */}
               <TouchableOpacity onPress={handleViewFull} activeOpacity={0.9} style={styles.receiptCard}>
                 <View style={styles.receiptPaper}>
-                  <Text style={styles.receiptShopName}>KEDAI KOPI SENJA</Text>
-                  <Text style={styles.receiptShopAddress}>Jl. Melati No. 12, Jakarta Selatan</Text>
+                  <Text style={styles.receiptShopName}>{expense?.typeOfCost ?? 'Expense Receipt'}</Text>
+                  <Text style={styles.receiptShopAddress}>Organization expense receipt</Text>
                   <Text style={styles.receiptDashedLine}>--------------------------------</Text>
                   <View style={styles.receiptItemRow}>
-                    <Text style={styles.receiptItemText}>Paket Espresso Blend (25x)</Text>
-                    <Text style={styles.receiptItemPrice}>Rp625.000</Text>
-                  </View>
-                  <View style={styles.receiptItemRow}>
-                    <Text style={styles.receiptItemText}>Snack Box Tradisional (25x)</Text>
-                    <Text style={styles.receiptItemPrice}>Rp450.000</Text>
-                  </View>
-                  <View style={styles.receiptItemRow}>
-                    <Text style={styles.receiptItemText}>Air Mineral Botol (30x)</Text>
-                    <Text style={styles.receiptItemPrice}>Rp175.000</Text>
+                    <Text style={styles.receiptItemText}>{expense?.description || expense?.typeOfCost}</Text>
+                    <Text style={styles.receiptItemPrice}>Rp{expense?.total ?? '0'}</Text>
                   </View>
                   <Text style={styles.receiptDashedLine}>--------------------------------</Text>
                   <View style={styles.receiptTotalRow}>
                     <Text style={styles.receiptTotalLabel}>TOTAL (Rp)</Text>
-                    <Text style={styles.receiptTotalPrice}>1.250.000</Text>
+                    <Text style={styles.receiptTotalPrice}>{expense?.total ?? '0'}</Text>
                   </View>
-                  <Text style={styles.receiptFooter}>PAID VIA QRIS • THANK YOU!</Text>
+                  <Text style={styles.receiptFooter}>TRANSACTION RECEIPT</Text>
                 </View>
               </TouchableOpacity>
             </View>
 
-            {/* Edit Transaction Button */}
-            <TouchableOpacity
-              style={styles.editBtn}
-              onPress={() => {
-                onEdit?.();
-                showMessage('Edit Transaction', 'Transaction editing form is ready.');
-              }}
-              activeOpacity={0.85}
-            >
-              <Svg width={14} height={14} viewBox="0 0 24 24" style={styles.editIcon}>
-                <Path
-                  d="M17 3A2.828 2.828 0 1 1 21 7L7.5 20.5 2 22l1.5-5.5L17 3z"
-                  fill="none"
-                  stroke="#FFFFFF"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
-              <Text style={styles.editBtnText}>Edit Transaction</Text>
-            </TouchableOpacity>
+            {expense?.status === 'PENDING' && (
+              <View style={styles.reviewActions}>
+                <TouchableOpacity
+                  style={styles.rejectBtn}
+                  onPress={onReject}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.rejectBtnText}>Reject</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.approveBtn}
+                  onPress={onApprove}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.approveBtnText}>Approve Transaction</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -177,13 +198,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(23, 24, 43, 0.45)',
   },
   sheet: {
-    maxHeight: '88%',
+    maxHeight: '92%',
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
     paddingTop: 18,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 26,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
   },
   header: {
     flexDirection: 'row',
@@ -214,6 +235,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerSpacer: {
+    width: 32,
   },
   content: {
     paddingBottom: 20,
@@ -257,6 +281,20 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     color: '#E87A35',
+  },
+  approvedBadge: {
+    backgroundColor: '#E8F8F2',
+    borderColor: '#B9E8D5',
+  },
+  approvedBadgeText: {
+    color: '#2C9B76',
+  },
+  rejectedBadge: {
+    backgroundColor: '#FFF0F1',
+    borderColor: '#F5C6CA',
+  },
+  rejectedBadgeText: {
+    color: '#D94450',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -425,23 +463,34 @@ const styles = StyleSheet.create({
     marginTop: 4,
     letterSpacing: 0.5,
   },
-  editBtn: {
+  reviewActions: {
     flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
+  rejectBtn: {
+    flex: 1,
     height: 48,
-    backgroundColor: colors.primary,
     borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E45B66',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
-    shadowColor: colors.primaryDark,
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 2,
   },
-  editIcon: {
-    marginRight: 8,
+  rejectBtnText: {
+    color: '#D94450',
+    fontSize: 13,
+    fontWeight: '800',
   },
-  editBtnText: {
+  approveBtn: {
+    flex: 1.5,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  approveBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '800',

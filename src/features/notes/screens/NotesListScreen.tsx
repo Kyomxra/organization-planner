@@ -20,11 +20,11 @@ interface NotesListScreenProps {
 const mockNotes: NoteItem[] = [
   {
     id: 'note-1',
-    title: 'Rapat Evaluasi Acara',
+    title: 'Event Evaluation Meeting',
     content:
-      'Catatan hasil evaluasi: alur registrasi perlu dipercepat dan briefing volunteer dimulai lebih awal.',
+      'Evaluation notes: speed up registration and start the volunteer briefing earlier.',
     dateLabel: 'Today, 10:24',
-    audienceCategory: ['All', 'BPH', 'Coordinators'],
+    audienceCategory: ['All', 'Executive', 'Coordinators'],
     badges: [
       { label: 'Executive', type: 'executive', bgColor: '#E6F4FF', textColor: '#2B88E8' },
       { label: 'Coordinators', type: 'coordinators', bgColor: '#FFF1E6', textColor: '#E87A35' },
@@ -32,7 +32,7 @@ const mockNotes: NoteItem[] = [
   },
   {
     id: 'note-2',
-    title: 'Ide Konten Sosmed',
+    title: 'Social Media Content Ideas',
     content:
       'Carousel recap, volunteer spotlight, and a short behind-the-scenes reel for next week.',
     dateLabel: 'Today, 08:15',
@@ -41,7 +41,7 @@ const mockNotes: NoteItem[] = [
   },
   {
     id: 'note-3',
-    title: 'Rundown Technical Meeting',
+    title: 'Technical Meeting Rundown',
     content:
       'Sound check at 18.30, stage cue review at 19.00, then a full rehearsal with the event lead.',
     dateLabel: '30 Sep 2026',
@@ -54,7 +54,7 @@ const mockNotes: NoteItem[] = [
     content:
       'Welcome desk assignments, emergency contacts, meal distribution, and closing shift reminders.',
     dateLabel: '29 Sep 2026',
-    audienceCategory: ['All', 'BPH', 'Members'],
+    audienceCategory: ['All', 'Executive', 'Members'],
     badges: [
       { label: 'Executive', type: 'executive', bgColor: '#E6F4FF', textColor: '#2B88E8' },
       { label: 'Members', type: 'members', bgColor: '#E8F8F2', textColor: '#2C9B76' },
@@ -78,7 +78,7 @@ const filterTabs: NoteAudience[] = [
   'All',
   'Private',
   'Division',
-  'BPH',
+  'Executive',
   'Coordinators',
   'Members',
 ];

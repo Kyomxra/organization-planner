@@ -16,31 +16,57 @@ import { AddExpenseModal } from '../components/AddExpenseModal';
 
 interface BudgetingScreenProps {
   onBack: () => void;
+  openAddExpense?: boolean;
 }
 
 const mockIncomes: IncomeItem[] = [
-  { id: 'inc-1', no: 1, date: '1 Oct', from: 'Iuran Anggota', total: '5.000.000', numericTotal: 5000000 },
+  { id: 'inc-1', no: 1, date: '1 Oct', from: 'Membership Dues', total: '5.000.000', numericTotal: 5000000 },
   { id: 'inc-2', no: 2, date: '3 Oct', from: 'Sponsor', total: '6.000.000', numericTotal: 6000000 },
   { id: 'inc-3', no: 3, date: '8 Oct', from: 'Merchandise', total: '1.500.000', numericTotal: 1500000 },
 ];
 
 const mockExpenses: ExpenseItem[] = [
-  { id: 'exp-1', no: 1, date: '2 Oct', typeOfCost: 'Meeting Consum', total: '1.250.000', numericTotal: 1250000, hasReceipt: true, status: 'PENDING' },
+  { id: 'exp-1', no: 1, date: '2 Oct', typeOfCost: 'Meeting Refreshments', description: 'Refreshments for the event preparation meeting.', total: '1.250.000', numericTotal: 1250000, hasReceipt: true, status: 'PENDING' },
   { id: 'exp-2', no: 2, date: '5 Oct', typeOfCost: 'Print Banner', total: '1.000.000', numericTotal: 1000000, hasReceipt: true, status: 'PENDING' },
-  { id: 'exp-3', no: 3, date: '9 Oct', typeOfCost: 'Rent equipment', total: '1.500.000', numericTotal: 1500000, hasReceipt: true, status: 'VERIFIED' },
+  { id: 'exp-3', no: 3, date: '9 Oct', typeOfCost: 'Equipment Rental', total: '1.500.000', numericTotal: 1500000, hasReceipt: true, status: 'APPROVED' },
 ];
 
-export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
+export function BudgetingScreen({ onBack, openAddExpense = false }: BudgetingScreenProps) {
   const [incomes, setIncomes] = useState<IncomeItem[]>(mockIncomes);
   const [expenses, setExpenses] = useState<ExpenseItem[]>(mockExpenses);
   const [fromDate, setFromDate] = useState('01 Oct 2026');
   const [toDate, setToDate] = useState('31 Oct 2026');
   const [isReceiptModalVisible, setIsReceiptModalVisible] = useState(false);
   const [isAddRevenueModalVisible, setIsAddRevenueModalVisible] = useState(false);
-  const [isAddExpenseModalVisible, setIsAddExpenseModalVisible] = useState(false);
+  const [isAddExpenseModalVisible, setIsAddExpenseModalVisible] = useState(openAddExpense);
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseItem | null>(null);
 
   const subtotalIncome = incomes.reduce((acc, curr) => acc + curr.numericTotal, 0);
-  const subtotalExpense = expenses.reduce((acc, curr) => acc + curr.numericTotal, 0);
+  const subtotalExpense = expenses
+    .filter((item) => item.status !== 'REJECTED')
+    .reduce((acc, curr) => acc + curr.numericTotal, 0);
+  const pendingExpenses = expenses.filter((item) => item.status === 'PENDING');
+  const availableBudget = subtotalIncome - subtotalExpense;
+  const budgetSpentPercentage = subtotalIncome > 0
+    ? Math.round((subtotalExpense / subtotalIncome) * 100)
+    : 0;
+
+  const openExpenseDetails = (expense: ExpenseItem) => {
+    setSelectedExpense(expense);
+    setIsReceiptModalVisible(true);
+  };
+
+  const reviewExpense = (status: 'APPROVED' | 'REJECTED') => {
+    if (!selectedExpense) return;
+    setExpenses((prev) => prev.map((item) =>
+      item.id === selectedExpense.id ? { ...item, status } : item
+    ));
+    showMessage(
+      status === 'APPROVED' ? 'Transaction Approved' : 'Transaction Rejected',
+      `${selectedExpense.typeOfCost} has been ${status.toLowerCase()}.`
+    );
+    setIsReceiptModalVisible(false);
+  };
 
   const handleAddIncome = () => {
     setIsAddRevenueModalVisible(true);
@@ -87,27 +113,27 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
         {/* Top Summary Card */}
         <View style={styles.summaryCard}>
           <Text style={styles.summarySubLabel}>Total Budget Available</Text>
-          <Text style={styles.summaryAmount}>Rp8.750.000</Text>
+          <Text style={styles.summaryAmount}>Rp{Math.max(availableBudget, 0).toLocaleString('en-US')}</Text>
 
           {/* Stats Row */}
           <View style={styles.statsRow}>
             <View>
               <Text style={styles.statLabel}>Revenue</Text>
-              <Text style={styles.revenueText}>+ Rp12,5 jt</Text>
+              <Text style={styles.revenueText}>+ Rp{subtotalIncome.toLocaleString('en-US')}</Text>
             </View>
             <View>
               <Text style={styles.statLabel}>Expenditures</Text>
-              <Text style={styles.expenditureText}>- Rp3,75 jt</Text>
+              <Text style={styles.expenditureText}>- Rp{subtotalExpense.toLocaleString('en-US')}</Text>
             </View>
           </View>
 
           {/* Progress Bar */}
           <View style={styles.progressRow}>
             <Text style={styles.progressLabel}>Budget Spent</Text>
-            <Text style={styles.progressPercentage}>30%</Text>
+            <Text style={styles.progressPercentage}>{budgetSpentPercentage}%</Text>
           </View>
           <View style={styles.progressBarTrack}>
-            <View style={[styles.progressBarFill, { width: '30%' }]} />
+            <View style={[styles.progressBarFill, { width: `${Math.min(budgetSpentPercentage, 100)}%` }]} />
           </View>
         </View>
 
@@ -168,13 +194,13 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
 
             {/* Subtotal Footer */}
             <View style={styles.tableFooterRow}>
-              <Text style={styles.footerLabel}>Subtotal Income</Text>
+              <Text style={styles.footerLabel}>Subtotal Revenue</Text>
               <Text style={styles.footerValue}>{subtotalIncome.toLocaleString('id-ID')}</Text>
             </View>
           </View>
 
           <TouchableOpacity style={styles.addIncomeBtn} onPress={handleAddIncome} activeOpacity={0.8}>
-            <Text style={styles.addIncomeBtnText}>+ Add income</Text>
+            <Text style={styles.addIncomeBtnText}>+ Add Revenue</Text>
           </TouchableOpacity>
         </View>
 
@@ -188,7 +214,7 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
               <Text style={[styles.thText, { width: 60 }]}>Date</Text>
               <Text style={[styles.thText, { flex: 1 }]}>Type of cost</Text>
               <Text style={[styles.thText, { width: 85, textAlign: 'right' }]}>Total (Rp)</Text>
-              <Text style={[styles.thText, { width: 44, textAlign: 'center' }]}>Prove</Text>
+              <Text style={[styles.thText, { width: 44, textAlign: 'center' }]}>Receipt</Text>
             </View>
 
             {/* Rows */}
@@ -202,7 +228,7 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
                 </Text>
                 <TouchableOpacity
                   style={styles.proveCell}
-                  onPress={() => setIsReceiptModalVisible(true)}
+                  onPress={() => openExpenseDetails(item)}
                   hitSlop={6}
                 >
                   <Svg width={18} height={18} viewBox="0 0 24 24">
@@ -221,21 +247,24 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
 
             {/* Subtotal Footer */}
             <View style={styles.tableFooterRow}>
-              <Text style={styles.footerLabel}>Subtotal Income</Text>
+              <Text style={styles.footerLabel}>Subtotal Expenses</Text>
               <Text style={styles.footerValue}>{subtotalExpense.toLocaleString('id-ID')}</Text>
             </View>
           </View>
 
           <TouchableOpacity style={styles.addExpenseBtn} onPress={handleAddExpense} activeOpacity={0.85}>
-            <Text style={styles.addExpenseBtnText}>+ Add income</Text>
+            <Text style={styles.addExpenseBtnText}>+ Add Expense</Text>
           </TouchableOpacity>
         </View>
 
         {/* Pending Verification Banner */}
         <TouchableOpacity
           style={styles.pendingBanner}
-          onPress={() => setIsReceiptModalVisible(true)}
+          onPress={() => {
+            if (pendingExpenses[0]) openExpenseDetails(pendingExpenses[0]);
+          }}
           activeOpacity={0.8}
+          disabled={pendingExpenses.length === 0}
         >
           <View style={styles.pendingLeft}>
             <View style={styles.checkIconBox}>
@@ -244,7 +273,9 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
               </Svg>
             </View>
             <Text style={styles.pendingBannerText}>
-              3 transaction receipts pending verification
+              {pendingExpenses.length > 0
+                ? `${pendingExpenses.length} transaction${pendingExpenses.length === 1 ? '' : 's'} pending review`
+                : 'All transactions reviewed'}
             </Text>
           </View>
           <Text style={styles.pendingChevron}>&gt;</Text>
@@ -255,6 +286,9 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
       <TransactionDetailsModal
         visible={isReceiptModalVisible}
         onClose={() => setIsReceiptModalVisible(false)}
+        expense={selectedExpense}
+        onApprove={() => reviewExpense('APPROVED')}
+        onReject={() => reviewExpense('REJECTED')}
       />
 
       {/* Add Revenue Modal */}
@@ -288,6 +322,7 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
               no: prev.length + 1,
               date: newExp.date || '10 Oct',
               typeOfCost: newExp.typeOfCost || 'Expense',
+              description: newExp.description,
               total: newExp.total || '0',
               numericTotal: newExp.numericTotal || 0,
               hasReceipt: !!newExp.hasReceipt,
