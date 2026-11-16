@@ -4,7 +4,7 @@ export interface OrganizationItem {
   id: string;
   name: string;
   roleTitle: string; // e.g. "Executive Committee"
-  role: 'BPH' | 'Coordinator' | 'Participant';
+  role: 'Executive' | 'Coordinator' | 'Participant';
   memberCount: number;
   status: OrgStatus;
   letter: string;

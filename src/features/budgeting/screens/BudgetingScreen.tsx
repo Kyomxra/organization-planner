@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -13,34 +14,138 @@ import { ExpenseItem, IncomeItem } from '../types';
 import { TransactionDetailsModal } from '../components/TransactionDetailsModal';
 import { AddRevenueModal } from '../components/AddRevenueModal';
 import { AddExpenseModal } from '../components/AddExpenseModal';
+import { supabase } from '../../../lib/supabase';
+import { formatLocalDate, isValidLocalDate } from '../../../lib/date';
 
 interface BudgetingScreenProps {
+  organizationId: string;
   onBack: () => void;
+  openAddExpense?: boolean;
 }
 
-const mockIncomes: IncomeItem[] = [
-  { id: 'inc-1', no: 1, date: '1 Oct', from: 'Iuran Anggota', total: '5.000.000', numericTotal: 5000000 },
-  { id: 'inc-2', no: 2, date: '3 Oct', from: 'Sponsor', total: '6.000.000', numericTotal: 6000000 },
-  { id: 'inc-3', no: 3, date: '8 Oct', from: 'Merchandise', total: '1.500.000', numericTotal: 1500000 },
-];
+function displayDate(date: string): string {
+  return new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+  });
+}
 
-const mockExpenses: ExpenseItem[] = [
-  { id: 'exp-1', no: 1, date: '2 Oct', typeOfCost: 'Meeting Consum', total: '1.250.000', numericTotal: 1250000, hasReceipt: true, status: 'PENDING' },
-  { id: 'exp-2', no: 2, date: '5 Oct', typeOfCost: 'Print Banner', total: '1.000.000', numericTotal: 1000000, hasReceipt: true, status: 'PENDING' },
-  { id: 'exp-3', no: 3, date: '9 Oct', typeOfCost: 'Rent equipment', total: '1.500.000', numericTotal: 1500000, hasReceipt: true, status: 'VERIFIED' },
-];
+function formatAmount(amount: number): string {
+  return amount.toLocaleString('id-ID');
+}
 
-export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
-  const [incomes, setIncomes] = useState<IncomeItem[]>(mockIncomes);
-  const [expenses, setExpenses] = useState<ExpenseItem[]>(mockExpenses);
-  const [fromDate, setFromDate] = useState('01 Oct 2026');
-  const [toDate, setToDate] = useState('31 Oct 2026');
+export function BudgetingScreen({
+  organizationId,
+  onBack,
+  openAddExpense = false,
+}: BudgetingScreenProps) {
+  const today = new Date();
+  const defaultFromDate = formatLocalDate(new Date(today.getFullYear(), today.getMonth(), 1));
+  const defaultToDate = formatLocalDate(new Date(today.getFullYear(), today.getMonth() + 1, 0));
+  const [incomes, setIncomes] = useState<IncomeItem[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
+  const [fromDate, setFromDate] = useState(defaultFromDate);
+  const [toDate, setToDate] = useState(defaultToDate);
+  const [appliedFromDate, setAppliedFromDate] = useState(defaultFromDate);
+  const [appliedToDate, setAppliedToDate] = useState(defaultToDate);
+  const [isLoading, setIsLoading] = useState(true);
   const [isReceiptModalVisible, setIsReceiptModalVisible] = useState(false);
   const [isAddRevenueModalVisible, setIsAddRevenueModalVisible] = useState(false);
-  const [isAddExpenseModalVisible, setIsAddExpenseModalVisible] = useState(false);
+  const [isAddExpenseModalVisible, setIsAddExpenseModalVisible] = useState(openAddExpense);
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseItem | null>(null);
+
+  useEffect(() => {
+    setIsAddExpenseModalVisible(openAddExpense);
+  }, [openAddExpense]);
+
+  const loadTransactions = useCallback(async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('id, type, amount, occurred_on, source_or_category, description, status, receipt_path')
+      .eq('organization_id', organizationId)
+      .gte('occurred_on', appliedFromDate)
+      .lte('occurred_on', appliedToDate)
+      .order('occurred_on', { ascending: false });
+
+    if (error) {
+      showMessage('Could not load transactions', error.message);
+      setIsLoading(false);
+      return;
+    }
+
+    const incomeRows = (data ?? []).filter((row) => row.type === 'income');
+    const expenseRows = (data ?? []).filter((row) => row.type === 'expense');
+    setIncomes(incomeRows.map((row, index) => ({
+      id: row.id,
+      no: index + 1,
+      date: displayDate(row.occurred_on),
+      from: row.source_or_category,
+      total: formatAmount(Number(row.amount)),
+      numericTotal: Number(row.amount),
+      description: row.description,
+    })));
+    setExpenses(expenseRows.map((row, index) => ({
+      id: row.id,
+      no: index + 1,
+      date: displayDate(row.occurred_on),
+      typeOfCost: row.source_or_category,
+      description: row.description,
+      total: formatAmount(Number(row.amount)),
+      numericTotal: Number(row.amount),
+      hasReceipt: Boolean(row.receipt_path),
+      status: row.status.toUpperCase() as ExpenseItem['status'],
+    })));
+    setIsLoading(false);
+  }, [appliedFromDate, appliedToDate, organizationId]);
+
+  useEffect(() => {
+    void loadTransactions();
+  }, [loadTransactions]);
 
   const subtotalIncome = incomes.reduce((acc, curr) => acc + curr.numericTotal, 0);
-  const subtotalExpense = expenses.reduce((acc, curr) => acc + curr.numericTotal, 0);
+  const subtotalExpense = expenses
+    .filter((item) => item.status !== 'REJECTED')
+    .reduce((acc, curr) => acc + curr.numericTotal, 0);
+  const pendingExpenses = expenses.filter((item) => item.status === 'PENDING');
+  const availableBudget = subtotalIncome - subtotalExpense;
+  const budgetSpentPercentage = subtotalIncome > 0
+    ? Math.round((subtotalExpense / subtotalIncome) * 100)
+    : 0;
+
+  const openExpenseDetails = (expense: ExpenseItem) => {
+    setSelectedExpense(expense);
+    setIsReceiptModalVisible(true);
+  };
+
+  const reviewExpense = async (status: 'APPROVED' | 'REJECTED') => {
+    if (!selectedExpense) return;
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      showMessage('Could not review transaction', userError?.message ?? 'Sign in again and retry.');
+      return;
+    }
+    const { data, error } = await supabase
+      .from('transactions')
+      .update({
+        status: status.toLowerCase(),
+        reviewed_by: user.id,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq('id', selectedExpense.id)
+      .eq('organization_id', organizationId)
+      .select('id')
+      .maybeSingle();
+    if (error || !data) {
+      showMessage(
+        'Could not review transaction',
+        error?.message ?? 'You may not have permission to review this transaction.',
+      );
+      return;
+    }
+    await loadTransactions();
+    setIsReceiptModalVisible(false);
+  };
 
   const handleAddIncome = () => {
     setIsAddRevenueModalVisible(true);
@@ -51,7 +156,60 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
   };
 
   const handleSearchFilter = () => {
-    showMessage('Date Filter', `Filtering transactions from ${fromDate} to ${toDate}.`);
+    if (!isValidLocalDate(fromDate) || !isValidLocalDate(toDate) || fromDate > toDate) {
+      showMessage('Check date range', 'Enter dates as YYYY-MM-DD and make sure the start is not after the end.');
+      return;
+    }
+    setAppliedFromDate(fromDate);
+    setAppliedToDate(toDate);
+  };
+
+  const saveIncome = async (income: Partial<IncomeItem>): Promise<boolean> => {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      showMessage('Could not save revenue', userError?.message ?? 'Sign in again and retry.');
+      return false;
+    }
+    const { error } = await supabase.from('transactions').insert({
+      organization_id: organizationId,
+      type: 'income',
+      amount: income.numericTotal,
+      occurred_on: income.date,
+      source_or_category: income.from,
+      description: income.description ?? '',
+      status: 'approved',
+      submitted_by: user.id,
+    });
+    if (error) {
+      showMessage('Could not save revenue', error.message);
+      return false;
+    }
+    await loadTransactions();
+    return true;
+  };
+
+  const saveExpense = async (expense: Partial<ExpenseItem>): Promise<boolean> => {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      showMessage('Could not save expense', userError?.message ?? 'Sign in again and retry.');
+      return false;
+    }
+    const { error } = await supabase.from('transactions').insert({
+      organization_id: organizationId,
+      type: 'expense',
+      amount: expense.numericTotal,
+      occurred_on: expense.date,
+      source_or_category: expense.typeOfCost,
+      description: expense.description ?? '',
+      status: 'pending',
+      submitted_by: user.id,
+    });
+    if (error) {
+      showMessage('Could not save expense', error.message);
+      return false;
+    }
+    await loadTransactions();
+    return true;
   };
 
   return (
@@ -75,7 +233,12 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
         </View>
 
         <View style={styles.octBadge}>
-          <Text style={styles.octBadgeText}>OCT 2026</Text>
+          <Text style={styles.octBadgeText}>
+            {new Date(`${appliedFromDate}T12:00:00`).toLocaleDateString(undefined, {
+              month: 'short',
+              year: 'numeric',
+            }).toUpperCase()}
+          </Text>
         </View>
       </View>
 
@@ -84,30 +247,31 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {isLoading && <Text style={styles.emptyTableText}>Loading transactions...</Text>}
         {/* Top Summary Card */}
         <View style={styles.summaryCard}>
           <Text style={styles.summarySubLabel}>Total Budget Available</Text>
-          <Text style={styles.summaryAmount}>Rp8.750.000</Text>
+          <Text style={styles.summaryAmount}>Rp{formatAmount(Math.max(availableBudget, 0))}</Text>
 
           {/* Stats Row */}
           <View style={styles.statsRow}>
             <View>
               <Text style={styles.statLabel}>Revenue</Text>
-              <Text style={styles.revenueText}>+ Rp12,5 jt</Text>
+              <Text style={styles.revenueText}>+ Rp{formatAmount(subtotalIncome)}</Text>
             </View>
             <View>
               <Text style={styles.statLabel}>Expenditures</Text>
-              <Text style={styles.expenditureText}>- Rp3,75 jt</Text>
+              <Text style={styles.expenditureText}>- Rp{formatAmount(subtotalExpense)}</Text>
             </View>
           </View>
 
           {/* Progress Bar */}
           <View style={styles.progressRow}>
             <Text style={styles.progressLabel}>Budget Spent</Text>
-            <Text style={styles.progressPercentage}>30%</Text>
+            <Text style={styles.progressPercentage}>{budgetSpentPercentage}%</Text>
           </View>
           <View style={styles.progressBarTrack}>
-            <View style={[styles.progressBarFill, { width: '30%' }]} />
+            <View style={[styles.progressBarFill, { width: `${Math.min(budgetSpentPercentage, 100)}%` }]} />
           </View>
         </View>
 
@@ -117,7 +281,14 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
             <View style={styles.filterBox}>
               <Text style={styles.filterLabel}>From</Text>
               <View style={styles.filterValueRow}>
-                <Text style={styles.filterDateText}>{fromDate}</Text>
+                <TextInput
+                  style={styles.filterDateInput}
+                  value={fromDate}
+                  onChangeText={setFromDate}
+                  placeholder="YYYY-MM-DD"
+                  keyboardType="numbers-and-punctuation"
+                  accessibilityLabel="Filter start date"
+                />
                 <Svg width={14} height={14} viewBox="0 0 24 24">
                   <Rect x="3" y="4" width="18" height="18" rx="3" stroke={colors.primary} strokeWidth={2} fill="none" />
                   <Path d="M16 2V6M8 2V6M3 10H21" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
@@ -128,7 +299,14 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
             <View style={styles.filterBox}>
               <Text style={styles.filterLabel}>To</Text>
               <View style={styles.filterValueRow}>
-                <Text style={styles.filterDateText}>{toDate}</Text>
+                <TextInput
+                  style={styles.filterDateInput}
+                  value={toDate}
+                  onChangeText={setToDate}
+                  placeholder="YYYY-MM-DD"
+                  keyboardType="numbers-and-punctuation"
+                  accessibilityLabel="Filter end date"
+                />
                 <Svg width={14} height={14} viewBox="0 0 24 24">
                   <Rect x="3" y="4" width="18" height="18" rx="3" stroke={colors.primary} strokeWidth={2} fill="none" />
                   <Path d="M16 2V6M8 2V6M3 10H21" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
@@ -155,6 +333,9 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
             </View>
 
             {/* Rows */}
+            {!isLoading && incomes.length === 0 && (
+              <Text style={styles.emptyTableText}>No revenue in this date range.</Text>
+            )}
             {incomes.map((item, idx) => (
               <View key={item.id} style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}>
                 <Text style={[styles.tdText, { width: 30 }]}>{item.no}</Text>
@@ -168,13 +349,13 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
 
             {/* Subtotal Footer */}
             <View style={styles.tableFooterRow}>
-              <Text style={styles.footerLabel}>Subtotal Income</Text>
+              <Text style={styles.footerLabel}>Subtotal Revenue</Text>
               <Text style={styles.footerValue}>{subtotalIncome.toLocaleString('id-ID')}</Text>
             </View>
           </View>
 
           <TouchableOpacity style={styles.addIncomeBtn} onPress={handleAddIncome} activeOpacity={0.8}>
-            <Text style={styles.addIncomeBtnText}>+ Add income</Text>
+            <Text style={styles.addIncomeBtnText}>+ Add Revenue</Text>
           </TouchableOpacity>
         </View>
 
@@ -188,10 +369,13 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
               <Text style={[styles.thText, { width: 60 }]}>Date</Text>
               <Text style={[styles.thText, { flex: 1 }]}>Type of cost</Text>
               <Text style={[styles.thText, { width: 85, textAlign: 'right' }]}>Total (Rp)</Text>
-              <Text style={[styles.thText, { width: 44, textAlign: 'center' }]}>Prove</Text>
+              <Text style={[styles.thText, { width: 44, textAlign: 'center' }]}>Receipt</Text>
             </View>
 
             {/* Rows */}
+            {!isLoading && expenses.length === 0 && (
+              <Text style={styles.emptyTableText}>No expenses in this date range.</Text>
+            )}
             {expenses.map((item, idx) => (
               <View key={item.id} style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}>
                 <Text style={[styles.tdText, { width: 28 }]}>{item.no}</Text>
@@ -202,7 +386,7 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
                 </Text>
                 <TouchableOpacity
                   style={styles.proveCell}
-                  onPress={() => setIsReceiptModalVisible(true)}
+                  onPress={() => openExpenseDetails(item)}
                   hitSlop={6}
                 >
                   <Svg width={18} height={18} viewBox="0 0 24 24">
@@ -221,21 +405,24 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
 
             {/* Subtotal Footer */}
             <View style={styles.tableFooterRow}>
-              <Text style={styles.footerLabel}>Subtotal Income</Text>
+              <Text style={styles.footerLabel}>Subtotal Expenses</Text>
               <Text style={styles.footerValue}>{subtotalExpense.toLocaleString('id-ID')}</Text>
             </View>
           </View>
 
           <TouchableOpacity style={styles.addExpenseBtn} onPress={handleAddExpense} activeOpacity={0.85}>
-            <Text style={styles.addExpenseBtnText}>+ Add income</Text>
+            <Text style={styles.addExpenseBtnText}>+ Add Expense</Text>
           </TouchableOpacity>
         </View>
 
         {/* Pending Verification Banner */}
         <TouchableOpacity
           style={styles.pendingBanner}
-          onPress={() => setIsReceiptModalVisible(true)}
+          onPress={() => {
+            if (pendingExpenses[0]) openExpenseDetails(pendingExpenses[0]);
+          }}
           activeOpacity={0.8}
+          disabled={pendingExpenses.length === 0}
         >
           <View style={styles.pendingLeft}>
             <View style={styles.checkIconBox}>
@@ -244,7 +431,9 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
               </Svg>
             </View>
             <Text style={styles.pendingBannerText}>
-              3 transaction receipts pending verification
+              {pendingExpenses.length > 0
+                ? `${pendingExpenses.length} transaction${pendingExpenses.length === 1 ? '' : 's'} pending review`
+                : 'All transactions reviewed'}
             </Text>
           </View>
           <Text style={styles.pendingChevron}>&gt;</Text>
@@ -255,46 +444,23 @@ export function BudgetingScreen({ onBack }: BudgetingScreenProps) {
       <TransactionDetailsModal
         visible={isReceiptModalVisible}
         onClose={() => setIsReceiptModalVisible(false)}
+        expense={selectedExpense}
+        onApprove={() => reviewExpense('APPROVED')}
+        onReject={() => reviewExpense('REJECTED')}
       />
 
       {/* Add Revenue Modal */}
       <AddRevenueModal
         visible={isAddRevenueModalVisible}
         onClose={() => setIsAddRevenueModalVisible(false)}
-        onAdd={(newInc) => {
-          setIncomes((prev) => [
-            ...prev,
-            {
-              id: `inc-${Date.now()}`,
-              no: prev.length + 1,
-              date: newInc.date || '10 Oct',
-              from: newInc.from || 'Revenue',
-              total: newInc.total || '0',
-              numericTotal: newInc.numericTotal || 0,
-            },
-          ]);
-        }}
+        onAdd={saveIncome}
       />
 
       {/* Add Expense Modal */}
       <AddExpenseModal
         visible={isAddExpenseModalVisible}
         onClose={() => setIsAddExpenseModalVisible(false)}
-        onAdd={(newExp) => {
-          setExpenses((prev) => [
-            ...prev,
-            {
-              id: `exp-${Date.now()}`,
-              no: prev.length + 1,
-              date: newExp.date || '10 Oct',
-              typeOfCost: newExp.typeOfCost || 'Expense',
-              total: newExp.total || '0',
-              numericTotal: newExp.numericTotal || 0,
-              hasReceipt: !!newExp.hasReceipt,
-              status: 'PENDING',
-            },
-          ]);
-        }}
+        onAdd={saveExpense}
       />
     </View>
   );
@@ -463,6 +629,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: colors.text,
+  },
+  filterDateInput: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.text,
+    padding: 0,
+  },
+  emptyTableText: {
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+    color: colors.muted,
+    fontSize: 12,
+    textAlign: 'center',
   },
   searchBtn: {
     height: 44,

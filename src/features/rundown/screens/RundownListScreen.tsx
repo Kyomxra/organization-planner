@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -10,9 +10,12 @@ import {
 import Svg, { Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { Rundown } from '../types';
+import { showMessage } from '../../auth/utils/feedback';
+import { supabase } from '../../../lib/supabase';
 
 interface RundownListScreenProps {
-  rundowns: Rundown[];
+  organizationId: string;
+  organizationName: string;
   onBack: () => void;
   onOpenRundown: (rundown: Rundown) => void;
   onCreateRundown: () => void;
@@ -58,12 +61,91 @@ function RundownIcon({ accentColor = '#6C63FF' }: { accentColor?: string }) {
 }
 
 export function RundownListScreen({
-  rundowns,
+  organizationId,
+  organizationName,
   onBack,
   onOpenRundown,
   onCreateRundown,
 }: RundownListScreenProps) {
+  const [rundowns, setRundowns] = useState<Rundown[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const loadRundowns = async () => {
+      const { data: rows, error } = await supabase
+        .from('rundowns')
+        .select('id, title, event_id, updated_at')
+        .eq('organization_id', organizationId)
+        .order('updated_at', { ascending: false });
+      if (!active) return;
+      if (error) {
+        showMessage('Could not load rundowns', error.message);
+        setIsLoading(false);
+        return;
+      }
+
+      const rundownIds = (rows ?? []).map((row) => row.id);
+      const eventIds = [...new Set((rows ?? [])
+        .map((row) => row.event_id)
+        .filter((id): id is string => Boolean(id)))];
+      const [itemsResult, eventsResult] = await Promise.all([
+        rundownIds.length
+          ? supabase.from('rundown_items').select('rundown_id').in('rundown_id', rundownIds)
+          : Promise.resolve({ data: [], error: null }),
+        eventIds.length
+          ? supabase.from('events').select('id, start_at').in('id', eventIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (!active) return;
+      if (itemsResult.error || eventsResult.error) {
+        showMessage(
+          'Could not load rundown details',
+          itemsResult.error?.message ?? eventsResult.error?.message ?? 'Could not load rundown details.',
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      const itemCounts = new Map<string, number>();
+      for (const item of itemsResult.data ?? []) {
+        itemCounts.set(item.rundown_id, (itemCounts.get(item.rundown_id) ?? 0) + 1);
+      }
+      const eventDates = new Map((eventsResult.data ?? []).map((event) => [event.id, event.start_at]));
+      setRundowns((rows ?? []).map((row, index) => {
+        const eventDate = row.event_id ? eventDates.get(row.event_id) : null;
+        return {
+          id: row.id,
+          title: row.title,
+          eventDate: eventDate
+            ? new Date(eventDate).toLocaleDateString(undefined, {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })
+            : 'No event linked',
+          updatedLabel: new Date(row.updated_at).toLocaleDateString(),
+          itemCount: itemCounts.get(row.id) ?? 0,
+          accentColor: ['#6C63FF', '#E87A35', '#2C9B76'][index % 3],
+        };
+      }));
+      setIsLoading(false);
+    };
+
+    void loadRundowns().catch((error: unknown) => {
+      if (!active) return;
+      showMessage(
+        'Could not load rundowns',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+      setIsLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [organizationId]);
 
   const filtered = rundowns.filter((rundown) =>
     rundown.title.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -91,8 +173,8 @@ export function RundownListScreen({
           <Text style={styles.headerTitle}>Rundown Maker</Text>
           <Text style={styles.headerSub}>
             {isEmpty
-              ? 'Organization A'
-              : `Organization A · ${rundowns.length} saved rundowns`}
+              ? organizationName
+              : `${organizationName} · ${rundowns.length} saved rundowns`}
           </Text>
         </View>
 
@@ -146,7 +228,12 @@ export function RundownListScreen({
         </TouchableOpacity>
       </View>
 
-      {isEmpty ? (
+      {isLoading ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptySubtitle}>Loading rundowns…</Text>
+        </View>
+      ) : isEmpty ? (
+        /* ── EMPTY STATE ── */
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIllustration}>
             <View style={styles.emptyDocBg} />
@@ -224,12 +311,14 @@ export function RundownListScreen({
 
           <View style={styles.listSection}>
             <Text style={styles.listSectionTitle}>Your rundowns</Text>
-            <TouchableOpacity hitSlop={8}>
-              <Text style={styles.recentlyUpdated}>Recently updated</Text>
-            </TouchableOpacity>
+            <Text style={styles.recentlyUpdated}>Recently updated</Text>
           </View>
 
-          {filtered.map((rundown) => (
+          {isLoading ? (
+            <Text style={styles.emptySubtitle}>Loading rundowns…</Text>
+          ) : filtered.length === 0 ? (
+            <Text style={styles.emptySubtitle}>No rundowns match your search.</Text>
+          ) : filtered.map((rundown) => (
             <TouchableOpacity
               key={rundown.id}
               style={styles.rundownCard}
@@ -337,6 +426,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.muted,
     marginTop: 1,
+  },
+  headerSpacer: {
+    width: 34,
+    height: 34,
   },
   filterBtn: {
     width: 34,

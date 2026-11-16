@@ -15,31 +15,42 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
 import { IncomeItem } from '../types';
+import { formatLocalDate, isValidLocalDate } from '../../../lib/date';
 
 interface AddRevenueModalProps {
   visible: boolean;
   onClose: () => void;
-  onAdd: (item: Partial<IncomeItem>) => void;
+  onAdd: (item: Partial<IncomeItem>) => Promise<boolean>;
 }
 
 export function AddRevenueModal({ visible, onClose, onAdd }: AddRevenueModalProps) {
   const [source, setSource] = useState('');
-  const [date, setDate] = useState('10 Oct 2026');
+  const [date, setDate] = useState(() => formatLocalDate(new Date()));
   const [total, setTotal] = useState('');
   const [description, setDescription] = useState('');
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!source.trim()) {
       showMessage('Source Required', 'Please enter the name of the revenue source.');
       return;
     }
-    const num = parseInt(total.replace(/\D/g, ''), 10) || 0;
-    onAdd({
+    const num = Number(total.replace(/\D/g, '')) || 0;
+    if (num <= 0) {
+      showMessage('Amount Required', 'Enter a revenue amount greater than zero.');
+      return;
+    }
+    if (!isValidLocalDate(date)) {
+      showMessage('Check date', 'Enter the date as YYYY-MM-DD.');
+      return;
+    }
+    const saved = await onAdd({
       from: source.trim(),
-      date: '10 Oct',
-      total: num > 0 ? num.toLocaleString('id-ID') : '0',
+      date,
+      total: num.toLocaleString('id-ID'),
       numericTotal: num,
+      description: description.trim(),
     });
+    if (!saved) return;
     setSource('');
     setTotal('');
     setDescription('');
@@ -47,7 +58,14 @@ export function AddRevenueModal({ visible, onClose, onAdd }: AddRevenueModalProp
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardWrap}>
@@ -86,7 +104,13 @@ export function AddRevenueModal({ visible, onClose, onAdd }: AddRevenueModalProp
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>Date</Text>
                   <View style={styles.datePickerRow}>
-                    <Text style={styles.dateValueText}>{date}</Text>
+                    <TextInput
+                      style={styles.dateInput}
+                      value={date}
+                      onChangeText={setDate}
+                      placeholder="YYYY-MM-DD"
+                      keyboardType="numbers-and-punctuation"
+                    />
                     <Svg width={16} height={16} viewBox="0 0 24 24" style={styles.calIcon}>
                       <Rect x="3" y="4" width="18" height="18" rx="3" stroke={colors.primary} strokeWidth={2} fill="none" />
                       <Path d="M16 2V6M8 2V6M3 10H21" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
@@ -228,6 +252,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
     marginRight: 6,
+  },
+  dateInput: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+    padding: 0,
   },
   calIcon: {
     marginLeft: 2,

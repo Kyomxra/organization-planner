@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -11,55 +11,84 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
-import { CalendarEvent } from '../types';
+import { showMessage } from '../../auth/utils/feedback';
+import { NewCalendarEvent } from '../types';
 
 interface NewEventModalProps {
   visible: boolean;
+  initialDate: string;
   onClose: () => void;
-  onSave: (newEvent: Partial<CalendarEvent>) => void;
-  onOpenRundown?: () => void;
+  onSave: (newEvent: NewCalendarEvent) => Promise<boolean>;
 }
 
-export function NewEventModal({ visible, onClose, onSave, onOpenRundown }: NewEventModalProps) {
-  const [title, setTitle] = useState('Meeting Preparation for Pleno 1');
-  const [description, setDescription] = useState(
-    'Discuss the layout of the event and the division of committee tasks.'
-  );
-  const [startDate, setStartDate] = useState('5 Oct 2026');
-  const [startTime, setStartTime] = useState('21.00');
-  const [endDate, setEndDate] = useState('5 Oct 2026');
-  const [endTime, setEndTime] = useState('22.00');
-  const [hasLinkedRundown, setHasLinkedRundown] = useState(true);
-  const [notes, setNotes] = useState('Write the notes for participants.');
+export function NewEventModal({ visible, initialDate, onClose, onSave }: NewEventModalProps) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [startDate, setStartDate] = useState(initialDate);
+  const [startTime, setStartTime] = useState('09:00');
+  const [endDate, setEndDate] = useState(initialDate);
+  const [endTime, setEndTime] = useState('10:00');
+  const [notes, setNotes] = useState('');
 
-  const handleSave = () => {
-    onSave({
-      title: title || 'New Event',
+  useEffect(() => {
+    if (!visible) return;
+    setTitle('');
+    setDescription('');
+    setStartDate(initialDate);
+    setStartTime('09:00');
+    setEndDate(initialDate);
+    setEndTime('10:00');
+    setNotes('');
+  }, [initialDate, visible]);
+
+  const handleSave = async () => {
+    const startAt = new Date(`${startDate}T${startTime}:00`);
+    const endAt = new Date(`${endDate}T${endTime}:00`);
+    if (!title.trim()) {
+      showMessage('Title required', 'Enter a title for this event.');
+      return;
+    }
+    const isValidDateTime = (date: string, time: string, parsed: Date) =>
+      /^\d{4}-\d{2}-\d{2}$/.test(date)
+      && /^\d{2}:\d{2}$/.test(time)
+      && !Number.isNaN(parsed.getTime())
+      && parsed.getFullYear() === Number(date.slice(0, 4))
+      && parsed.getMonth() + 1 === Number(date.slice(5, 7))
+      && parsed.getDate() === Number(date.slice(8, 10))
+      && parsed.getHours() === Number(time.slice(0, 2))
+      && parsed.getMinutes() === Number(time.slice(3, 5));
+
+    if (!isValidDateTime(startDate, startTime, startAt) || !isValidDateTime(endDate, endTime, endAt)) {
+      showMessage('Check date and time', 'Use YYYY-MM-DD for dates and HH:MM for times.');
+      return;
+    }
+    if (endAt <= startAt) {
+      showMessage('Check event time', 'The end date and time must be after the start.');
+      return;
+    }
+
+    const saved = await onSave({
+      title: title.trim(),
+      category: 'organization meeting',
       description,
-      startTime,
-      endTime,
-      dayOfMonth: 5,
-      dateLabel: 'Monday, 5 October 2026',
-      category: 'ORGANIZATION MEETING',
-      orgName: 'Organization A',
-      divisionName: 'Division A',
-      duration: '1 hour',
-      linkedRundown: hasLinkedRundown
-        ? {
-            title: 'Volunteer Appreciation Night',
-            itemsCount: 8,
-            timeRange: '18.30–21.00',
-          }
-        : undefined,
       notes,
+      startAt: startAt.toISOString(),
+      endAt: endAt.toISOString(),
     });
-    onClose();
+    if (saved) onClose();
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardWrap}>
@@ -109,82 +138,49 @@ export function NewEventModal({ visible, onClose, onSave, onOpenRundown }: NewEv
                 <View style={styles.timeRow}>
                   <Text style={styles.timeLabel}>Start</Text>
                   <View style={styles.timePills}>
-                    <View style={styles.datePill}>
-                      <Text style={styles.datePillText}>{startDate}</Text>
-                    </View>
-                    <Text style={styles.timeText}>{startTime}</Text>
+                    <TextInput
+                      style={[styles.datePill, styles.datePillText]}
+                      value={startDate}
+                      onChangeText={setStartDate}
+                      placeholder="YYYY-MM-DD"
+                      autoCapitalize="none"
+                      keyboardType="numbers-and-punctuation"
+                    />
+                    <TextInput
+                      style={[styles.timeText, styles.timeInput]}
+                      value={startTime}
+                      onChangeText={setStartTime}
+                      placeholder="HH:MM"
+                      autoCapitalize="none"
+                      keyboardType="numbers-and-punctuation"
+                    />
                   </View>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.timeRow}>
                   <Text style={styles.timeLabel}>End</Text>
                   <View style={styles.timePills}>
-                    <View style={styles.datePill}>
-                      <Text style={styles.datePillText}>{endDate}</Text>
-                    </View>
-                    <Text style={styles.timeText}>{endTime}</Text>
+                    <TextInput
+                      style={[styles.datePill, styles.datePillText]}
+                      value={endDate}
+                      onChangeText={setEndDate}
+                      placeholder="YYYY-MM-DD"
+                      autoCapitalize="none"
+                      keyboardType="numbers-and-punctuation"
+                    />
+                    <TextInput
+                      style={[styles.timeText, styles.timeInput]}
+                      value={endTime}
+                      onChangeText={setEndTime}
+                      placeholder="HH:MM"
+                      autoCapitalize="none"
+                      keyboardType="numbers-and-punctuation"
+                    />
                   </View>
                 </View>
               </View>
 
-              {/* Card 3: Linked Rundown */}
-              {hasLinkedRundown && (
-                <View style={styles.rundownCard}>
-                  <TouchableOpacity
-                    style={styles.rundownLeft}
-                    onPress={onOpenRundown}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.rundownIconBox}>
-                      <Svg width={18} height={18} viewBox="0 0 24 24">
-                        <Path
-                          d="M9 6H20M9 12H20M9 18H20M4 6V6.01M4 12V12.01M4 18V18.01"
-                          stroke={colors.primary}
-                          strokeWidth={2.4}
-                          strokeLinecap="round"
-                        />
-                      </Svg>
-                    </View>
-                    <View style={styles.rundownTextCol}>
-                      <Text style={styles.rundownTitle}>Volunteer Appreciation Night</Text>
-                      <Text style={styles.rundownMeta}>8 items · 18.30–21.00</Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <View style={styles.rundownActions}>
-                    <TouchableOpacity
-                      style={styles.syncBtn}
-                      onPress={onOpenRundown}
-                      hitSlop={8}
-                    >
-                      <Svg width={14} height={14} viewBox="0 0 24 24">
-                        <Path
-                          d="M23 4V10H17M1 20V14H7"
-                          stroke="#E87A35"
-                          strokeWidth={2}
-                          strokeLinecap="round"
-                        />
-                        <Path
-                          d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15"
-                          stroke="#E87A35"
-                          strokeWidth={2}
-                          strokeLinecap="round"
-                        />
-                      </Svg>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.removeBtn}
-                      onPress={() => setHasLinkedRundown(false)}
-                      hitSlop={8}
-                    >
-                      <Text style={styles.removeIcon}>✕</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-
-              {/* Card 4: Notes */}
+              {/* Notes */}
               <View style={styles.card}>
                 <View style={styles.notesHeader}>
                   <View style={styles.notesHeaderLeft}>
@@ -336,11 +332,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: colors.primary,
+    width: 100,
+    textAlign: 'center',
   },
   timeText: {
     fontSize: 13,
     fontWeight: '700',
     color: colors.text,
+  },
+  timeInput: {
+    width: 52,
+    textAlign: 'center',
   },
   rundownCard: {
     flexDirection: 'row',

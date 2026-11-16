@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -10,11 +10,13 @@ import {
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { Rundown } from '../types';
-import { mockRundowns } from '../data/mockRundowns';
+import { showMessage } from '../../auth/utils/feedback';
+import { supabase } from '../../../lib/supabase';
 
 interface SelectRundownScreenProps {
-  /** Name of the event we are attaching to */
-  eventTitle?: string;
+  organizationId: string;
+  eventId: string;
+  eventTitle: string;
   onBack: () => void;
   onAttach: (selected: Rundown[]) => void;
 }
@@ -36,28 +38,74 @@ function RundownIcon({ accentColor = '#6C63FF' }: { accentColor?: string }) {
 }
 
 export function SelectRundownScreen({
-  eventTitle = 'Volunteer Appreciation Night',
+  organizationId,
+  eventId,
+  eventTitle,
   onBack,
   onAttach,
 }: SelectRundownScreenProps) {
-  const [rundowns] = useState<Rundown[]>(mockRundowns);
+  const [rundowns, setRundowns] = useState<Rundown[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedIds, setSelectedIds] = useState<string[]>([mockRundowns[0].id]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const loadRundowns = async () => {
+      const { data: rows, error } = await supabase
+        .from('rundowns')
+        .select('id, title, event_id, updated_at')
+        .eq('organization_id', organizationId)
+        .or(`event_id.is.null,event_id.eq.${eventId}`)
+        .order('updated_at', { ascending: false });
+      if (!active) return;
+      if (error) {
+        showMessage('Could not load rundowns', error.message);
+        setIsLoading(false);
+        return;
+      }
+
+      const ids = (rows ?? []).map((row) => row.id);
+      const { data: itemRows, error: itemsError } = ids.length
+        ? await supabase.from('rundown_items').select('rundown_id').in('rundown_id', ids)
+        : { data: [], error: null };
+      if (!active) return;
+      if (itemsError) {
+        showMessage('Could not load rundown items', itemsError.message);
+        setIsLoading(false);
+        return;
+      }
+
+      const counts = new Map<string, number>();
+      for (const item of itemRows ?? []) {
+        counts.set(item.rundown_id, (counts.get(item.rundown_id) ?? 0) + 1);
+      }
+      setRundowns((rows ?? []).map((row) => ({
+        id: row.id,
+        title: row.title,
+        eventDate: row.event_id === eventId ? 'Already linked to this event' : 'Not linked',
+        updatedLabel: new Date(row.updated_at).toLocaleDateString(),
+        itemCount: counts.get(row.id) ?? 0,
+      })));
+      setSelectedId((rows ?? []).find((row) => row.event_id === eventId)?.id ?? null);
+      setIsLoading(false);
+    };
+    void loadRundowns().catch((error: unknown) => {
+      if (!active) return;
+      showMessage(
+        'Could not load rundowns',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+      setIsLoading(false);
+    });
+    return () => { active = false; };
+  }, [eventId, organizationId]);
 
   const filtered = rundowns.filter((r) =>
     r.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const selectedRundowns = rundowns.filter((r) => selectedIds.includes(r.id));
-
-  // Estimate total duration (mock: 2h30m for first selected, else proportional)
-  const totalDuration = selectedIds.length > 0 ? '2 hr 30 min' : '—';
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  };
+  const selectedRundown = rundowns.find((rundown) => rundown.id === selectedId);
 
   return (
     <View style={styles.root}>
@@ -103,23 +151,6 @@ export function SelectRundownScreen({
             onChangeText={setSearchQuery}
           />
         </View>
-        <TouchableOpacity style={styles.filterSmallBtn} hitSlop={8}>
-          <Svg width={16} height={16} viewBox="0 0 24 24">
-            <Path
-              d="M4 6h16M7 12h10M10 18h4"
-              stroke={colors.primary}
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
-          </Svg>
-        </TouchableOpacity>
-      </View>
-
-      {/* Create New shortcut */}
-      <View style={styles.createRow}>
-        <TouchableOpacity style={styles.createNewBtn} activeOpacity={0.85}>
-          <Text style={styles.createNewBtnText}>+ Create New Rundown</Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -135,13 +166,15 @@ export function SelectRundownScreen({
           </View>
         </View>
 
-        {filtered.map((rundown) => {
-          const isSelected = selectedIds.includes(rundown.id);
+        {isLoading ? <Text style={styles.cardDate}>Loading rundowns…</Text> : filtered.length === 0 ? (
+          <Text style={styles.cardDate}>No available rundowns. Create one first from Rundown Maker.</Text>
+        ) : filtered.map((rundown) => {
+          const isSelected = selectedId === rundown.id;
           return (
             <TouchableOpacity
               key={rundown.id}
               style={[styles.rundownCard, isSelected && styles.rundownCardSelected]}
-              onPress={() => toggleSelect(rundown.id)}
+              onPress={() => setSelectedId(isSelected ? null : rundown.id)}
               activeOpacity={0.8}
             >
               <RundownIcon accentColor={rundown.accentColor} />
@@ -188,13 +221,16 @@ export function SelectRundownScreen({
       <View style={styles.footer}>
         <View style={styles.footerInfo}>
           <Text style={styles.footerCount}>
-            {selectedIds.length} rundown{selectedIds.length !== 1 ? 's' : ''} selected
+            {selectedRundown ? '1 rundown selected' : 'No rundown selected'}
           </Text>
-          <Text style={styles.footerDuration}>{totalDuration}</Text>
+          <Text style={styles.footerDuration}>
+            {selectedRundown ? `${selectedRundown.itemCount} agenda items` : '—'}
+          </Text>
         </View>
         <TouchableOpacity
-          style={[styles.attachBtn, selectedIds.length === 0 && styles.attachBtnDisabled]}
-          onPress={() => selectedIds.length > 0 && onAttach(selectedRundowns)}
+          style={[styles.attachBtn, !selectedRundown && styles.attachBtnDisabled]}
+          onPress={() => selectedRundown && onAttach([selectedRundown])}
+          disabled={!selectedRundown}
           activeOpacity={0.85}
         >
           <Svg width={16} height={16} viewBox="0 0 24 24" style={{ marginRight: 8 }}>

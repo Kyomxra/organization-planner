@@ -15,47 +15,61 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
 import { ExpenseItem } from '../types';
+import { formatLocalDate, isValidLocalDate } from '../../../lib/date';
 
 interface AddExpenseModalProps {
   visible: boolean;
   onClose: () => void;
-  onAdd: (item: Partial<ExpenseItem>) => void;
+  onAdd: (item: Partial<ExpenseItem>) => Promise<boolean>;
 }
 
 export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProps) {
-  const [expenseType, setExpenseType] = useState('Meeting Consum');
-  const [date, setDate] = useState('10 Oct 2026');
+  const [expenseType, setExpenseType] = useState('Meeting Refreshments');
+  const [date, setDate] = useState(() => formatLocalDate(new Date()));
   const [total, setTotal] = useState('');
   const [description, setDescription] = useState('');
-  const [hasReceipt, setHasReceipt] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!expenseType.trim()) {
       showMessage('Expense Type Required', 'Please choose or enter the expense type.');
       return;
     }
-    const num = parseInt(total.replace(/\D/g, ''), 10) || 0;
-    onAdd({
+    const num = Number(total.replace(/\D/g, '')) || 0;
+    if (num <= 0) {
+      showMessage('Amount Required', 'Enter an expense amount greater than zero.');
+      return;
+    }
+    if (!isValidLocalDate(date)) {
+      showMessage('Check date', 'Enter the date as YYYY-MM-DD.');
+      return;
+    }
+    const saved = await onAdd({
       typeOfCost: expenseType.trim(),
-      date: '10 Oct',
-      total: num > 0 ? num.toLocaleString('id-ID') : '0',
+      date,
+      description: description.trim(),
+      total: num.toLocaleString('id-ID'),
       numericTotal: num,
-      hasReceipt: hasReceipt,
       status: 'PENDING',
     });
+    if (!saved) return;
     setTotal('');
     setDescription('');
-    setHasReceipt(false);
     onClose();
   };
 
   const handlePickReceipt = () => {
-    setHasReceipt(true);
-    showMessage('Receipt Uploaded', 'Receipt image has been attached.');
+    showMessage('Receipt upload unavailable', 'Receipt storage has not been configured for this project yet.');
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardWrap}>
@@ -85,7 +99,7 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
                   <TouchableOpacity
                     style={styles.dashedAddBtn}
                     onPress={() => {
-                      const types = ['Meeting Consum', 'Print Banner', 'Rent equipment', 'Logistics', 'Snacks'];
+                      const types = ['Meeting Refreshments', 'Print Banner', 'Equipment Rental', 'Logistics', 'Snacks'];
                       const next = types[(types.indexOf(expenseType) + 1) % types.length];
                       setExpenseType(next);
                     }}
@@ -100,7 +114,13 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>Date</Text>
                   <View style={styles.datePickerRow}>
-                    <Text style={styles.dateValueText}>{date}</Text>
+                    <TextInput
+                      style={styles.dateInput}
+                      value={date}
+                      onChangeText={setDate}
+                      placeholder="YYYY-MM-DD"
+                      keyboardType="numbers-and-punctuation"
+                    />
                     <Svg width={16} height={16} viewBox="0 0 24 24" style={styles.calIcon}>
                       <Rect x="3" y="4" width="18" height="18" rx="3" stroke={colors.primary} strokeWidth={2} fill="none" />
                       <Path d="M16 2V6M8 2V6M3 10H21" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
@@ -132,7 +152,7 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
                     style={styles.fieldInput}
                     value={description}
                     onChangeText={setDescription}
-                    placeholder="Add revenue notes"
+                    placeholder="Add expense notes"
                     placeholderTextColor={colors.placeholder}
                   />
                 </View>
@@ -142,7 +162,7 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
               <View style={styles.receiptCard}>
                 <View style={styles.receiptHeader}>
                   <Text style={styles.receiptTitle}>Receipt</Text>
-                  <Text style={styles.receiptSubtext}>JPG, PNG • maks. 5 MB</Text>
+                  <Text style={styles.receiptSubtext}>JPG, PNG • max. 5 MB</Text>
                 </View>
 
                 <TouchableOpacity style={styles.dropzone} onPress={handlePickReceipt} activeOpacity={0.8}>
@@ -154,7 +174,7 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
                     </Svg>
                   </View>
                   <Text style={styles.dropzoneMainText}>
-                    {hasReceipt ? '✓ Receipt attached' : 'Take photo or upload'}
+                    Receipt upload is not configured
                   </Text>
                   <Text style={styles.dropzoneSubText}>Ensure transaction details are readable.</Text>
                 </TouchableOpacity>
@@ -286,6 +306,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
     marginRight: 8,
+  },
+  dateInput: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+    padding: 0,
   },
   calIcon: {
     marginLeft: 'auto',

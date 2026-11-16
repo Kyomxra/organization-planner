@@ -1,5 +1,8 @@
 export interface CalendarEvent {
   id: string;
+  startAt: string;
+  endAt: string;
+  divisionId: string | null;
   title: string;
   category: string; // e.g. "ORGANIZATION MEETING"
   orgName: string;
@@ -18,4 +21,13 @@ export interface CalendarEvent {
     timeRange: string;
   };
   notes?: string;
+}
+
+export interface NewCalendarEvent {
+  title: string;
+  category: string;
+  description: string;
+  notes: string;
+  startAt: string;
+  endAt: string;
 }

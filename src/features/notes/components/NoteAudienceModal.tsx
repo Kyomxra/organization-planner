@@ -21,10 +21,17 @@ export type AudienceSelection = {
   isAllMembers: boolean;
 };
 
+interface NoteDivision {
+  id: string;
+  name: string;
+}
+
 interface NoteAudienceModalProps {
   visible: boolean;
   onClose: () => void;
   selection: AudienceSelection;
+  divisions: NoteDivision[];
+  organizationName: string;
   onSave: (selection: AudienceSelection) => void;
 }
 
@@ -32,6 +39,8 @@ export function NoteAudienceModal({
   visible,
   onClose,
   selection: initialSelection,
+  divisions,
+  organizationName,
   onSave,
 }: NoteAudienceModalProps) {
   const [selection, setSelection] = useState<AudienceSelection>(initialSelection);
@@ -56,12 +65,11 @@ export function NoteAudienceModal({
 
   const toggleDivision = () => {
     setSelection((prev) => {
-      const nextDiv = !prev.isDivision;
       return {
         ...prev,
         isOnlyMe: false,
-        isDivision: nextDiv,
-        selectedDivisions: nextDiv && prev.selectedDivisions.length === 0 ? ['Divisi A', 'Divisi C'] : prev.selectedDivisions,
+        isDivision: !prev.isDivision,
+        selectedDivisions: prev.isDivision ? [] : prev.selectedDivisions,
       };
     });
   };
@@ -111,7 +119,14 @@ export function NoteAudienceModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.sheet}>
@@ -190,34 +205,38 @@ export function NoteAudienceModal({
             </TouchableOpacity>
 
             {/* Division Sub-selector */}
-            {(selection.isDivision || true) && (
+            {selection.isDivision && (
               <View style={styles.divisionSelectorCard}>
                 <View style={styles.divisionHeaderRow}>
-                  <Text style={styles.divisionSelectorTitle}>EXAMPLE AFTER CHOOSING DIVISION</Text>
+                  <Text style={styles.divisionSelectorTitle}>SELECT DIVISIONS</Text>
                   <Text style={styles.divisionSelectorType}>Multi-select</Text>
                 </View>
-                <View style={styles.chipsRow}>
-                  {['Divisi A', 'Divisi B', 'Divisi C'].map((div) => {
-                    const isSelected = selection.selectedDivisions.includes(div);
-                    return (
-                      <TouchableOpacity
-                        key={div}
-                        style={[styles.divChip, isSelected && styles.divChipSelected]}
-                        onPress={() => toggleDivisionChip(div)}
-                        activeOpacity={0.7}
-                      >
-                        {isSelected && (
-                          <Svg width={12} height={12} viewBox="0 0 20 20" style={{ marginRight: 5 }}>
-                            <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                          </Svg>
-                        )}
-                        <Text style={[styles.divChipText, isSelected && styles.divChipTextSelected]}>
-                          {div}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                {divisions.length ? (
+                  <View style={styles.chipsRow}>
+                    {divisions.map((division) => {
+                      const isSelected = selection.selectedDivisions.includes(division.id);
+                      return (
+                        <TouchableOpacity
+                          key={division.id}
+                          style={[styles.divChip, isSelected && styles.divChipSelected]}
+                          onPress={() => toggleDivisionChip(division.id)}
+                          activeOpacity={0.7}
+                        >
+                          {isSelected && (
+                            <Svg width={12} height={12} viewBox="0 0 20 20" style={{ marginRight: 5 }}>
+                              <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                            </Svg>
+                          )}
+                          <Text style={[styles.divChipText, isSelected && styles.divChipTextSelected]}>
+                            {division.name}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ) : (
+                  <Text style={styles.divisionSelectorType}>Create a division before sharing by division.</Text>
+                )}
               </View>
             )}
 
@@ -287,7 +306,7 @@ export function NoteAudienceModal({
               </View>
               <View style={styles.textCol}>
                 <Text style={styles.optionTitle}>All Members</Text>
-                <Text style={styles.optionSub}>Everyone in Organization A</Text>
+                <Text style={styles.optionSub}>Everyone in {organizationName}</Text>
               </View>
               <View style={[styles.checkbox, selection.isAllMembers && styles.checkboxActive]}>
                 {selection.isAllMembers && (
@@ -303,7 +322,7 @@ export function NoteAudienceModal({
               <View style={styles.warningCircle}>
                 <Text style={styles.warningExclamation}>!</Text>
               </View>
-              <Text style={styles.warningText}>Division, BPH, and Coordinators can be combined.</Text>
+              <Text style={styles.warningText}>Division, Executive, and Coordinators can be combined.</Text>
             </View>
 
             {/* Done button */}

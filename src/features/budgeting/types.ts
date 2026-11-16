@@ -5,6 +5,7 @@ export interface IncomeItem {
   from: string;
   total: string;
   numericTotal: number;
+  description?: string;
 }
 
 export interface ExpenseItem {
@@ -12,8 +13,9 @@ export interface ExpenseItem {
   no: number;
   date: string;
   typeOfCost: string;
+  description?: string;
   total: string;
   numericTotal: number;
   hasReceipt: boolean;
-  status: 'PENDING' | 'VERIFIED';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
 }

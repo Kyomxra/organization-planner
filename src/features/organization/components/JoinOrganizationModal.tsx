@@ -15,17 +15,22 @@ import { colors } from '../../../theme/colors';
 interface JoinOrganizationModalProps {
   visible: boolean;
   onClose: () => void;
-  onJoin: (code: string) => void;
+  onJoin: (code: string) => Promise<boolean>;
 }
 
 export function JoinOrganizationModal({ visible, onClose, onJoin }: JoinOrganizationModalProps) {
   const [code, setCode] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
 
-  const handleJoinPress = () => {
+  const handleJoinPress = async () => {
     if (!code.trim()) return;
-    onJoin(code.trim().toUpperCase());
-    setCode('');
-    onClose();
+    setIsJoining(true);
+    const joined = await onJoin(code.trim().toUpperCase());
+    setIsJoining(false);
+    if (joined) {
+      setCode('');
+      onClose();
+    }
   };
 
   const handleClose = () => {
@@ -34,7 +39,14 @@ export function JoinOrganizationModal({ visible, onClose, onJoin }: JoinOrganiza
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={handleClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={handleClose}
+    >
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardContainer}>
@@ -64,11 +76,11 @@ export function JoinOrganizationModal({ visible, onClose, onJoin }: JoinOrganiza
             {/* Join Action Button */}
             <TouchableOpacity
               style={[styles.joinBtn, !code.trim() && styles.joinBtnDisabled]}
-              onPress={handleJoinPress}
-              disabled={!code.trim()}
+              onPress={() => { void handleJoinPress(); }}
+              disabled={!code.trim() || isJoining}
               activeOpacity={0.85}
             >
-              <Text style={styles.joinBtnText}>JOIN</Text>
+              <Text style={styles.joinBtnText}>{isJoining ? 'JOINING…' : 'JOIN'}</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>

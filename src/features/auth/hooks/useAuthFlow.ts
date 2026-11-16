@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from '../../../lib/supabase';
 import { showMessage } from '../utils/feedback';
 import { isValidEmail } from '../utils/validation';
 
@@ -11,6 +13,7 @@ export function useAuthFlow() {
   const [passwordSheet, setPasswordSheet] = useState<PasswordSheet>('none');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('Alex');
+  const [userEmail, setUserEmail] = useState('');
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -27,39 +30,116 @@ export function useAuthFlow() {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   useEffect(() => {
-    const timer = setTimeout(() => setSplashDone(true), 1450);
-    return () => clearTimeout(timer);
+    let isMounted = true;
+    const applySession = (session: Session | null) => {
+      setIsAuthenticated(Boolean(session));
+      setUserEmail(session?.user.email ?? '');
+      const name = session?.user.user_metadata?.full_name
+        || session?.user.email?.split('@')[0]
+        || '';
+      setUserName(name ? name.charAt(0).toUpperCase() + name.slice(1) : '');
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (isMounted) applySession(session);
+    });
+
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!isMounted) return;
+      if (error) {
+        showMessage('Session error', error.message);
+      } else {
+        applySession(data.session);
+      }
+      setSplashDone(true);
+    }).catch((error: unknown) => {
+      if (!isMounted) return;
+      showMessage(
+        'Session error',
+        error instanceof Error ? error.message : 'Could not restore your sign-in session.',
+      );
+      setSplashDone(true);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const openForgotPassword = () => {
+  const openForgotPassword = async () => {
     if (!isValidEmail(loginEmail)) {
       showMessage('Email required', 'Enter your email address first, then tap Forgot password? again.');
       return;
     }
 
-    setResetEmail(loginEmail.trim());
-    setVerificationCode('');
-    setNewPassword('');
-    setConfirmNewPassword('');
-    setPasswordSheet('verify');
+    const email = loginEmail.trim();
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) {
+        showMessage('Could not send reset email', error.message);
+        return;
+      }
+
+      setResetEmail(email);
+      setVerificationCode('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setPasswordSheet('verify');
+    } catch (error: unknown) {
+      showMessage(
+        'Could not send reset email',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+    }
   };
 
-  const handleSignIn = () => {
-    if (loginEmail && !isValidEmail(loginEmail)) {
+  const handleSignIn = async () => {
+    if (!isValidEmail(loginEmail)) {
       showMessage('Check your email', 'Please enter a valid email address.');
       return;
     }
-    const name = loginEmail ? loginEmail.split('@')[0] : 'Alex';
-    setUserName(name.charAt(0).toUpperCase() + name.slice(1));
-    setIsAuthenticated(true);
+    if (!loginPassword) {
+      showMessage('Password required', 'Enter your password to sign in.');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail.trim(),
+        password: loginPassword,
+      });
+      if (error) {
+        showMessage('Sign in failed', error.message);
+      }
+    } catch (error: unknown) {
+      showMessage(
+        'Sign in failed',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+    }
   };
 
-  const handleSignOut = () => {
-    setIsAuthenticated(false);
-    setLoginPassword('');
+  const handleSignOut = async (): Promise<boolean> => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        showMessage('Sign out failed', error.message);
+        return false;
+      }
+      setIsAuthenticated(false);
+      setLoginPassword('');
+      return true;
+    } catch (error: unknown) {
+      showMessage(
+        'Sign out failed',
+        error instanceof Error ? error.message : 'Could not sign out.',
+      );
+      return false;
+    }
   };
 
-  const handleCreateAccount = () => {
+  const handleCreateAccount = async () => {
     if (!fullName.trim()) {
       showMessage('Name required', 'Please enter your full name.');
       return;
@@ -77,28 +157,80 @@ export function useAuthFlow() {
       return;
     }
 
-    showMessage(
-      'Account form completed',
-      'The sign-up screen is ready. Account creation will work after the team connects an authentication backend.',
-      () => setMainScreen('login'),
-    );
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: signupEmail.trim(),
+        password: signupPassword,
+        options: {
+          data: { full_name: fullName.trim() },
+        },
+      });
+      if (error) {
+        showMessage('Account creation failed', error.message);
+        return;
+      }
+
+      setLoginEmail(signupEmail.trim());
+      setLoginPassword('');
+      setUserEmail(data.user?.email ?? signupEmail.trim());
+      setMainScreen('login');
+      showMessage(
+        data.session ? 'Account created' : 'Check your email',
+        data.session
+          ? 'Your account is ready. You are now signed in.'
+          : 'Confirm your email using the link we sent, then sign in.',
+      );
+    } catch (error: unknown) {
+      showMessage(
+        'Account creation failed',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+    }
   };
 
-  const handleResendCode = () => {
-    showMessage('Email delivery is not connected', 'This prototype cannot send a verification code yet.');
+  const handleResendCode = async () => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail);
+      if (error) {
+        showMessage('Could not resend reset email', error.message);
+        return;
+      }
+      showMessage('Email sent', 'A new password-reset email has been sent.');
+    } catch (error: unknown) {
+      showMessage(
+        'Could not resend reset email',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+    }
   };
 
-  const handleVerifyCode = () => {
+  const handleVerifyCode = async () => {
     if (!/^\d{6}$/.test(verificationCode)) {
       showMessage('Incomplete code', 'Enter all six digits to continue.');
       return;
     }
 
-    // Demo only: any six-digit code advances the UI. A backend must validate a real OTP.
-    setPasswordSheet('reset');
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: resetEmail,
+        token: verificationCode,
+        type: 'recovery',
+      });
+      if (error) {
+        showMessage('Could not verify code', error.message);
+        return;
+      }
+
+      setPasswordSheet('reset');
+    } catch (error: unknown) {
+      showMessage(
+        'Could not verify code',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+    }
   };
 
-  const handleFinishReset = () => {
+  const handleFinishReset = async () => {
     if (newPassword.length < 8) {
       showMessage('Password is too short', 'Your new password should be at least 8 characters.');
       return;
@@ -108,17 +240,26 @@ export function useAuthFlow() {
       return;
     }
 
-    showMessage(
-      'Reset flow completed',
-      'The reset-password UI is ready. A real password update requires an authentication backend.',
-      () => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        showMessage('Password update failed', error.message);
+        return;
+      }
+
+      showMessage('Password updated', 'Your password has been changed.', () => {
         setPasswordSheet('none');
         setLoginPassword('');
         setVerificationCode('');
         setNewPassword('');
         setConfirmNewPassword('');
-      },
-    );
+      });
+    } catch (error: unknown) {
+      showMessage(
+        'Password update failed',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+    }
   };
 
   return {
@@ -151,6 +292,7 @@ export function useAuthFlow() {
     isAuthenticated,
     setIsAuthenticated,
     userName,
+    userEmail,
     openForgotPassword,
     handleSignIn,
     handleSignOut,

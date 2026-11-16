@@ -1,13 +1,74 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
+import { showMessage } from '../../auth/utils/feedback';
+import { supabase } from '../../../lib/supabase';
 
 interface NotificationScreenProps {
+  organizationId: string;
   onBack: () => void;
 }
 
-export function NotificationScreen({ onBack }: NotificationScreenProps) {
+interface NotificationItem {
+  id: string;
+  title: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+}
+
+export function NotificationScreen({ organizationId, onBack }: NotificationScreenProps) {
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const loadNotifications = async () => {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('id, title, body, created_at, read_at')
+        .eq('organization_id', organizationId)
+        .order('created_at', { ascending: false });
+      if (!active) return;
+      if (error) {
+        showMessage('Could not load notifications', error.message);
+        setIsLoading(false);
+        return;
+      }
+      setNotifications(data ?? []);
+      setIsLoading(false);
+    };
+    void loadNotifications().catch((error: unknown) => {
+      if (!active) return;
+      showMessage(
+        'Could not load notifications',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+      setIsLoading(false);
+    });
+    return () => { active = false; };
+  }, [organizationId]);
+
+  const markAsRead = async (item: NotificationItem) => {
+    if (item.read_at) return;
+    const readAt = new Date().toISOString();
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read_at: readAt })
+      .eq('id', item.id)
+      .eq('organization_id', organizationId);
+    if (error) {
+      showMessage('Could not mark notification as read', error.message);
+      return;
+    }
+    setNotifications((current) => current.map((notification) =>
+      notification.id === item.id ? { ...notification, read_at: readAt } : notification
+    ));
+  };
+
+  const hasNotifications = notifications.length > 0;
+
   return (
     <View style={styles.root}>
       {/* Top Header */}
@@ -28,7 +89,34 @@ export function NotificationScreen({ onBack }: NotificationScreenProps) {
         <View style={styles.spacer} />
       </View>
 
-      {/* Center Empty State Graphic */}
+      {isLoading ? (
+        <View style={styles.centerContainer}>
+          <Text style={styles.emptySubtitle}>Loading notifications…</Text>
+        </View>
+      ) : hasNotifications ? (
+        <ScrollView contentContainerStyle={styles.notificationList}>
+          {notifications.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[styles.notificationCard, !item.read_at && styles.unreadCard]}
+              onPress={() => { void markAsRead(item); }}
+              activeOpacity={0.8}
+            >
+              <View style={styles.notificationHeader}>
+                <Text style={styles.notificationTitle}>{item.title}</Text>
+                {!item.read_at && <View style={styles.unreadDot} />}
+              </View>
+              <Text style={styles.notificationBody}>{item.body}</Text>
+              <Text style={styles.notificationDate}>
+                {new Date(item.created_at).toLocaleString(undefined, {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      ) : (
       <View style={styles.centerContainer}>
         <View style={styles.mailboxGraphic}>
           <Svg width={180} height={160} viewBox="0 0 200 180">
@@ -56,10 +144,10 @@ export function NotificationScreen({ onBack }: NotificationScreenProps) {
             <Rect x="150" y="66" width="16" height="20" rx="3" fill="#4B3DE8" />
           </Svg>
         </View>
-
         <Text style={styles.emptyTitle}>No notification yet</Text>
         <Text style={styles.emptySubtitle}>Your notification will appear here.</Text>
       </View>
+      )}
     </View>
   );
 }
@@ -102,6 +190,52 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 30,
     paddingBottom: 60,
+  },
+  notificationList: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 32,
+    gap: 10,
+  },
+  notificationCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#ECEEF7',
+    borderRadius: 16,
+    padding: 14,
+  },
+  unreadCard: {
+    borderColor: colors.primary,
+    backgroundColor: '#FBFAFF',
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  notificationTitle: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  notificationBody: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  notificationDate: {
+    color: colors.muted,
+    fontSize: 10,
+    marginTop: 8,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 8,
+    backgroundColor: colors.primary,
   },
   mailboxGraphic: {
     marginBottom: 24,

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,84 +13,141 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
 import { NoteAudience, NoteItem } from '../types';
+import { supabase } from '../../../lib/supabase';
 
 interface NotesListScreenProps {
+  organizationId: string;
+  organizationName: string;
   onBack: () => void;
   onOpenNewNote: () => void;
 }
-
-const mockNotes: NoteItem[] = [
-  {
-    id: 'note-1',
-    title: 'Rapat Evaluasi Acara',
-    content:
-      'Catatan hasil evaluasi: alur registrasi perlu dipercepat dan briefing volunteer dimulai lebih awal.',
-    dateLabel: 'Today, 10:24',
-    audienceCategory: ['All', 'BPH', 'Coordinators'],
-    badges: [
-      { label: 'Executive', type: 'executive', bgColor: '#E6F4FF', textColor: '#2B88E8' },
-      { label: 'Coordinators', type: 'coordinators', bgColor: '#FFF1E6', textColor: '#E87A35' },
-    ],
-  },
-  {
-    id: 'note-2',
-    title: 'Ide Konten Sosmed',
-    content:
-      'Carousel recap, volunteer spotlight, and a short behind-the-scenes reel for next week.',
-    dateLabel: 'Today, 08:15',
-    audienceCategory: ['All', 'Private'],
-    badges: [{ label: 'Private', type: 'private', bgColor: '#F0F1F7', textColor: '#5A5D75' }],
-  },
-  {
-    id: 'note-3',
-    title: 'Rundown Technical Meeting',
-    content:
-      'Sound check at 18.30, stage cue review at 19.00, then a full rehearsal with the event lead.',
-    dateLabel: '30 Sep 2026',
-    audienceCategory: ['All', 'Division'],
-    badges: [{ label: 'Division A', type: 'division', bgColor: '#EEECFF', textColor: '#5145E8' }],
-  },
-  {
-    id: 'note-4',
-    title: 'Volunteer Briefing Points',
-    content:
-      'Welcome desk assignments, emergency contacts, meal distribution, and closing shift reminders.',
-    dateLabel: '29 Sep 2026',
-    audienceCategory: ['All', 'BPH', 'Members'],
-    badges: [
-      { label: 'Executive', type: 'executive', bgColor: '#E6F4FF', textColor: '#2B88E8' },
-      { label: 'Members', type: 'members', bgColor: '#E8F8F2', textColor: '#2C9B76' },
-    ],
-  },
-  {
-    id: 'note-5',
-    title: 'Sponsor Follow-up',
-    content:
-      'Send the revised benefit deck and confirm logo assets before the publication deadline.',
-    dateLabel: '27 Sep 2026',
-    audienceCategory: ['All', 'Coordinators', 'Division'],
-    badges: [
-      { label: 'Coordinators', type: 'coordinators', bgColor: '#FFF1E6', textColor: '#E87A35' },
-      { label: 'Division B', type: 'division', bgColor: '#EEECFF', textColor: '#5145E8' },
-    ],
-  },
-];
 
 const filterTabs: NoteAudience[] = [
   'All',
   'Private',
   'Division',
-  'BPH',
+  'Executive',
   'Coordinators',
   'Members',
 ];
 
-export function NotesListScreen({ onBack, onOpenNewNote }: NotesListScreenProps) {
+const roleBadges = {
+  executive: { label: 'Executive', type: 'executive' as const, bgColor: '#E6F4FF', textColor: '#2B88E8' },
+  coordinator: { label: 'Coordinators', type: 'coordinators' as const, bgColor: '#FFF1E6', textColor: '#E87A35' },
+  member: { label: 'Members', type: 'members' as const, bgColor: '#E8F8F2', textColor: '#2C9B76' },
+};
+
+export function NotesListScreen({
+  organizationId,
+  organizationName,
+  onBack,
+  onOpenNewNote,
+}: NotesListScreenProps) {
   const [activeFilter, setActiveFilter] = useState<NoteAudience>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [notes, setNotes] = useState<NoteItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const filteredNotes = mockNotes.filter((note) => {
+  const loadNotes = useCallback(async () => {
+    setIsLoading(true);
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      showMessage('Could not load notes', userError?.message ?? 'Sign in again and retry.');
+      setIsLoading(false);
+      return;
+    }
+    setCurrentUserId(user.id);
+    const { data: noteRows, error } = await supabase
+      .from('notes')
+      .select('id, author_id, title, content, share_with_all_members, created_at')
+      .eq('organization_id', organizationId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      showMessage('Could not load notes', error.message);
+      setIsLoading(false);
+      return;
+    }
+
+    const noteIds = (noteRows ?? []).map((note) => note.id);
+    const [roleResult, divisionResult] = noteIds.length
+      ? await Promise.all([
+          supabase.from('note_audience_roles').select('note_id, role').in('note_id', noteIds),
+          supabase.from('note_audience_divisions').select('note_id, division_id').in('note_id', noteIds),
+        ])
+      : [{ data: [], error: null }, { data: [], error: null }];
+
+    if (roleResult.error || divisionResult.error) {
+      showMessage('Could not load note audiences', roleResult.error?.message ?? divisionResult.error?.message ?? 'Could not load note audiences.');
+      setIsLoading(false);
+      return;
+    }
+
+    const divisionIds = [...new Set((divisionResult.data ?? []).map((row) => row.division_id))];
+    const { data: divisionRows, error: divisionsError } = divisionIds.length
+      ? await supabase.from('divisions').select('id, name').in('id', divisionIds)
+      : { data: [], error: null };
+    if (divisionsError) {
+      showMessage('Could not load note divisions', divisionsError.message);
+      setIsLoading(false);
+      return;
+    }
+
+    const divisionNames = new Map((divisionRows ?? []).map((division) => [division.id, division.name]));
+    setNotes((noteRows ?? []).map((note) => {
+      const roles = (roleResult.data ?? []).filter((row) => row.note_id === note.id);
+      const noteDivisions = (divisionResult.data ?? []).filter((row) => row.note_id === note.id);
+      const badges: NoteItem['badges'] = [
+        ...roles.flatMap((row) => row.role in roleBadges ? [roleBadges[row.role as keyof typeof roleBadges]] : []),
+        ...noteDivisions.flatMap((row) => {
+          const name = divisionNames.get(row.division_id);
+          return name ? [{
+            label: name,
+            type: 'division' as const,
+            bgColor: '#EEECFF',
+            textColor: '#5145E8',
+          }] : [];
+        }),
+        ...(note.share_with_all_members ? [{
+          label: 'All Members',
+          type: 'members' as const,
+          bgColor: '#E8F8F2',
+          textColor: '#2C9B76',
+        }] : []),
+      ];
+      const audienceCategory: NoteAudience[] = ['All'];
+      if (note.share_with_all_members) audienceCategory.push('Members');
+      if (roles.some((row) => row.role === 'executive')) audienceCategory.push('Executive');
+      if (roles.some((row) => row.role === 'coordinator')) audienceCategory.push('Coordinators');
+      if (noteDivisions.length) audienceCategory.push('Division');
+      if (!badges.length) {
+        audienceCategory.push('Private');
+        badges.push({ label: 'Private', type: 'private', bgColor: '#F0F1F7', textColor: '#5A5D75' });
+      }
+
+      return {
+        id: note.id,
+        authorId: note.author_id,
+        title: note.title,
+        content: note.content,
+        dateLabel: new Date(note.created_at).toLocaleString(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        }),
+        badges,
+        audienceCategory,
+      };
+    }));
+    setIsLoading(false);
+  }, [organizationId]);
+
+  useEffect(() => {
+    void loadNotes();
+  }, [loadNotes]);
+
+  const filteredNotes = notes.filter((note) => {
     const matchesFilter =
       activeFilter === 'All' ? true : note.audienceCategory.includes(activeFilter);
     const matchesSearch =
@@ -96,6 +155,31 @@ export function NotesListScreen({ onBack, onOpenNewNote }: NotesListScreenProps)
       note.content.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  const deleteNote = async (noteId: string) => {
+    const { error } = await supabase
+      .from('notes')
+      .delete()
+      .eq('id', noteId)
+      .eq('organization_id', organizationId);
+    if (error) {
+      showMessage('Could not delete note', error.message);
+      return;
+    }
+    setNotes((current) => current.filter((note) => note.id !== noteId));
+  };
+
+  const confirmDeleteNote = (note: NoteItem) => {
+    const onConfirm = () => { void deleteNote(note.id); };
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm(`Delete "${note.title}"? This cannot be undone.`)) onConfirm();
+      return;
+    }
+    Alert.alert('Delete note?', `Delete "${note.title}"? This cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: onConfirm },
+    ]);
+  };
 
   return (
     <View style={styles.root}>
@@ -116,7 +200,7 @@ export function NotesListScreen({ onBack, onOpenNewNote }: NotesListScreenProps)
           </TouchableOpacity>
           <View>
             <Text style={styles.headerTitle}>Notes</Text>
-            <Text style={styles.headerSub}>Organization A · {mockNotes.length} notes</Text>
+            <Text style={styles.headerSub}>{organizationName} · {notes.length} notes</Text>
           </View>
         </View>
 
@@ -183,20 +267,39 @@ export function NotesListScreen({ onBack, onOpenNewNote }: NotesListScreenProps)
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.notesList}>
+          {!isLoading && filteredNotes.length === 0 && (
+            <View style={styles.noteCard}>
+              <Text style={styles.noteTitle}>No notes found</Text>
+              <Text style={styles.noteBody}>
+                {searchQuery || activeFilter !== 'All'
+                  ? 'Try another search or audience filter.'
+                  : 'Create a note to start sharing information with your organization.'}
+              </Text>
+            </View>
+          )}
           {filteredNotes.map((note) => (
             <View key={note.id} style={styles.noteCard}>
               <View style={styles.noteTopRow}>
                 <Text style={styles.noteTitle}>{note.title}</Text>
-                <TouchableOpacity
-                  onPress={() => showMessage(note.title, 'Note options menu')}
-                  hitSlop={8}
-                >
-                  <Svg width={16} height={16} viewBox="0 0 24 24">
-                    <Circle cx="5" cy="12" r="2" fill="#85879A" />
-                    <Circle cx="12" cy="12" r="2" fill="#85879A" />
-                    <Circle cx="19" cy="12" r="2" fill="#85879A" />
-                  </Svg>
-                </TouchableOpacity>
+                {note.authorId === currentUserId && (
+                  <TouchableOpacity
+                    onPress={() => confirmDeleteNote(note)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Delete ${note.title}`}
+                  >
+                    <Svg width={16} height={16} viewBox="0 0 24 24">
+                      <Path
+                        d="M3 6H5H21M8 6V4C8 3.4 8.4 3 9 3H15C15.6 3 16 3.4 16 4V6M19 6V20C19 20.6 18.6 21 18 21H6C5.4 21 5 20.6 5 20V6H19Z"
+                        fill="none"
+                        stroke="#85879A"
+                        strokeWidth={1.8}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </Svg>
+                  </TouchableOpacity>
+                )}
               </View>
 
               <Text style={styles.noteBody}>{note.content}</Text>

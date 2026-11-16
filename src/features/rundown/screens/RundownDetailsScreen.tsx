@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -10,8 +10,10 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
 import { Rundown, RundownItem } from '../types';
+import { supabase } from '../../../lib/supabase';
 
 interface RundownDetailsScreenProps {
+  organizationId: string;
   rundown: Rundown | null;
   items: RundownItem[];
   onBack: () => void;
@@ -19,23 +21,73 @@ interface RundownDetailsScreenProps {
 }
 
 export function RundownDetailsScreen({
+  organizationId,
   rundown,
-  items,
   onBack,
   onEdit,
 }: RundownDetailsScreenProps) {
-  const handleMenuOptions = () => {
-    showMessage(
-      'Rundown Options',
-      'Export as PDF, share via link, or duplicate rundown.',
-    );
-  };
+  const [items, setItems] = useState<RundownItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    let active = true;
+    const loadItems = async () => {
+      const { data: rows, error } = await supabase
+        .from('rundown_items')
+        .select('id, sort_order, title, start_time, duration_minutes, description, assignee_user_id')
+        .eq('organization_id', organizationId)
+        .eq('rundown_id', rundown.id)
+        .order('sort_order');
+      if (!active) return;
+      if (error) {
+        showMessage('Could not load rundown items', error.message);
+        setIsLoading(false);
+        return;
+      }
+
+      const assigneeIds = [...new Set((rows ?? [])
+        .map((row) => row.assignee_user_id)
+        .filter((id): id is string => Boolean(id)))];
+      const { data: profiles, error: profilesError } = assigneeIds.length
+        ? await supabase.from('profiles').select('id, full_name').in('id', assigneeIds)
+        : { data: [], error: null };
+      if (!active) return;
+      if (profilesError) {
+        showMessage('Could not load rundown assignees', profilesError.message);
+        setIsLoading(false);
+        return;
+      }
+      const names = new Map((profiles ?? []).map((profile) => [profile.id, profile.full_name]));
+      setItems((rows ?? []).map((row) => {
+        const assigneeName: string = row.assignee_user_id ? names.get(row.assignee_user_id) ?? '' : '';
+        return {
+          id: row.id,
+          stepNumber: row.sort_order,
+          title: row.title,
+          startTime: row.start_time?.slice(0, 5).replace(':', '.') ?? '—',
+          durationMinutes: row.duration_minutes,
+          description: row.description,
+          assigneeUserId: row.assignee_user_id,
+          assigneeInitials: assigneeName.split(/\s+/).map((part) => part[0] ?? '').join('').slice(0, 2).toUpperCase(),
+          assigneeName,
+        };
+      }));
+      setIsLoading(false);
+    };
+    void loadItems().catch((error: unknown) => {
+      if (!active) return;
+      showMessage(
+        'Could not load rundown items',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+      setIsLoading(false);
+    });
+    return () => { active = false; };
+  }, [organizationId, rundown.id]);
+
+  const totalMinutes = items.reduce((sum, item) => sum + item.durationMinutes, 0);
   const handleStepPress = (item: RundownItem) => {
-    showMessage(
-      item.title,
-      `${item.startTime} (${item.durationMinutes} min)\n${item.description}`,
-    );
+    showMessage(item.title, `${item.startTime} (${item.durationMinutes} min)\n${item.description}`);
   };
 
   return (
@@ -130,45 +182,39 @@ export function RundownDetailsScreen({
         </View>
 
         <View style={styles.timelineHeader}>
-          <Text style={styles.timelineHeading}>Evening timeline</Text>
-          <Text style={styles.readyText}>Ready to share</Text>
+          <Text style={styles.timelineHeading}>Agenda timeline</Text>
+          <Text style={styles.readyText}>Saved</Text>
         </View>
 
-        {items.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No rundown items yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Tap Edit to add the first activity to this rundown.
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.timelineContainer}>
-            {items.map((item, index) => {
-              const isLast = index === items.length - 1;
-              const isFirst = item.stepNumber === 1;
+        {/* Connected Vertical Timeline */}
+        <View style={styles.timelineContainer}>
+          {isLoading ? (
+            <Text style={styles.readyText}>Loading agenda…</Text>
+          ) : items.length === 0 ? (
+            <Text style={styles.readyText}>No agenda items yet. Edit this rundown to add items.</Text>
+          ) : items.map((item, index) => {
+            const isLast = index === items.length - 1;
+            const isStepOne = index === 0;
 
-              return (
-                <View key={item.id} style={styles.timelineItemRow}>
-                  <View style={styles.nodeColumn}>
-                    <View
+            return (
+              <View key={item.id} style={styles.timelineItemRow}>
+                {/* Left Node Column (Number Circle + Vertical Line) */}
+                <View style={styles.nodeColumn}>
+                  <View
+                    style={[
+                      styles.nodeCircle,
+                      isStepOne ? styles.nodeCircleActive : styles.nodeCircleInactive,
+                    ]}
+                  >
+                    <Text
                       style={[
-                        styles.nodeCircle,
-                        isFirst
-                          ? styles.nodeCircleActive
-                          : styles.nodeCircleInactive,
+                        styles.nodeNumber,
+                        isStepOne ? styles.nodeNumberActive : styles.nodeNumberInactive,
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.nodeNumber,
-                          isFirst
-                            ? styles.nodeNumberActive
-                            : styles.nodeNumberInactive,
-                        ]}
-                      >
-                        {item.stepNumber}
-                      </Text>
-                    </View>
+                      {item.stepNumber}
+                    </Text>
+                  </View>
 
                     {!isLast && (
                       <View
@@ -225,13 +271,14 @@ export function RundownDetailsScreen({
                           Responsible: {item.assigneeName}
                         </Text>
                       </View>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              );
-            })}
-          </View>
-        )}
+                      <Text style={styles.responsibleName}>Responsible: {item.assigneeName}</Text>
+                    </View>
+                  ) : null}
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </View>
       </ScrollView>
     </View>
   );

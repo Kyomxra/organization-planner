@@ -11,35 +11,61 @@ import {
 } from 'react-native';
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
+import { supabase } from '../../../lib/supabase';
+import * as Clipboard from 'expo-clipboard';
 
 interface InvitesModalProps {
   visible: boolean;
+  organizationId: string;
   onClose: () => void;
 }
 
-export function InvitesModal({ visible, onClose }: InvitesModalProps) {
+export function InvitesModal({ visible, organizationId, onClose }: InvitesModalProps) {
   const [executiveCode, setExecutiveCode] = useState('');
   const [coordinatorCode, setCoordinatorCode] = useState('');
   const [memberCode, setMemberCode] = useState('');
-  const [hasGenerated, setHasGenerated] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleGenerateCodes = () => {
-    setExecutiveCode('ORG-7P2F');
-    setCoordinatorCode('ORG-8K2F');
-    setMemberCode('ORG-2C7F');
-    setHasGenerated(true);
+  const handleGenerateCodes = async () => {
+    setIsGenerating(true);
+    const { data, error } = await supabase.rpc('create_organization_invites', {
+      p_organization_id: organizationId,
+    });
+    setIsGenerating(false);
+    if (error) {
+      showMessage('Could not generate invite codes', error.message);
+      return;
+    }
+    setExecutiveCode(data.executive);
+    setCoordinatorCode(data.coordinator);
+    setMemberCode(data.member);
   };
 
-  const handleCopyCode = (role: string, code: string) => {
+  const handleCopyCode = async (role: string, code: string) => {
     if (!code) {
       showMessage('Generate First', 'Please tap "Generate codes" first to create invite codes.');
       return;
     }
-    showMessage('Copied', `${role} invite code (${code}) copied to clipboard.`);
+    try {
+      await Clipboard.setStringAsync(code);
+      showMessage('Copied', `${role} invite code copied to the clipboard.`);
+    } catch (error: unknown) {
+      showMessage(
+        'Could not copy invite code',
+        error instanceof Error ? error.message : 'Select and copy the code manually.',
+      );
+    }
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.sheet}>
@@ -55,10 +81,11 @@ export function InvitesModal({ visible, onClose }: InvitesModalProps) {
           {/* Generate Codes Button */}
           <TouchableOpacity
             style={styles.generateBtn}
-            onPress={handleGenerateCodes}
+            onPress={() => { void handleGenerateCodes(); }}
+            disabled={isGenerating}
             activeOpacity={0.85}
           >
-            <Text style={styles.generateBtnText}>Generate codes</Text>
+            <Text style={styles.generateBtnText}>{isGenerating ? 'Generating…' : 'Generate codes'}</Text>
           </TouchableOpacity>
 
           {/* Executives Invite */}

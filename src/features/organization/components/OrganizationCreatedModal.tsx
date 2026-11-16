@@ -42,7 +42,13 @@ export function OrganizationCreatedModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      navigationBarTranslucent
+    >
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>

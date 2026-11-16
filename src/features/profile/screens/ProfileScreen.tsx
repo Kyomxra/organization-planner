@@ -12,29 +12,33 @@ import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
 
 interface ProfileScreenProps {
-  userName?: string;
-  userEmail?: string;
+  userName: string;
+  userEmail: string;
   onBack: () => void;
+  onSaveName: (name: string) => Promise<boolean>;
   onSignOut: () => void;
 }
 
 export function ProfileScreen({
-  userName = 'Alex Morgan',
-  userEmail = 'alex@organization.com',
+  userName,
+  userEmail,
   onBack,
+  onSaveName,
   onSignOut,
 }: ProfileScreenProps) {
-  const [name, setName] = useState(userName);
   const [displayName, setDisplayName] = useState(userName);
-  const [email] = useState(userEmail);
-  const [address, setAddress] = useState('Cluster Alogio');
+  const [isSavingName, setIsSavingName] = useState(false);
 
-  const handleEditField = (field: string) => {
-    showMessage(`Edit ${field}`, `Update your ${field.toLowerCase()} in your account settings.`);
-  };
-
-  const handleAvatarPress = () => {
-    showMessage('Upload Photo', 'Choose a profile photo from your library or camera.');
+  const handleSaveName = async () => {
+    const name = displayName.trim();
+    if (!name) {
+      showMessage('Name required', 'Enter a name before saving.');
+      return;
+    }
+    setIsSavingName(true);
+    const saved = await onSaveName(name);
+    setIsSavingName(false);
+    if (saved) showMessage('Profile updated', 'Your account name has been saved.');
   };
 
   const handleLogoutPress = () => {
@@ -66,67 +70,49 @@ export function ProfileScreen({
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Avatar Upload Circle */}
+        {/* Account Avatar */}
         <View style={styles.avatarWrap}>
-          <TouchableOpacity
-            style={styles.avatarCircle}
-            onPress={handleAvatarPress}
-            activeOpacity={0.85}
-          >
-            <Svg width={30} height={30} viewBox="0 0 24 24">
-              <Path d="M12 5V19M5 12H19" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" />
-            </Svg>
-          </TouchableOpacity>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarInitials}>
+              {userName.split(/\s+/).map((part) => part[0] ?? '').join('').slice(0, 2).toUpperCase()}
+            </Text>
+          </View>
         </View>
 
         {/* Account Info Heading */}
         <Text style={styles.sectionHeading}>Account info</Text>
 
         <View style={styles.formGroup}>
-          {/* 1. Name Readonly Box */}
-          <View style={styles.fieldBoxGrey}>
+          {/* Account name */}
+          <View style={styles.fieldBoxWhite}>
             <Svg width={18} height={18} viewBox="0 0 24 24" style={styles.fieldIcon}>
               <Circle cx="12" cy="8" r="4" fill="none" stroke="#2D3142" strokeWidth={1.8} />
               <Path d="M4 20C4 16 7.5 14 12 14C16.5 14 20 16 20 20" stroke="#2D3142" strokeWidth={1.8} fill="none" strokeLinecap="round" />
             </Svg>
-            <Text style={styles.fieldValueText}>{name}</Text>
+            <TextInput
+              style={styles.fieldValueText}
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="Your name"
+              accessibilityLabel="Account name"
+            />
           </View>
 
-          {/* 2. Display Name with Edit Icon */}
-          <View style={styles.fieldBoxWhite}>
-            <Svg width={18} height={18} viewBox="0 0 24 24" style={styles.fieldIcon}>
-              <Circle cx="12" cy="12" r="9" stroke="#2D3142" strokeWidth={1.8} fill="none" />
-              <Path d="M9.09 9A3 3 0 0 1 15 10C15 12 12 13 12 13M12 17H12.01" stroke="#2D3142" strokeWidth={2} strokeLinecap="round" />
-            </Svg>
-            <Text style={styles.fieldValueText}>{displayName}</Text>
-            <TouchableOpacity onPress={() => handleEditField('Display Name')} hitSlop={8}>
-              <Svg width={16} height={16} viewBox="0 0 24 24">
-                <Path d="M17 3A2.828 2.828 0 1 1 21 7L7.5 20.5 2 22l1.5-5.5L17 3z" fill="none" stroke="#2D3142" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.saveProfileBtn}
+            onPress={() => { void handleSaveName(); }}
+            disabled={isSavingName}
+          >
+            <Text style={styles.saveProfileText}>{isSavingName ? 'Saving…' : 'Save name'}</Text>
+          </TouchableOpacity>
 
-          {/* 3. Email Address */}
+          {/* Email Address */}
           <View style={styles.fieldBoxWhite}>
             <Svg width={18} height={18} viewBox="0 0 24 24" style={styles.fieldIcon}>
               <Path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="#2D3142" strokeWidth={1.8} fill="none" />
               <Path d="M22 6L12 13L2 6" stroke="#2D3142" strokeWidth={1.8} strokeLinecap="round" fill="none" />
             </Svg>
-            <Text style={styles.fieldValueText}>{email}</Text>
-          </View>
-
-          {/* 4. Student Address with Edit Icon */}
-          <View style={styles.fieldBoxWhite}>
-            <Svg width={18} height={18} viewBox="0 0 24 24" style={styles.fieldIcon}>
-              <Path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z" stroke="#2D3142" strokeWidth={1.8} fill="none" />
-              <Circle cx="12" cy="9" r="2.5" stroke="#2D3142" strokeWidth={1.8} fill="none" />
-            </Svg>
-            <Text style={styles.fieldValueText}>{address}</Text>
-            <TouchableOpacity onPress={() => handleEditField('Address')} hitSlop={8}>
-              <Svg width={16} height={16} viewBox="0 0 24 24">
-                <Path d="M17 3A2.828 2.828 0 1 1 21 7L7.5 20.5 2 22l1.5-5.5L17 3z" fill="none" stroke="#2D3142" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-            </TouchableOpacity>
+            <Text style={styles.fieldValueText}>{userEmail}</Text>
           </View>
 
           {/* 5. Log Out Button */}
@@ -209,6 +195,11 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
+  avatarInitials: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '800',
+  },
   sectionHeading: {
     fontSize: 14,
     fontWeight: '800',
@@ -244,6 +235,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.text,
+  },
+  saveProfileBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#EEECFF',
+  },
+  saveProfileText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '800',
   },
   logoutBtn: {
     flexDirection: 'row',

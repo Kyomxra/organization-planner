@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { colors } from '../theme/colors';
 import { useAuthFlow } from '../features/auth/hooks/useAuthFlow';
@@ -15,9 +15,12 @@ import { OrganizationStatusModal } from '../features/organization/components/Org
 import { JoinOrganizationModal } from '../features/organization/components/JoinOrganizationModal';
 import { OrganizationCreatedModal } from '../features/organization/components/OrganizationCreatedModal';
 import { InvitesModal } from '../features/organization/components/InvitesModal';
+import { DivisionManagementScreen } from '../features/organization/screens/DivisionManagementScreen';
+import { Division, DivisionMember } from '../features/organization/types/division';
 
 import { DashboardHomeScreen } from '../features/dashboard/screens/DashboardHomeScreen';
 import { CalendarScreen } from '../features/calendar/screens/CalendarScreen';
+import { CalendarEvent } from '../features/calendar/types';
 import { BudgetingScreen } from '../features/budgeting/screens/BudgetingScreen';
 import { RundownListScreen } from '../features/rundown/screens/RundownListScreen';
 import { RundownDetailsScreen } from '../features/rundown/screens/RundownDetailsScreen';
@@ -29,14 +32,17 @@ import { NotificationScreen } from '../features/notifications/screens/Notificati
 import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
 import { showMessage } from '../features/auth/utils/feedback';
 import { Rundown, RundownItem } from '../features/rundown/types';
+import { supabase } from '../lib/supabase';
 import { mockRundowns } from '../features/rundown/data/mockRundowns';
 
 type ActiveView =
   | 'org-list'
   | 'create-org'
   | 'dashboard'
+  | 'divisions'
   | 'calendar'
   | 'budgeting'
+  | 'budgeting-add-expense'
   | 'rundown-list'
   | 'rundown-details'
   | 'rundown-edit'
@@ -53,66 +59,159 @@ export function RootFlow() {
   const [isInvitesModalVisible, setIsInvitesModalVisible] = useState(false);
   const [previousView, setPreviousView] = useState<ActiveView>('dashboard');
   const [selectedRundown, setSelectedRundown] = useState<Rundown | null>(null);
-  const [rundowns, setRundowns] = useState<Rundown[]>(mockRundowns);
-
-  const getRundownItems = (rundown: Rundown | null): RundownItem[] =>
-    rundown?.items ?? [
-      {
-        id: 'rd-1',
-        stepNumber: 1,
-        title: 'Guest arrival & registration',
-        startTime: '18.30',
-        durationMinutes: 20,
-        description: 'Welcome desk opens; distribute name tags and seating cards.',
-        assigneeInitials: 'MC',
-        assigneeName: 'Maya Chen',
-      },
-      {
-        id: 'rd-2',
-        stepNumber: 2,
-        title: 'Opening remarks',
-        startTime: '18.50',
-        durationMinutes: 10,
-        description: 'Host welcome, safety note, and overview of the evening.',
-        assigneeInitials: 'DK',
-        assigneeName: 'Daniel Kim',
-      },
-      {
-        id: 'rd-3',
-        stepNumber: 3,
-        title: 'Impact stories',
-        startTime: '19.00',
-        durationMinutes: 35,
-        description: 'Three community partners share five-minute stories.',
-        assigneeInitials: 'PS',
-        assigneeName: 'Priya Shah',
-      },
-      {
-        id: 'rd-4',
-        stepNumber: 4,
-        title: 'Volunteer recognition',
-        startTime: '19.35',
-        durationMinutes: 25,
-        description: 'Awards, photo moment, and thank-you presentation.',
-        assigneeInitials: '',
-        assigneeName: '',
-      },
-    ];
-
-  const saveRundown = (updated: Rundown) => {
-    setRundowns((current) =>
-      current.some((item) => item.id === updated.id)
-        ? current.map((item) => (item.id === updated.id ? updated : item))
-        : [updated, ...current],
-    );
-    setSelectedRundown(updated);
-    setActiveView('rundown-details');
-  };
+  const [selectedCalendarEvent, setSelectedCalendarEvent] = useState<CalendarEvent | null>(null);
+  const selectedOrg = org.selectedOrg;
+  const [divisions, setDivisions] = useState<Division[]>([]);
+  const [divisionMembers, setDivisionMembers] = useState<DivisionMember[]>([]);
 
   const navigateTo = (view: ActiveView) => {
     setPreviousView(activeView);
     setActiveView(view);
   };
+
+  useEffect(() => {
+    if (activeView !== 'divisions' || !selectedOrg) return;
+
+    let active = true;
+    const loadDivisionData = async () => {
+      const [divisionResult, memberResult] = await Promise.all([
+        supabase
+          .from('divisions')
+          .select('id, name, color, background_color')
+          .eq('organization_id', selectedOrg.id)
+          .order('name'),
+        supabase
+          .from('organization_members')
+          .select('id, user_id, division_id, role')
+          .eq('organization_id', selectedOrg.id)
+          .eq('status', 'active'),
+      ]);
+
+      if (!active) return;
+      if (divisionResult.error || memberResult.error) {
+        const error = divisionResult.error ?? memberResult.error;
+        showMessage('Could not load divisions', error?.message ?? 'Could not load organization data.');
+        return;
+      }
+
+      const memberIds = (memberResult.data ?? []).map((member) => member.user_id);
+      const { data: profiles, error: profilesError } = memberIds.length
+        ? await supabase.from('profiles').select('id, full_name, email').in('id', memberIds)
+        : { data: [], error: null };
+
+      if (!active) return;
+      if (profilesError) {
+        showMessage('Could not load members', profilesError.message);
+        return;
+      }
+
+      const profilesById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+      setDivisions((divisionResult.data ?? []).map((division) => ({
+        id: division.id,
+        name: division.name,
+        color: division.color ?? '#5145E8',
+        backgroundColor: division.background_color ?? '#EEECFF',
+      })));
+      setDivisionMembers((memberResult.data ?? []).map((member) => {
+        const profile = profilesById.get(member.user_id);
+        return {
+          id: member.id,
+          name: profile?.full_name || profile?.email || 'Member',
+          email: profile?.email ?? '',
+          role: member.role === 'coordinator'
+            ? 'Coordinator'
+            : member.role === 'executive'
+              ? 'Executive'
+              : 'Member',
+          divisionId: member.division_id,
+        };
+      }));
+    };
+
+    void loadDivisionData().catch((error: unknown) => {
+      if (!active) return;
+      showMessage(
+        'Could not load divisions',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [activeView, selectedOrg?.id]);
+
+  useEffect(() => {
+    if (activeView !== 'divisions' || !selectedOrg) return;
+
+    let active = true;
+    const loadDivisionData = async () => {
+      const [divisionResult, memberResult] = await Promise.all([
+        supabase
+          .from('divisions')
+          .select('id, name, color, background_color')
+          .eq('organization_id', selectedOrg.id)
+          .order('name'),
+        supabase
+          .from('organization_members')
+          .select('id, user_id, division_id, role')
+          .eq('organization_id', selectedOrg.id)
+          .eq('status', 'active'),
+      ]);
+
+      if (!active) return;
+      if (divisionResult.error || memberResult.error) {
+        const error = divisionResult.error ?? memberResult.error;
+        showMessage('Could not load divisions', error?.message ?? 'Could not load organization data.');
+        return;
+      }
+
+      const memberIds = (memberResult.data ?? []).map((member) => member.user_id);
+      const { data: profiles, error: profilesError } = memberIds.length
+        ? await supabase.from('profiles').select('id, full_name, email').in('id', memberIds)
+        : { data: [], error: null };
+
+      if (!active) return;
+      if (profilesError) {
+        showMessage('Could not load members', profilesError.message);
+        return;
+      }
+
+      const profilesById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+      setDivisions((divisionResult.data ?? []).map((division) => ({
+        id: division.id,
+        name: division.name,
+        color: division.color ?? '#5145E8',
+        backgroundColor: division.background_color ?? '#EEECFF',
+      })));
+      setDivisionMembers((memberResult.data ?? []).map((member) => {
+        const profile = profilesById.get(member.user_id);
+        return {
+          id: member.id,
+          name: profile?.full_name || profile?.email || 'Member',
+          email: profile?.email ?? '',
+          role: member.role === 'coordinator'
+            ? 'Coordinator'
+            : member.role === 'executive'
+              ? 'Executive'
+              : 'Member',
+          divisionId: member.division_id,
+        };
+      }));
+    };
+
+    void loadDivisionData().catch((error: unknown) => {
+      if (!active) return;
+      showMessage(
+        'Could not load divisions',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [activeView, selectedOrg?.id]);
 
   if (!auth.splashDone) {
     return <SplashScreen />;
@@ -180,6 +279,9 @@ export function RootFlow() {
         <OrganizationListScreen
           organizations={org.organizations}
           userName={auth.userName}
+          isLoading={org.isLoadingOrganizations}
+          loadError={org.organizationLoadError}
+          onRetry={() => { void org.reloadOrganizations(); }}
           showJoinedToast={org.showJoinedToast}
           onDismissToast={() => org.setShowJoinedToast(false)}
           onSelectOrganization={(selected) => {
@@ -204,47 +306,80 @@ export function RootFlow() {
 
       {activeView === 'dashboard' && (
         <DashboardHomeScreen
-          organizationName={org.selectedOrg.name}
+          organizationId={selectedOrg.id}
+          organizationName={selectedOrg.name}
           onBackToOrgList={() => setActiveView('org-list')}
           onOpenCalendar={() => setActiveView('calendar')}
           onOpenBudgeting={() => setActiveView('budgeting')}
+          onOpenAddExpense={() => setActiveView('budgeting-add-expense')}
           onOpenRundown={() => navigateTo('rundown-list')}
           onOpenNotes={() => navigateTo('notes-list')}
           onOpenNotifications={() => navigateTo('notifications')}
           onOpenInvites={() => setIsInvitesModalVisible(true)}
-          onOpenDivisions={() =>
-            showMessage(
-              'Divisions',
-              'Divisions management is coming in the next update.',
-            )
-          }
+          onOpenDivisions={() => setActiveView('divisions')}
           onOpenProfile={() => setActiveView('profile')}
         />
       )}
 
-      {activeView === 'calendar' && (
-        <CalendarScreen
-          onSwitchTab={(tab) => {
-            if (tab === 'home') setActiveView('dashboard');
-            else if (tab === 'profile') setActiveView('profile');
-            else if (tab === 'divisions') {
-              showMessage(
-                'Divisions',
-                'Divisions management is coming in the next update.',
-              );
+      {activeView === 'divisions' && selectedOrg && (
+        <DivisionManagementScreen
+          organizationName={selectedOrg.name}
+          divisions={divisions}
+          members={divisionMembers}
+          onBack={() => setActiveView('dashboard')}
+          onAssignMember={async (memberId, divisionId) => {
+            const { data, error } = await supabase
+              .from('organization_members')
+              .update({ division_id: divisionId })
+              .eq('id', memberId)
+              .eq('organization_id', selectedOrg.id)
+              .select('id')
+              .maybeSingle();
+            if (error) {
+              showMessage('Could not update division', error.message);
+              return;
             }
+            if (!data) {
+              showMessage('Could not update division', 'You may not have permission to change this member.');
+              return;
+            }
+            setDivisionMembers((current) => current.map((member) =>
+              member.id === memberId ? { ...member, divisionId } : member
+            ));
           }}
-          onOpenRundown={() => navigateTo('rundown-list')}
         />
       )}
 
-      {activeView === 'budgeting' && (
-        <BudgetingScreen onBack={() => setActiveView('dashboard')} />
+      {/* 2D. Calendar Screen */}
+      {activeView === 'calendar' && selectedOrg && (
+        <CalendarScreen
+          organizationId={selectedOrg.id}
+          organizationName={selectedOrg.name}
+          onSwitchTab={(tab) => {
+            if (tab === 'home') setActiveView('dashboard');
+            else if (tab === 'profile') setActiveView('profile');
+            else if (tab === 'divisions') setActiveView('divisions');
+          }}
+          onAttachRundown={(event) => {
+            setSelectedCalendarEvent(event);
+            setActiveView('rundown-select');
+          }}
+        />
+      )}
+
+      {/* 2E. Budgeting Screen */}
+      {(activeView === 'budgeting' || activeView === 'budgeting-add-expense') && (
+        <BudgetingScreen
+          organizationId={selectedOrg?.id ?? ''}
+          onBack={() => setActiveView('dashboard')}
+          openAddExpense={activeView === 'budgeting-add-expense'}
+        />
       )}
 
       {activeView === 'rundown-list' && (
         <RundownListScreen
-          rundowns={rundowns}
+          organizationId={selectedOrg?.id ?? ''}
+          organizationName={selectedOrg?.name ?? ''}
           onBack={() => setActiveView('dashboard')}
           onOpenRundown={(rundown) => {
             const selected =
@@ -259,32 +394,53 @@ export function RootFlow() {
         />
       )}
 
-      {activeView === 'rundown-details' && (
+      {/* 2G. Rundown Details Screen */}
+      {activeView === 'rundown-details' && selectedOrg && selectedRundown && (
         <RundownDetailsScreen
+          organizationId={selectedOrg.id}
           rundown={selectedRundown}
-          items={getRundownItems(selectedRundown)}
           onBack={() => setActiveView('rundown-list')}
           onEdit={() => navigateTo('rundown-edit')}
         />
       )}
 
-      {activeView === 'rundown-edit' && (
+      {/* 2H. Edit Rundown Screen */}
+      {activeView === 'rundown-edit' && selectedOrg && (
         <EditRundownScreen
+          organizationId={selectedOrg.id}
           rundown={selectedRundown}
-          onBack={() => setActiveView('rundown-details')}
-          onSave={saveRundown}
+          onBack={() => setActiveView(selectedRundown ? 'rundown-details' : 'rundown-list')}
+          onSave={(rundown) => {
+            setSelectedRundown(rundown);
+            setActiveView('rundown-details');
+          }}
         />
       )}
 
-      {activeView === 'rundown-select' && (
+      {/* 2I. Select Rundown Screen (attach to Calendar event) */}
+      {activeView === 'rundown-select' && selectedOrg && selectedCalendarEvent && (
         <SelectRundownScreen
-          eventTitle={selectedRundown?.title ?? 'this event'}
+          organizationId={selectedOrg.id}
+          eventId={selectedCalendarEvent.id}
+          eventTitle={selectedCalendarEvent.title}
           onBack={() => setActiveView('calendar')}
-          onAttach={(_selected) => {
-            showMessage(
-              'Rundown Attached',
-              'The rundown has been linked to the event.',
-            );
+          onAttach={async (selected) => {
+            const rundown = selected[0];
+            if (!rundown) return;
+            const { data, error } = await supabase
+              .from('rundowns')
+              .update({ event_id: selectedCalendarEvent.id })
+              .eq('organization_id', selectedOrg.id)
+              .eq('id', rundown.id)
+              .select('id')
+              .maybeSingle();
+            if (error || !data) {
+              showMessage(
+                'Could not attach rundown',
+                error?.message ?? 'You may not have permission to change this rundown.',
+              );
+              return;
+            }
             setActiveView('calendar');
           }}
         />
@@ -292,6 +448,8 @@ export function RootFlow() {
 
       {activeView === 'notes-list' && (
         <NotesListScreen
+          organizationId={selectedOrg?.id ?? ''}
+          organizationName={selectedOrg?.name ?? ''}
           onBack={() => setActiveView('dashboard')}
           onOpenNewNote={() => navigateTo('notes-new')}
         />
@@ -299,23 +457,64 @@ export function RootFlow() {
 
       {activeView === 'notes-new' && (
         <NewNoteScreen
+          organizationId={selectedOrg?.id ?? ''}
+          organizationName={selectedOrg?.name ?? ''}
           onBack={() => setActiveView('notes-list')}
           onSaveSuccess={() => setActiveView('notes-list')}
         />
       )}
 
-      {activeView === 'notifications' && (
-        <NotificationScreen onBack={() => setActiveView('dashboard')} />
+      {/* 2J. Notifications Screen */}
+      {activeView === 'notifications' && selectedOrg && (
+        <NotificationScreen
+          organizationId={selectedOrg.id}
+          onBack={() => setActiveView('dashboard')}
+        />
       )}
 
       {activeView === 'profile' && (
         <ProfileScreen
-          userName={auth.userName ? `${auth.userName} Morgan` : 'Alex Morgan'}
-          userEmail={auth.loginEmail || 'alex@organization.com'}
+          userName={auth.userName || 'User'}
+          userEmail={auth.userEmail || auth.loginEmail}
           onBack={() => setActiveView(previousView)}
+          onSaveName={async (name) => {
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) {
+              showMessage('Could not update profile', userError?.message ?? 'Sign in again and retry.');
+              return false;
+            }
+            const { data, error } = await supabase
+              .from('profiles')
+              .update({ full_name: name })
+              .eq('id', user.id)
+              .select('id')
+              .maybeSingle();
+            if (error || !data) {
+              showMessage('Could not update profile', error?.message ?? 'Your profile could not be found.');
+              return false;
+            }
+            const { error: metadataError } = await supabase.auth.updateUser({
+              data: { full_name: name },
+            });
+            if (metadataError) {
+              const { error: rollbackError } = await supabase
+                .from('profiles')
+                .update({ full_name: auth.userName })
+                .eq('id', user.id);
+              showMessage(
+                'Profile update incomplete',
+                rollbackError
+                  ? `${metadataError.message} The profile row could not be restored: ${rollbackError.message}`
+                  : metadataError.message,
+              );
+              return false;
+            }
+            return true;
+          }}
           onSignOut={() => {
-            auth.handleSignOut();
-            setActiveView('org-list');
+            void auth.handleSignOut().then((signedOut) => {
+              if (signedOut) setActiveView('org-list');
+            });
           }}
         />
       )}
@@ -344,6 +543,7 @@ export function RootFlow() {
 
       <InvitesModal
         visible={isInvitesModalVisible}
+        organizationId={selectedOrg?.id ?? ''}
         onClose={() => setIsInvitesModalVisible(false)}
       />
     </View>
