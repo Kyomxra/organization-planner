@@ -21,6 +21,9 @@ interface OrganizationListScreenProps {
   onOpenJoinOrg: () => void;
   onOpenStatusModal: (org: OrganizationItem) => void;
   onOpenProfile?: () => void;
+  isLoading?: boolean;
+  loadError?: string | null;
+  onRetry?: () => void;
 }
 
 export function OrganizationListScreen({
@@ -33,6 +36,9 @@ export function OrganizationListScreen({
   onOpenJoinOrg,
   onOpenStatusModal,
   onOpenProfile,
+  isLoading = false,
+  loadError,
+  onRetry,
 }: OrganizationListScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -119,7 +125,21 @@ export function OrganizationListScreen({
 
         {/* Organizations List */}
         <View style={styles.listContainer}>
-          {filteredOrgs.map((org) => (
+          {isLoading ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>Loading organizations...</Text>
+            </View>
+          ) : loadError ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>Could not load organizations</Text>
+              <Text style={styles.emptySubtitle}>{loadError}</Text>
+              {onRetry && (
+                <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
+                  <Text style={styles.retryButtonText}>Try again</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : filteredOrgs.length > 0 ? filteredOrgs.map((org) => (
             <TouchableOpacity
               key={org.id}
               style={styles.card}
@@ -180,7 +200,18 @@ export function OrganizationListScreen({
                 </View>
               </View>
             </TouchableOpacity>
-          ))}
+          )) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>
+                {organizations.length === 0 ? 'No organizations yet' : 'No organizations found'}
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                {organizations.length === 0
+                  ? 'Create a new organization or join one with an invite code.'
+                  : 'Try a different search term.'}
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -335,6 +366,40 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     gap: 14,
+  },
+  emptyState: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#ECEEF7',
+    paddingHorizontal: 20,
+    paddingVertical: 28,
+  },
+  emptyTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 12,
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
   card: {
     backgroundColor: '#FFFFFF',

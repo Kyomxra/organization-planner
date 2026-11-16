@@ -5,6 +5,7 @@ export interface RundownItem {
   startTime: string;
   durationMinutes: number;
   description: string;
+  assigneeUserId?: string | null;
   assigneeInitials: string;
   assigneeName: string;
 }

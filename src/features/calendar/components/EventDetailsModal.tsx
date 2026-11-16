@@ -17,9 +17,15 @@ interface EventDetailsModalProps {
   visible: boolean;
   event: CalendarEvent | null;
   onClose: () => void;
+  onAttachRundown: () => void;
 }
 
-export function EventDetailsModal({ visible, event, onClose }: EventDetailsModalProps) {
+export function EventDetailsModal({
+  visible,
+  event,
+  onClose,
+  onAttachRundown,
+}: EventDetailsModalProps) {
   if (!event) return null;
 
   return (
@@ -91,6 +97,24 @@ export function EventDetailsModal({ visible, event, onClose }: EventDetailsModal
             <View style={styles.card}>
               <Text style={styles.descHeading}>DESCRIPTION</Text>
               <Text style={styles.descBody}>{event.description}</Text>
+            </View>
+            {event.notes ? (
+              <View style={styles.card}>
+                <Text style={styles.descHeading}>NOTES</Text>
+                <Text style={styles.descBody}>{event.notes}</Text>
+              </View>
+            ) : null}
+            <View style={styles.rundownCard}>
+              <Text style={styles.rundownText}>
+                {event.linkedRundown
+                  ? `Linked rundown: ${event.linkedRundown.title}`
+                  : 'No rundown is linked to this event.'}
+              </Text>
+              <TouchableOpacity onPress={onAttachRundown} style={styles.rundownButton}>
+                <Text style={styles.rundownButtonText}>
+                  {event.linkedRundown ? 'Change rundown' : 'Attach rundown'}
+                </Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </View>
@@ -218,5 +242,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#2D3142',
     lineHeight: 20,
+  },
+  rundownCard: {
+    backgroundColor: '#F8F7FF',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 14,
+  },
+  rundownText: {
+    fontSize: 12,
+    color: colors.text,
+    marginBottom: 10,
+  },
+  rundownButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  rundownButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

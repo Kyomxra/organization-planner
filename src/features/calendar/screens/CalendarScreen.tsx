@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -8,63 +8,158 @@ import {
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
-import { CalendarEvent } from '../types';
+import { showMessage } from '../../auth/utils/feedback';
+import { supabase } from '../../../lib/supabase';
+import { formatLocalDate } from '../../../lib/date';
+import { CalendarEvent, NewCalendarEvent } from '../types';
 import { EventDetailsModal } from '../components/EventDetailsModal';
 import { NewEventModal } from '../components/NewEventModal';
 
 interface CalendarScreenProps {
+  organizationId: string;
+  organizationName: string;
   onSwitchTab: (tab: 'home' | 'calendar' | 'divisions' | 'profile') => void;
-  onOpenRundown?: () => void;
+  onAttachRundown: (event: CalendarEvent) => void;
 }
 
-const defaultEvent: CalendarEvent = {
-  id: 'ev-1',
-  title: 'Meeting Preparation for Pleno 1',
-  category: 'ORGANIZATION MEETING',
-  orgName: 'Organization A',
-  divisionName: 'Division A',
-  dayOfMonth: 5,
-  month: 9,
-  year: 2026,
-  dateLabel: 'Monday, 5 October 2026',
-  startTime: '21.00',
-  endTime: '22.00',
-  duration: '1 hour',
-  description:
-    'Align the event layout, confirm committee roles, and review the final preparation checklist.',
-  linkedRundown: {
-    title: 'Volunteer Appreciation Night',
-    itemsCount: 8,
-    timeRange: '18.30–21.00',
-  },
-  notes: 'Write the notes for participants.',
-};
+function formatEventTime(date: Date): string {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }).replace(':', '.');
+}
 
-export function CalendarScreen({ onSwitchTab, onOpenRundown }: CalendarScreenProps) {
-  const [selectedDay, setSelectedDay] = useState(5);
-  const [events, setEvents] = useState<CalendarEvent[]>([defaultEvent]);
+export function CalendarScreen({
+  organizationId,
+  organizationName,
+  onSwitchTab,
+  onAttachRundown,
+}: CalendarScreenProps) {
+  const today = new Date();
+  const [visibleMonth, setVisibleMonth] = useState(
+    () => new Date(today.getFullYear(), today.getMonth(), 1),
+  );
+  const [selectedDay, setSelectedDay] = useState(today.getDate());
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isNewEventModalVisible, setIsNewEventModalVisible] = useState(false);
+  const monthYear = visibleMonth.getFullYear();
+  const monthIndex = visibleMonth.getMonth();
+  const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+  const daysInMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0).getDate();
+  const startDayOffset = (monthStart.getDay() + 6) % 7;
 
-  // October 2026 starts on Thursday (index 3 if Monday is 0)
-  // Mon Tue Wed Thu Fri Sat Sun
-  // 1 is Thursday
-  const daysInMonth = 31;
-  const startDayOffset = 3; // Thu
-  const eventDays = [1, 5, 9, 15, 20, 24];
+  const loadEvents = useCallback(async () => {
+    const rangeStart = new Date(monthYear, monthIndex, 1);
+    const rangeEnd = new Date(monthYear, monthIndex + 1, 1);
+    const { data: eventRows, error } = await supabase
+      .from('events')
+      .select('id, title, category, division_id, start_at, end_at, description, notes')
+      .eq('organization_id', organizationId)
+      .gte('start_at', rangeStart.toISOString())
+      .lt('start_at', rangeEnd.toISOString())
+      .order('start_at');
 
+    if (error) {
+      showMessage('Could not load events', error.message);
+      return;
+    }
+
+    const divisionIds = [...new Set((eventRows ?? [])
+      .map((event) => event.division_id)
+      .filter((id): id is string => Boolean(id)))];
+    const { data: divisionRows, error: divisionError } = divisionIds.length
+      ? await supabase.from('divisions').select('id, name').in('id', divisionIds)
+      : { data: [], error: null };
+
+    if (divisionError) {
+      showMessage('Could not load event divisions', divisionError.message);
+      return;
+    }
+
+    const eventIds = (eventRows ?? []).map((event) => event.id);
+    const { data: rundownRows, error: rundownError } = eventIds.length
+      ? await supabase.from('rundowns').select('id, title, event_id').in('event_id', eventIds)
+      : { data: [], error: null };
+    if (rundownError) {
+      showMessage('Could not load event rundowns', rundownError.message);
+      return;
+    }
+
+    const divisionsById = new Map((divisionRows ?? []).map((division) => [division.id, division.name]));
+    const rundownsByEventId = new Map((rundownRows ?? []).map((rundown) => [rundown.event_id, rundown]));
+    setEvents((eventRows ?? []).map((row) => {
+      const start = new Date(row.start_at);
+      const end = new Date(row.end_at);
+      const rundown = rundownsByEventId.get(row.id);
+      const durationMinutes = Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000));
+      const duration = durationMinutes >= 60
+        ? `${Math.floor(durationMinutes / 60)} hour${durationMinutes >= 120 ? 's' : ''}${durationMinutes % 60 ? ` ${durationMinutes % 60} min` : ''}`
+        : `${durationMinutes} min`;
+
+      return {
+        id: row.id,
+        startAt: row.start_at,
+        endAt: row.end_at,
+        divisionId: row.division_id,
+        title: row.title,
+        category: row.category.toUpperCase(),
+        orgName: organizationName,
+        divisionName: row.division_id ? divisionsById.get(row.division_id) ?? 'Organization' : 'Organization',
+        dayOfMonth: start.getDate(),
+        month: start.getMonth(),
+        year: start.getFullYear(),
+        dateLabel: start.toLocaleDateString(undefined, {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }),
+        startTime: formatEventTime(start),
+        endTime: formatEventTime(end),
+        duration,
+        description: row.description,
+        notes: row.notes,
+        linkedRundown: rundown ? {
+          title: rundown.title,
+          itemsCount: 0,
+          timeRange: '',
+        } : undefined,
+      };
+    }));
+  }, [monthIndex, monthYear, organizationId, organizationName]);
+
+  useEffect(() => {
+    void loadEvents();
+  }, [loadEvents]);
+
+  const eventDays = new Set(events.map((event) => event.dayOfMonth));
   const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  const dayEvents = events.filter((e) => e.dayOfMonth === selectedDay);
+  const dayEvents = events.filter((event) => event.dayOfMonth === selectedDay);
 
-  const handleAddEvent = (newEventData: Partial<CalendarEvent>) => {
-    const newEv: CalendarEvent = {
-      ...defaultEvent,
-      ...newEventData,
-      id: `ev-${Date.now()}`,
-      dayOfMonth: selectedDay,
-    };
-    setEvents((prev) => [...prev, newEv]);
+  const handleAddEvent = async (event: NewCalendarEvent): Promise<boolean> => {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      showMessage('Could not save event', userError?.message ?? 'Sign in again and retry.');
+      return false;
+    }
+
+    const { error } = await supabase.from('events').insert({
+      organization_id: organizationId,
+      title: event.title,
+      category: event.category,
+      description: event.description,
+      notes: event.notes,
+      start_at: event.startAt,
+      end_at: event.endAt,
+      created_by: user.id,
+    });
+
+    if (error) {
+      showMessage('Could not save event', error.message);
+      return false;
+    }
+
+    await loadEvents();
+    return true;
   };
 
   return (
@@ -72,16 +167,36 @@ export function CalendarScreen({ onSwitchTab, onOpenRundown }: CalendarScreenPro
       {/* Top Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>October 2026</Text>
-          <Text style={styles.headerSubtitle}>6 events this month</Text>
+          <Text style={styles.headerTitle}>
+            {visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {events.length} event{events.length === 1 ? '' : 's'} this month
+          </Text>
         </View>
         <View style={styles.monthNav}>
-          <TouchableOpacity style={styles.navCircle} hitSlop={8}>
+          <TouchableOpacity
+            style={styles.navCircle}
+            hitSlop={8}
+            onPress={() => {
+              const previous = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+              setVisibleMonth(previous);
+              setSelectedDay(1);
+            }}
+          >
             <Svg width={14} height={14} viewBox="0 0 20 20">
               <Path d="M12 4L6 10L12 16" fill="none" stroke="#2D3142" strokeWidth={2} strokeLinecap="round" />
             </Svg>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navCircle} hitSlop={8}>
+          <TouchableOpacity
+            style={styles.navCircle}
+            hitSlop={8}
+            onPress={() => {
+              const next = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+              setVisibleMonth(next);
+              setSelectedDay(1);
+            }}
+          >
             <Svg width={14} height={14} viewBox="0 0 20 20">
               <Path d="M8 4L14 10L8 16" fill="none" stroke="#2D3142" strokeWidth={2} strokeLinecap="round" />
             </Svg>
@@ -116,7 +231,7 @@ export function CalendarScreen({ onSwitchTab, onOpenRundown }: CalendarScreenPro
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const dayNum = i + 1;
               const isSelected = selectedDay === dayNum;
-              const hasEvent = eventDays.includes(dayNum);
+              const hasEvent = eventDays.has(dayNum);
 
               return (
                 <TouchableOpacity
@@ -146,7 +261,8 @@ export function CalendarScreen({ onSwitchTab, onOpenRundown }: CalendarScreenPro
         {/* Selected Date Section */}
         <View style={styles.dateEventsHeader}>
           <Text style={styles.selectedDateTitle}>
-            Monday, {selectedDay} Oct
+            {new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), selectedDay)
+              .toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' })}
           </Text>
           {dayEvents.length > 0 && (
             <View style={styles.eventCountBadge}>
@@ -257,13 +373,17 @@ export function CalendarScreen({ onSwitchTab, onOpenRundown }: CalendarScreenPro
         visible={!!selectedEvent}
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
+        onAttachRundown={() => {
+          if (selectedEvent) onAttachRundown(selectedEvent);
+          setSelectedEvent(null);
+        }}
       />
 
       <NewEventModal
         visible={isNewEventModalVisible}
+        initialDate={formatLocalDate(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), selectedDay))}
         onClose={() => setIsNewEventModalVisible(false)}
         onSave={handleAddEvent}
-        onOpenRundown={onOpenRundown}
       />
     </View>
   );

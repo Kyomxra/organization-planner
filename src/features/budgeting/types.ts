@@ -5,6 +5,7 @@ export interface IncomeItem {
   from: string;
   total: string;
   numericTotal: number;
+  description?: string;
 }
 
 export interface ExpenseItem {
