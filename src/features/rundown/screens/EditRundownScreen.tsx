@@ -1,70 +1,112 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
-import { RundownItem } from '../types';
+import { Rundown, RundownItem } from '../types';
+import { supabase } from '../../../lib/supabase';
 
 interface EditRundownScreenProps {
+  organizationId: string;
+  rundown: Rundown | null;
   onBack: () => void;
-  onSave?: () => void;
+  onSave: (rundown: Rundown) => void;
 }
 
-const initialItems: RundownItem[] = [
-  {
-    id: 'rd-1',
-    stepNumber: 1,
-    title: 'Guest arrival & registration',
-    startTime: '18.30',
-    durationMinutes: 20,
-    description: 'Welcome desk opens; distribute name tags.',
-    assigneeInitials: 'MC',
-    assigneeName: 'Maya Chen',
-  },
-  {
-    id: 'rd-2',
-    stepNumber: 2,
-    title: 'Opening remarks',
-    startTime: '18.50',
-    durationMinutes: 10,
-    description: 'Host welcome, safety note, and event overview.',
-    assigneeInitials: 'DK',
-    assigneeName: 'Daniel Kim',
-  },
-  {
-    id: 'rd-3',
-    stepNumber: 3,
-    title: 'Impact stories',
-    startTime: '19.00',
-    durationMinutes: 35,
-    description: 'Three community partners share their stories.',
-    assigneeInitials: 'PS',
-    assigneeName: 'Priya Shah',
-  },
-];
+export function EditRundownScreen({
+  organizationId,
+  rundown,
+  onBack,
+  onSave,
+}: EditRundownScreenProps) {
+  const [title, setTitle] = useState(rundown?.title ?? '');
+  const [items, setItems] = useState<RundownItem[]>([]);
+  const [isLoading, setIsLoading] = useState(Boolean(rundown));
+  const [isSaving, setIsSaving] = useState(false);
 
-export function EditRundownScreen({ onBack, onSave }: EditRundownScreenProps) {
-  const [items, setItems] = useState<RundownItem[]>(initialItems);
+  useEffect(() => {
+    let active = true;
+    setTitle(rundown?.title ?? '');
+    if (!rundown) {
+      setItems([]);
+      setIsLoading(false);
+      return () => { active = false; };
+    }
+
+    const loadItems = async () => {
+      const { data: rows, error } = await supabase
+        .from('rundown_items')
+        .select('id, sort_order, title, start_time, duration_minutes, description, assignee_user_id')
+        .eq('organization_id', organizationId)
+        .eq('rundown_id', rundown.id)
+        .order('sort_order');
+      if (!active) return;
+      if (error) {
+        showMessage('Could not load rundown items', error.message);
+        setIsLoading(false);
+        return;
+      }
+
+      const assigneeIds = [...new Set((rows ?? [])
+        .map((row) => row.assignee_user_id)
+        .filter((id): id is string => Boolean(id)))];
+      const { data: profiles, error: profilesError } = assigneeIds.length
+        ? await supabase.from('profiles').select('id, full_name').in('id', assigneeIds)
+        : { data: [], error: null };
+      if (!active) return;
+      if (profilesError) {
+        showMessage('Could not load rundown assignees', profilesError.message);
+        setIsLoading(false);
+        return;
+      }
+      const names = new Map((profiles ?? []).map((profile) => [profile.id, profile.full_name]));
+      setItems((rows ?? []).map((row) => {
+        const assigneeName: string = row.assignee_user_id ? names.get(row.assignee_user_id) ?? '' : '';
+        return {
+          id: row.id,
+          stepNumber: row.sort_order,
+          title: row.title,
+          startTime: row.start_time?.slice(0, 5).replace(':', '.') ?? '09.00',
+          durationMinutes: row.duration_minutes,
+          description: row.description,
+          assigneeUserId: row.assignee_user_id,
+          assigneeInitials: assigneeName.split(/\s+/).map((part) => part[0] ?? '').join('').slice(0, 2).toUpperCase(),
+          assigneeName: assigneeName || 'Unassigned',
+        };
+      }));
+      setIsLoading(false);
+    };
+    void loadItems().catch((error: unknown) => {
+      if (!active) return;
+      showMessage(
+        'Could not load rundown items',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+      setIsLoading(false);
+    });
+    return () => { active = false; };
+  }, [organizationId, rundown]);
 
   const handleAddItem = () => {
     const nextStep = items.length + 1;
     const newItem: RundownItem = {
-      id: `rd-${Date.now()}`,
+      id: `new-${Date.now()}`,
       stepNumber: nextStep,
-      title: `Agenda Item ${nextStep}`,
-      startTime: '19.45',
+      title: '',
+      startTime: '09.00',
       durationMinutes: 15,
-      description: 'Review updates and next action items.',
-      assigneeInitials: 'AP',
-      assigneeName: 'Alex Pratama',
+      description: '',
+      assigneeInitials: '',
+      assigneeName: 'Unassigned',
     };
-    setItems([...items, newItem]);
+    setItems((current) => [...current, newItem]);
   };
 
   const handleDeleteItem = (id: string) => {
@@ -75,15 +117,127 @@ export function EditRundownScreen({ onBack, onSave }: EditRundownScreenProps) {
     );
   };
 
-  const handleEditItem = (item: RundownItem) => {
-    showMessage('Edit Item', `Editing "${item.title}"`);
+  const updateItem = (id: string, updates: Partial<RundownItem>) => {
+    setItems((current) => current.map((item) => item.id === id ? { ...item, ...updates } : item));
   };
 
-  const handleSaveRundown = () => {
-    showMessage('Rundown Saved', 'All rundown schedule items have been updated successfully.', () => {
-      onSave?.();
-      onBack();
+  const handleSaveRundown = async () => {
+    if (!title.trim()) {
+      showMessage('Title required', 'Enter a title for this rundown.');
+      return;
+    }
+    if (items.some((item) => {
+      const time = /^(\d{2})\.(\d{2})$/.exec(item.startTime);
+      return !item.title.trim()
+        || !time
+        || Number(time[1]) > 23
+        || Number(time[2]) > 59
+        || !Number.isInteger(item.durationMinutes)
+        || item.durationMinutes < 1;
+    })) {
+      showMessage('Check rundown items', 'Each item needs a title, a valid HH.MM time, and a duration of at least one minute.');
+      return;
+    }
+
+    setIsSaving(true);
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      showMessage('Could not save rundown', userError?.message ?? 'Sign in again and retry.');
+      setIsSaving(false);
+      return;
+    }
+
+    const rundownQuery = rundown
+      ? supabase
+          .from('rundowns')
+          .update({ title: title.trim() })
+          .eq('organization_id', organizationId)
+          .eq('id', rundown.id)
+          .select('id, updated_at')
+          .single()
+      : supabase
+          .from('rundowns')
+          .insert({ organization_id: organizationId, title: title.trim(), created_by: user.id })
+          .select('id, updated_at')
+          .single();
+    const { data: savedRundown, error: rundownError } = await rundownQuery;
+    if (rundownError) {
+      showMessage('Could not save rundown', rundownError.message);
+      setIsSaving(false);
+      return;
+    }
+
+    const existingIds = items.filter((item) => !item.id.startsWith('new-')).map((item) => item.id);
+    let removedIds: string[] = [];
+    if (rundown) {
+      const { data: originalItems, error: originalItemsError } = await supabase
+        .from('rundown_items')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .eq('rundown_id', savedRundown.id);
+      if (originalItemsError) {
+        showMessage('Could not load rundown items', originalItemsError.message);
+        setIsSaving(false);
+        return;
+      }
+      removedIds = (originalItems ?? [])
+        .map((item) => item.id)
+        .filter((id) => !existingIds.includes(id));
+    }
+    if (removedIds.length) {
+      const { error } = await supabase
+        .from('rundown_items')
+        .delete()
+        .eq('organization_id', organizationId)
+        .in('id', removedIds);
+      if (error) {
+        showMessage('Could not delete rundown items', error.message);
+        setIsSaving(false);
+        return;
+      }
+    }
+
+    const itemRows = items.map((item, index) => ({
+      ...(item.id.startsWith('new-') ? {} : { id: item.id }),
+      organization_id: organizationId,
+      rundown_id: savedRundown.id,
+      sort_order: index + 1,
+      title: item.title.trim(),
+      start_time: `${item.startTime.replace('.', ':')}:00`,
+      duration_minutes: item.durationMinutes,
+      description: item.description.trim(),
+      assignee_user_id: item.assigneeUserId ?? null,
+    }));
+    if (itemRows.length) {
+      const { error } = await supabase.from('rundown_items').upsert(itemRows, { onConflict: 'id' });
+      if (error) {
+        if (!rundown) {
+          const { error: rollbackError } = await supabase
+            .from('rundowns')
+            .delete()
+            .eq('organization_id', organizationId)
+            .eq('id', savedRundown.id);
+          showMessage(
+            'Could not save rundown items',
+            rollbackError ? `${error.message} The empty rundown could not be removed: ${rollbackError.message}` : error.message,
+          );
+        } else {
+          showMessage('Could not save rundown items', error.message);
+        }
+        setIsSaving(false);
+        return;
+      }
+    }
+
+    onSave({
+      id: savedRundown.id,
+      title: title.trim(),
+      eventDate: rundown?.eventDate ?? 'No event linked',
+      updatedLabel: new Date(savedRundown.updated_at).toLocaleDateString(),
+      itemCount: items.length,
+      accentColor: rundown?.accentColor,
     });
+    setIsSaving(false);
   };
 
   return (
@@ -117,14 +271,20 @@ export function EditRundownScreen({ onBack, onSave }: EditRundownScreenProps) {
         <View style={styles.eventContextCard}>
           <View style={styles.contextRow}>
             <Text style={styles.contextLabel}>Title</Text>
-            <Text style={styles.contextTitleValue}>Volunteer Appreciation Night</Text>
+            <TextInput
+              style={styles.contextTitleValue}
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Rundown title"
+              accessibilityLabel="Rundown title"
+            />
           </View>
           <View style={styles.divider} />
           <View style={styles.contextRow}>
             <Text style={styles.contextLabel}>Event</Text>
             <View>
-              <Text style={styles.eventDateText}>Sat, 24 Oct 2026</Text>
-              <Text style={styles.eventTimeContext}>Optional calendar context · 18.30–21.00</Text>
+              <Text style={styles.eventDateText}>{rundown?.eventDate ?? 'No event linked'}</Text>
+              <Text style={styles.eventTimeContext}>Link an event from Calendar when available.</Text>
             </View>
           </View>
         </View>
@@ -139,6 +299,10 @@ export function EditRundownScreen({ onBack, onSave }: EditRundownScreenProps) {
 
         {/* Items List */}
         <View style={styles.itemsList}>
+          {isLoading && <Text style={styles.itemDescription}>Loading rundown items…</Text>}
+          {!isLoading && items.length === 0 && (
+            <Text style={styles.itemDescription}>No agenda items yet. Add one below.</Text>
+          )}
           {items.map((item) => (
             <View key={item.id} style={styles.itemCard}>
               <View style={styles.itemTopRow}>
@@ -161,48 +325,58 @@ export function EditRundownScreen({ onBack, onSave }: EditRundownScreenProps) {
 
                 {/* Content */}
                 <View style={styles.itemBody}>
-                  <Text style={styles.itemTitle}>{item.title}</Text>
+                  <TextInput
+                    style={styles.itemTitle}
+                    value={item.title}
+                    onChangeText={(value) => updateItem(item.id, { title: value })}
+                    placeholder="Agenda item title"
+                  />
 
                   {/* Time badges */}
                   <View style={styles.timeBadgesRow}>
                     <View style={styles.timeBadgePurple}>
-                      <Text style={styles.timeBadgePurpleText}>{item.startTime}</Text>
+                      <TextInput
+                        style={styles.timeBadgePurpleText}
+                        value={item.startTime}
+                        onChangeText={(value) => updateItem(item.id, { startTime: value })}
+                        placeholder="HH.MM"
+                        keyboardType="numbers-and-punctuation"
+                      />
                     </View>
                     <View style={styles.timeBadgeGrey}>
-                      <Text style={styles.timeBadgeGreyText}>{item.durationMinutes} min</Text>
+                      <TextInput
+                        style={styles.timeBadgeGreyText}
+                        value={String(item.durationMinutes)}
+                        onChangeText={(value) => updateItem(item.id, {
+                          durationMinutes: Number(value.replace(/\D/g, '')) || 0,
+                        })}
+                        placeholder="min"
+                        keyboardType="numeric"
+                      />
                     </View>
                   </View>
 
-                  <Text style={styles.itemDescription}>{item.description}</Text>
+                  <TextInput
+                    style={styles.itemDescription}
+                    value={item.description}
+                    onChangeText={(value) => updateItem(item.id, { description: value })}
+                    placeholder="Agenda notes"
+                    multiline
+                  />
 
                   {/* Assignee */}
                   <View style={styles.assigneeRow}>
-                    <View style={styles.assigneeAvatar}>
-                      <Text style={styles.assigneeInitials}>{item.assigneeInitials}</Text>
-                    </View>
+                    {item.assigneeInitials ? (
+                      <View style={styles.assigneeAvatar}>
+                        <Text style={styles.assigneeInitials}>{item.assigneeInitials}</Text>
+                      </View>
+                    ) : null}
                     <Text style={styles.assigneeName}>{item.assigneeName}</Text>
                   </View>
                 </View>
 
                 {/* Action Buttons */}
                 <View style={styles.actionCol}>
-                  <TouchableOpacity
-                    style={styles.iconCircleBtn}
-                    onPress={() => handleEditItem(item)}
-                    hitSlop={6}
-                  >
-                    <Svg width={13} height={13} viewBox="0 0 24 24">
-                      <Path
-                        d="M17 3A2.828 2.828 0 1 1 21 7L7.5 20.5 2 22l1.5-5.5L17 3z"
-                        fill="none"
-                        stroke="#2D3142"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </Svg>
-                  </TouchableOpacity>
-
                   <TouchableOpacity
                     style={styles.iconCircleBtn}
                     onPress={() => handleDeleteItem(item.id)}
@@ -237,11 +411,16 @@ export function EditRundownScreen({ onBack, onSave }: EditRundownScreenProps) {
           <Text style={styles.cancelBtnText}>Cancel</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSaveRundown} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]}
+          onPress={() => { void handleSaveRundown(); }}
+          disabled={isSaving || isLoading}
+          activeOpacity={0.85}
+        >
           <Svg width={14} height={14} viewBox="0 0 20 20" style={styles.saveCheckIcon}>
             <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
           </Svg>
-          <Text style={styles.saveBtnText}>Save Rundown</Text>
+          <Text style={styles.saveBtnText}>{isSaving ? 'Saving…' : 'Save Rundown'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -513,6 +692,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 2,
+  },
+  saveBtnDisabled: {
+    opacity: 0.6,
   },
   saveCheckIcon: {
     marginRight: 8,

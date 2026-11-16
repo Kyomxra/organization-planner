@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -13,13 +13,21 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
 import { AudienceSelection, NoteAudienceModal } from '../components/NoteAudienceModal';
+import { supabase } from '../../../lib/supabase';
 
 interface NewNoteScreenProps {
+  organizationId: string;
+  organizationName: string;
   onBack: () => void;
   onSaveSuccess?: () => void;
 }
 
-export function NewNoteScreen({ onBack, onSaveSuccess }: NewNoteScreenProps) {
+export function NewNoteScreen({
+  organizationId,
+  organizationName,
+  onBack,
+  onSaveSuccess,
+}: NewNoteScreenProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [audienceText, setAudienceText] = useState('Only Me');
@@ -32,13 +40,96 @@ export function NewNoteScreen({ onBack, onSaveSuccess }: NewNoteScreenProps) {
     isCoordinators: false,
     isAllMembers: false,
   });
+  const [divisions, setDivisions] = useState<{ id: string; name: string }[]>([]);
 
-  const handleSave = () => {
+  useEffect(() => {
+    let active = true;
+    const loadDivisions = async () => {
+      const { data, error } = await supabase
+        .from('divisions')
+        .select('id, name')
+        .eq('organization_id', organizationId)
+        .order('name');
+      if (!active) return;
+      if (error) {
+        showMessage('Could not load divisions', error.message);
+        return;
+      }
+      setDivisions(data ?? []);
+    };
+    void loadDivisions();
+    return () => {
+      active = false;
+    };
+  }, [organizationId]);
+
+  const handleSave = async () => {
     if (!title.trim()) {
       showMessage('Title Required', 'Please enter a title for your note.');
       return;
     }
-    showMessage('Note Saved', `Your note "${title}" has been saved with audience: ${audienceText}.`, () => {
+    if (audienceSelection.isDivision && audienceSelection.selectedDivisions.length === 0) {
+      showMessage('Choose a division', 'Select at least one division or turn off division sharing.');
+      return;
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      showMessage('Could not save note', userError?.message ?? 'Sign in again and retry.');
+      return;
+    }
+
+    const { data: note, error } = await supabase
+      .from('notes')
+      .insert({
+        organization_id: organizationId,
+        author_id: user.id,
+        title: title.trim(),
+        content: content.trim(),
+        share_with_all_members: audienceSelection.isAllMembers,
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      showMessage('Could not save note', error.message);
+      return;
+    }
+
+    const roles = [
+      ...(audienceSelection.isExecutive ? ['executive'] : []),
+      ...(audienceSelection.isCoordinators ? ['coordinator'] : []),
+    ];
+    const audienceWrites = await Promise.all([
+      roles.length
+        ? supabase.from('note_audience_roles').insert(
+            roles.map((role) => ({ organization_id: organizationId, note_id: note.id, role })),
+          )
+        : Promise.resolve({ error: null }),
+      audienceSelection.selectedDivisions.length
+        ? supabase.from('note_audience_divisions').insert(
+            audienceSelection.selectedDivisions.map((divisionId) => ({
+              organization_id: organizationId,
+              note_id: note.id,
+              division_id: divisionId,
+            })),
+          )
+        : Promise.resolve({ error: null }),
+    ]);
+
+    const audienceError = audienceWrites.find((result) => result.error)?.error;
+    if (audienceError) {
+      const { error: rollbackError } = await supabase.from('notes').delete().eq('id', note.id);
+      showMessage(
+        'Could not save note audience',
+        rollbackError
+          ? `${audienceError.message} The note was created but could not be removed; review it in Notes. ${rollbackError.message}`
+          : audienceError.message,
+      );
+      return;
+    }
+
+    showMessage('Note Saved', `Your note "${title.trim()}" is visible to ${audienceText}.`, () => {
       onSaveSuccess?.();
       onBack();
     });
@@ -161,6 +252,8 @@ export function NewNoteScreen({ onBack, onSaveSuccess }: NewNoteScreenProps) {
         visible={isAudienceModalOpen}
         onClose={() => setIsAudienceModalOpen(false)}
         selection={audienceSelection}
+        divisions={divisions}
+        organizationName={organizationName}
         onSave={handleSaveAudience}
       />
     </KeyboardAvoidingView>

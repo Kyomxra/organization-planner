@@ -23,8 +23,8 @@ export function CreateOrganizationScreen({
   onBack,
   onCreateSuccess,
 }: CreateOrganizationScreenProps) {
-  const [orgName, setOrgName] = useState('Organisasi A');
-  const [description, setDescription] = useState('Testing');
+  const [orgName, setOrgName] = useState('');
+  const [description, setDescription] = useState('');
   const [divisions, setDivisions] = useState<string[]>(['Equipment', 'Event']);
   const [newDivisionText, setNewDivisionText] = useState('');
   const [isAddingDivision, setIsAddingDivision] = useState(false);

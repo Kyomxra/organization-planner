@@ -9,6 +9,7 @@ export interface NoteBadge {
 
 export interface NoteItem {
   id: string;
+  authorId: string;
   title: string;
   content: string;
   dateLabel: string;

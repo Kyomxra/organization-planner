@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -6,65 +6,87 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
+import { Rundown, RundownItem } from '../types';
+import { supabase } from '../../../lib/supabase';
 
 interface RundownDetailsScreenProps {
+  organizationId: string;
+  rundown: Rundown;
   onBack: () => void;
   onEdit: () => void;
 }
 
-const timelineData = [
-  {
-    step: 1,
-    title: 'Guest arrival & registration',
-    time: '18.30',
-    duration: '20 min',
-    description: 'Welcome desk opens; distribute name tags and seating cards.',
-    initials: 'MC',
-    responsible: 'Responsible: Maya Chen',
-    isActive: true,
-  },
-  {
-    step: 2,
-    title: 'Opening remarks',
-    time: '18.50',
-    duration: '10 min',
-    description: 'Host welcome, safety note, and overview of the evening.',
-    initials: 'DK',
-    responsible: 'Responsible: Daniel Kim',
-    isActive: false,
-  },
-  {
-    step: 3,
-    title: 'Impact stories',
-    time: '19.00',
-    duration: '35 min',
-    description: 'Three community partners share five-minute stories.',
-    initials: 'PS',
-    responsible: 'Responsible: Priya Shah',
-    isActive: false,
-  },
-  {
-    step: 4,
-    title: 'Volunteer recognition',
-    time: '19.35',
-    duration: '25 min',
-    description: 'Awards, photo moment, and thank-you presentation.',
-    initials: '',
-    responsible: '',
-    isActive: false,
-  },
-];
+export function RundownDetailsScreen({
+  organizationId,
+  rundown,
+  onBack,
+  onEdit,
+}: RundownDetailsScreenProps) {
+  const [items, setItems] = useState<RundownItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export function RundownDetailsScreen({ onBack, onEdit }: RundownDetailsScreenProps) {
-  const handleMenuOptions = () => {
-    showMessage('Rundown Options', 'Export as PDF, share via link, or duplicate rundown.');
-  };
+  useEffect(() => {
+    let active = true;
+    const loadItems = async () => {
+      const { data: rows, error } = await supabase
+        .from('rundown_items')
+        .select('id, sort_order, title, start_time, duration_minutes, description, assignee_user_id')
+        .eq('organization_id', organizationId)
+        .eq('rundown_id', rundown.id)
+        .order('sort_order');
+      if (!active) return;
+      if (error) {
+        showMessage('Could not load rundown items', error.message);
+        setIsLoading(false);
+        return;
+      }
 
-  const handleStepPress = (item: (typeof timelineData)[0]) => {
-    showMessage(item.title, `${item.time} (${item.duration})\n${item.description}`);
+      const assigneeIds = [...new Set((rows ?? [])
+        .map((row) => row.assignee_user_id)
+        .filter((id): id is string => Boolean(id)))];
+      const { data: profiles, error: profilesError } = assigneeIds.length
+        ? await supabase.from('profiles').select('id, full_name').in('id', assigneeIds)
+        : { data: [], error: null };
+      if (!active) return;
+      if (profilesError) {
+        showMessage('Could not load rundown assignees', profilesError.message);
+        setIsLoading(false);
+        return;
+      }
+      const names = new Map((profiles ?? []).map((profile) => [profile.id, profile.full_name]));
+      setItems((rows ?? []).map((row) => {
+        const assigneeName: string = row.assignee_user_id ? names.get(row.assignee_user_id) ?? '' : '';
+        return {
+          id: row.id,
+          stepNumber: row.sort_order,
+          title: row.title,
+          startTime: row.start_time?.slice(0, 5).replace(':', '.') ?? '—',
+          durationMinutes: row.duration_minutes,
+          description: row.description,
+          assigneeUserId: row.assignee_user_id,
+          assigneeInitials: assigneeName.split(/\s+/).map((part) => part[0] ?? '').join('').slice(0, 2).toUpperCase(),
+          assigneeName,
+        };
+      }));
+      setIsLoading(false);
+    };
+    void loadItems().catch((error: unknown) => {
+      if (!active) return;
+      showMessage(
+        'Could not load rundown items',
+        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      );
+      setIsLoading(false);
+    });
+    return () => { active = false; };
+  }, [organizationId, rundown.id]);
+
+  const totalMinutes = items.reduce((sum, item) => sum + item.durationMinutes, 0);
+  const handleStepPress = (item: RundownItem) => {
+    showMessage(item.title, `${item.startTime} (${item.durationMinutes} min)\n${item.description}`);
   };
 
   return (
@@ -85,8 +107,7 @@ export function RundownDetailsScreen({ onBack, onEdit }: RundownDetailsScreenPro
             </Svg>
           </TouchableOpacity>
           <View>
-            <Text style={styles.headerTitle}>Volunteer</Text>
-            <Text style={styles.headerTitle}>Appreciation</Text>
+            <Text style={styles.headerTitle}>{rundown.title}</Text>
             <Text style={styles.headerSub}>Rundown details</Text>
           </View>
         </View>
@@ -106,13 +127,6 @@ export function RundownDetailsScreen({ onBack, onEdit }: RundownDetailsScreenPro
             <Text style={styles.editBtnText}>Edit</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuCircleBtn} onPress={handleMenuOptions} hitSlop={8}>
-            <Svg width={16} height={16} viewBox="0 0 24 24">
-              <Circle cx="5" cy="12" r="2" fill="#2D3142" />
-              <Circle cx="12" cy="12" r="2" fill="#2D3142" />
-              <Circle cx="19" cy="12" r="2" fill="#2D3142" />
-            </Svg>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -124,30 +138,36 @@ export function RundownDetailsScreen({ onBack, onEdit }: RundownDetailsScreenPro
         {/* Banner Card */}
         <View style={styles.bannerCard}>
           <View style={styles.bannerDateBadge}>
-            <Text style={styles.bannerMonthText}>OCT</Text>
-            <Text style={styles.bannerDayText}>24</Text>
+            <Text style={styles.bannerMonthText}>ITEMS</Text>
+            <Text style={styles.bannerDayText}>{items.length}</Text>
           </View>
           <View style={styles.bannerInfo}>
-            <Text style={styles.bannerTitle}>Volunteer Appreciation Night</Text>
-            <Text style={styles.bannerTimePlace}>18.30–21.00 · Grand Hall</Text>
-            <Text style={styles.bannerMeta}>8 activities · 2 hr 30 min</Text>
+            <Text style={styles.bannerTitle}>{rundown.title}</Text>
+            <Text style={styles.bannerTimePlace}>{rundown.eventDate}</Text>
+            <Text style={styles.bannerMeta}>
+              {items.length} agenda item{items.length === 1 ? '' : 's'} · {totalMinutes} min
+            </Text>
           </View>
         </View>
 
         {/* Timeline Header */}
         <View style={styles.timelineHeader}>
-          <Text style={styles.timelineHeading}>Evening timeline</Text>
-          <Text style={styles.readyText}>Ready to share</Text>
+          <Text style={styles.timelineHeading}>Agenda timeline</Text>
+          <Text style={styles.readyText}>Saved</Text>
         </View>
 
         {/* Connected Vertical Timeline */}
         <View style={styles.timelineContainer}>
-          {timelineData.map((item, index) => {
-            const isLast = index === timelineData.length - 1;
-            const isStepOne = item.step === 1;
+          {isLoading ? (
+            <Text style={styles.readyText}>Loading agenda…</Text>
+          ) : items.length === 0 ? (
+            <Text style={styles.readyText}>No agenda items yet. Edit this rundown to add items.</Text>
+          ) : items.map((item, index) => {
+            const isLast = index === items.length - 1;
+            const isStepOne = index === 0;
 
             return (
-              <View key={item.step} style={styles.timelineItemRow}>
+              <View key={item.id} style={styles.timelineItemRow}>
                 {/* Left Node Column (Number Circle + Vertical Line) */}
                 <View style={styles.nodeColumn}>
                   <View
@@ -162,7 +182,7 @@ export function RundownDetailsScreen({ onBack, onEdit }: RundownDetailsScreenPro
                         isStepOne ? styles.nodeNumberActive : styles.nodeNumberInactive,
                       ]}
                     >
-                      {item.step}
+                      {item.stepNumber}
                     </Text>
                   </View>
 
@@ -193,18 +213,18 @@ export function RundownDetailsScreen({ onBack, onEdit }: RundownDetailsScreenPro
                   </View>
 
                   <View style={styles.timePillRow}>
-                    <Text style={styles.timeText}>{item.time}</Text>
-                    <Text style={styles.durationText}>{item.duration}</Text>
+                    <Text style={styles.timeText}>{item.startTime}</Text>
+                    <Text style={styles.durationText}>{item.durationMinutes} min</Text>
                   </View>
 
                   <Text style={styles.cardDescription}>{item.description}</Text>
 
-                  {item.initials ? (
+                  {item.assigneeName ? (
                     <View style={styles.responsibleRow}>
                       <View style={styles.responsibleAvatar}>
-                        <Text style={styles.responsibleInitials}>{item.initials}</Text>
+                        <Text style={styles.responsibleInitials}>{item.assigneeInitials}</Text>
                       </View>
-                      <Text style={styles.responsibleName}>{item.responsible}</Text>
+                      <Text style={styles.responsibleName}>Responsible: {item.assigneeName}</Text>
                     </View>
                   ) : null}
                 </TouchableOpacity>

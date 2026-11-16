@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -9,23 +9,27 @@ import {
 import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
+import { supabase } from '../../../lib/supabase';
+import { formatLocalDate } from '../../../lib/date';
 
 interface DashboardHomeScreenProps {
-  organizationName?: string;
+  organizationId: string;
+  organizationName: string;
   onBackToOrgList: () => void;
-  onOpenCalendar?: () => void;
-  onOpenDivisions?: () => void;
-  onOpenProfile?: () => void;
-  onOpenInvites?: () => void;
-  onOpenRundown?: () => void;
-  onOpenBudgeting?: () => void;
-  onOpenAddExpense?: () => void;
-  onOpenNotes?: () => void;
-  onOpenNotifications?: () => void;
+  onOpenCalendar: () => void;
+  onOpenDivisions: () => void;
+  onOpenProfile: () => void;
+  onOpenInvites: () => void;
+  onOpenRundown: () => void;
+  onOpenBudgeting: () => void;
+  onOpenAddExpense: () => void;
+  onOpenNotes: () => void;
+  onOpenNotifications: () => void;
 }
 
 export function DashboardHomeScreen({
-  organizationName = 'Organization A',
+  organizationId,
+  organizationName,
   onBackToOrgList,
   onOpenCalendar,
   onOpenDivisions,
@@ -38,41 +42,119 @@ export function DashboardHomeScreen({
   onOpenNotifications,
 }: DashboardHomeScreenProps) {
   const [activeTab, setActiveTab] = useState<'home' | 'calendar' | 'divisions' | 'profile'>('home');
+  const [nextActivity, setNextActivity] = useState<{ title: string; date: string } | null>(null);
+  const [budgetSummary, setBudgetSummary] = useState({ income: 0, expenses: 0, pending: 0 });
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    const loadDashboardData = async () => {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const [eventResult, transactionResult, notificationResult] = await Promise.all([
+        supabase
+          .from('events')
+          .select('title, start_at')
+          .eq('organization_id', organizationId)
+          .gte('start_at', now.toISOString())
+          .order('start_at')
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('transactions')
+          .select('type, amount, status')
+          .eq('organization_id', organizationId)
+          .gte('occurred_on', formatLocalDate(monthStart))
+          .lt('occurred_on', formatLocalDate(nextMonthStart)),
+        supabase
+          .from('notifications')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .is('read_at', null),
+      ]);
+
+      if (!active) return;
+      if (eventResult.error || transactionResult.error || notificationResult.error) {
+        showMessage(
+          'Could not load dashboard',
+          eventResult.error?.message
+            ?? transactionResult.error?.message
+            ?? notificationResult.error?.message
+            ?? 'Could not load organization data.',
+        );
+        return;
+      }
+
+      const visibleTransactions = transactionResult.data ?? [];
+      setNextActivity(eventResult.data ? {
+        title: eventResult.data.title,
+        date: new Date(eventResult.data.start_at).toLocaleString(undefined, {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        }),
+      } : null);
+      setBudgetSummary({
+        income: visibleTransactions
+          .filter((item) => item.type === 'income' && item.status === 'approved')
+          .reduce((sum, item) => sum + Number(item.amount), 0),
+        expenses: visibleTransactions
+          .filter((item) => item.type === 'expense' && item.status !== 'rejected')
+          .reduce((sum, item) => sum + Number(item.amount), 0),
+        pending: visibleTransactions.filter((item) => item.status === 'pending').length,
+      });
+      setUnreadNotifications(notificationResult.data?.length ?? 0);
+    };
+
+    void loadDashboardData().catch((error: unknown) => {
+      if (active) {
+        showMessage(
+          'Could not load dashboard',
+          error instanceof Error ? error.message : 'Could not connect to Supabase.',
+        );
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [organizationId]);
+
+  const availableBudget = budgetSummary.income - budgetSummary.expenses;
+  const spentPercentage = budgetSummary.income > 0
+    ? Math.round((budgetSummary.expenses / budgetSummary.income) * 100)
+    : 0;
+  const money = (amount: number) => amount.toLocaleString('id-ID');
 
   const handleQuickAccess = (name: string) => {
     if (name === 'Rundown') {
-      onOpenRundown?.();
+      onOpenRundown();
       return;
     }
     if (name === 'Notes') {
-      onOpenNotes?.();
+      onOpenNotes();
       return;
     }
     if (name === 'Divisions') {
-      onOpenDivisions?.();
+      onOpenDivisions();
       return;
     }
     if (name === 'Budgeting') {
-      onOpenBudgeting?.();
-      return;
+      onOpenBudgeting();
     }
-    showMessage(name, `${name} feature for ${organizationName} is ready for integration.`);
   };
 
   const handleBudgetAction = (action: string) => {
     if (action === 'Add Expense') {
-      if (onOpenAddExpense) {
-        onOpenAddExpense();
-      } else {
-        onOpenBudgeting?.();
-      }
+      onOpenAddExpense();
       return;
     }
     if (action === 'View Details' || action === 'Pending Transactions') {
-      onOpenBudgeting?.();
-      return;
+      onOpenBudgeting();
     }
-    showMessage(action, `${action} triggered. Connect financial module to manage transactions.`);
   };
 
   return (
@@ -101,7 +183,7 @@ export function DashboardHomeScreen({
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.headerIconBtn}
-            onPress={() => onOpenInvites ? onOpenInvites() : handleQuickAccess('Share Organization')}
+            onPress={onOpenInvites}
             hitSlop={8}
           >
             <Svg width={18} height={18} viewBox="0 0 24 24">
@@ -111,10 +193,9 @@ export function DashboardHomeScreen({
               <Path d="M8.59 13.51L15.42 17.49M15.41 6.51L8.59 10.49" stroke="#2D3142" strokeWidth={1.8} />
             </Svg>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.headerIconBtn}
-            onPress={() => onOpenNotifications ? onOpenNotifications() : handleQuickAccess('Notifications')}
+            onPress={onOpenNotifications}
             hitSlop={8}
           >
             <Svg width={18} height={18} viewBox="0 0 24 24">
@@ -134,8 +215,7 @@ export function DashboardHomeScreen({
                 strokeLinejoin="round"
               />
             </Svg>
-            {/* Unread Notification Badge */}
-            <View style={styles.notifBadge} />
+            {unreadNotifications > 0 && <View style={styles.notifBadge} />}
           </TouchableOpacity>
         </View>
       </View>
@@ -165,8 +245,12 @@ export function DashboardHomeScreen({
             </View>
 
             {/* Title & Date */}
-            <Text style={styles.reminderTitle}>Meeting for Pleno 1</Text>
-            <Text style={styles.reminderDate}>5 Oct 2026 - 21.00</Text>
+            <Text style={styles.reminderTitle}>
+              {nextActivity?.title ?? 'No upcoming activities'}
+            </Text>
+            <Text style={styles.reminderDate}>
+              {nextActivity?.date ?? 'Create an event in Calendar to see it here.'}
+            </Text>
           </View>
 
           {/* Decorative Background Circles */}
@@ -277,33 +361,38 @@ export function DashboardHomeScreen({
               <Text style={styles.budgetTitle}>Budgeting</Text>
             </View>
             <View style={styles.octBadge}>
-              <Text style={styles.octBadgeText}>OCT 2026</Text>
+              <Text style={styles.octBadgeText}>
+                {new Date().toLocaleDateString(undefined, {
+                  month: 'short',
+                  year: 'numeric',
+                }).toUpperCase()}
+              </Text>
             </View>
           </View>
 
           {/* Amount */}
           <Text style={styles.budgetSubLabel}>Total Budget Available</Text>
-          <Text style={styles.budgetAmount}>Rp8.750.000</Text>
+          <Text style={styles.budgetAmount}>Rp{money(Math.max(availableBudget, 0))}</Text>
 
           {/* Revenue & Expenditures Row */}
           <View style={styles.statsRow}>
             <View>
               <Text style={styles.statLabel}>Revenue</Text>
-              <Text style={styles.revenueText}>+ Rp12,5 jt</Text>
+              <Text style={styles.revenueText}>+ Rp{money(budgetSummary.income)}</Text>
             </View>
             <View>
               <Text style={styles.statLabel}>Expenditures</Text>
-              <Text style={styles.expenditureText}>- Rp3,75 jt</Text>
+              <Text style={styles.expenditureText}>- Rp{money(budgetSummary.expenses)}</Text>
             </View>
           </View>
 
           {/* Progress Bar */}
           <View style={styles.progressRow}>
             <Text style={styles.progressLabel}>Budget Spent</Text>
-            <Text style={styles.progressPercentage}>30%</Text>
+            <Text style={styles.progressPercentage}>{spentPercentage}%</Text>
           </View>
           <View style={styles.progressBarTrack}>
-            <View style={[styles.progressBarFill, { width: '30%' }]} />
+            <View style={[styles.progressBarFill, { width: `${Math.min(spentPercentage, 100)}%` }]} />
           </View>
 
           {/* Action Buttons Row */}
@@ -339,7 +428,9 @@ export function DashboardHomeScreen({
               <Path d="M12 8V12M12 16H12.01" stroke="#E87A35" strokeWidth={2.4} strokeLinecap="round" />
             </Svg>
             <Text style={styles.pendingText}>
-              Pending transactions require review
+              {budgetSummary.pending
+                ? `${budgetSummary.pending} transaction${budgetSummary.pending === 1 ? '' : 's'} pending review`
+                : 'No transactions pending review'}
             </Text>
             <Text style={styles.pendingChevron}>&gt;</Text>
           </TouchableOpacity>
@@ -353,7 +444,7 @@ export function DashboardHomeScreen({
           style={styles.tabItem}
           onPress={() => {
             setActiveTab('calendar');
-            onOpenCalendar?.();
+            onOpenCalendar();
           }}
           activeOpacity={0.7}
         >
@@ -388,7 +479,7 @@ export function DashboardHomeScreen({
           style={styles.tabItem}
           onPress={() => {
             setActiveTab('divisions');
-            onOpenDivisions?.();
+            onOpenDivisions();
           }}
           activeOpacity={0.7}
         >
@@ -406,7 +497,7 @@ export function DashboardHomeScreen({
           style={styles.tabItem}
           onPress={() => {
             setActiveTab('profile');
-            onOpenProfile?.();
+            onOpenProfile();
           }}
           activeOpacity={0.7}
         >
