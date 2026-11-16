@@ -10,9 +10,9 @@ import {
 import Svg, { Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { Rundown } from '../types';
-import { mockRundowns } from '../data/mockRundowns';
 
 interface RundownListScreenProps {
+  rundowns: Rundown[];
   onBack: () => void;
   onOpenRundown: (rundown: Rundown) => void;
   onCreateRundown: () => void;
@@ -20,9 +20,18 @@ interface RundownListScreenProps {
 
 function RundownIcon({ accentColor = '#6C63FF' }: { accentColor?: string }) {
   return (
-    <View style={[styles.rdIcon, { backgroundColor: accentColor + '1A' }]}>
+    <View style={[styles.rdIcon, { backgroundColor: `${accentColor}1A` }]}>
       <Svg width={22} height={22} viewBox="0 0 24 24">
-        <Rect x="3" y="3" width="18" height="18" rx="4" stroke={accentColor} strokeWidth={2} fill="none" />
+        <Rect
+          x="3"
+          y="3"
+          width="18"
+          height="18"
+          rx="4"
+          stroke={accentColor}
+          strokeWidth={2}
+          fill="none"
+        />
         <Path
           d="M7 8h3M7 12h3M7 16h3M13 8h4M13 12h4M13 16h4"
           stroke={accentColor}
@@ -49,22 +58,21 @@ function RundownIcon({ accentColor = '#6C63FF' }: { accentColor?: string }) {
 }
 
 export function RundownListScreen({
+  rundowns,
   onBack,
   onOpenRundown,
   onCreateRundown,
 }: RundownListScreenProps) {
-  const [rundowns] = useState<Rundown[]>(mockRundowns);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filtered = rundowns.filter((r) =>
-    r.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  const filtered = rundowns.filter((rundown) =>
+    rundown.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const isEmpty = rundowns.length === 0;
 
   return (
     <View style={styles.root}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={10}>
           <Svg width={20} height={20} viewBox="0 0 24 24">
@@ -78,6 +86,7 @@ export function RundownListScreen({
             />
           </Svg>
         </TouchableOpacity>
+
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Rundown Maker</Text>
           <Text style={styles.headerSub}>
@@ -86,6 +95,7 @@ export function RundownListScreen({
               : `Organization A · ${rundowns.length} saved rundowns`}
           </Text>
         </View>
+
         <TouchableOpacity style={styles.filterBtn} hitSlop={10}>
           <Svg width={20} height={20} viewBox="0 0 24 24">
             <Path
@@ -98,10 +108,14 @@ export function RundownListScreen({
         </TouchableOpacity>
       </View>
 
-      {/* Search */}
       <View style={styles.searchRow}>
         <View style={styles.searchBar}>
-          <Svg width={16} height={16} viewBox="0 0 24 24" style={styles.searchIcon}>
+          <Svg
+            width={16}
+            height={16}
+            viewBox="0 0 24 24"
+            style={styles.searchIcon}
+          >
             <Path
               d="M21 21L16.5 16.5M19 11A8 8 0 1 1 3 11a8 8 0 0 1 16 0Z"
               stroke={colors.muted}
@@ -110,6 +124,7 @@ export function RundownListScreen({
               fill="none"
             />
           </Svg>
+
           <TextInput
             style={styles.searchInput}
             placeholder="Search rundowns"
@@ -118,6 +133,7 @@ export function RundownListScreen({
             onChangeText={setSearchQuery}
           />
         </View>
+
         <TouchableOpacity style={styles.filterSmallBtn} hitSlop={8}>
           <Svg width={16} height={16} viewBox="0 0 24 24">
             <Path
@@ -131,41 +147,81 @@ export function RundownListScreen({
       </View>
 
       {isEmpty ? (
-        /* ── EMPTY STATE ── */
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIllustration}>
             <View style={styles.emptyDocBg} />
             <View style={styles.emptyDoc}>
               <Svg width={44} height={44} viewBox="0 0 48 48">
-                <Rect x="6" y="4" width="36" height="40" rx="5" fill="#EEEAFF" stroke={colors.primary} strokeWidth={2} />
-                <Path d="M14 16h8M14 22h20M14 28h20M14 34h14" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
-                <Path d="M22 12l2-2 2 2" stroke={colors.primary} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <Path d="M22 12l2 3 2-3" stroke={colors.primary} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <Rect
+                  x="6"
+                  y="4"
+                  width="36"
+                  height="40"
+                  rx="5"
+                  fill="#EEEAFF"
+                  stroke={colors.primary}
+                  strokeWidth={2}
+                />
+                <Path
+                  d="M14 16h8M14 22h20M14 28h20M14 34h14"
+                  stroke={colors.primary}
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                />
+                <Path
+                  d="M22 12l2-2 2 2"
+                  stroke={colors.primary}
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+                <Path
+                  d="M22 12l2 3 2-3"
+                  stroke={colors.primary}
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
               </Svg>
             </View>
           </View>
+
           <Text style={styles.emptyTitle}>Plan the day, together</Text>
           <Text style={styles.emptySubtitle}>
-            Create a clear, timed agenda so every{'\n'}committee member knows what happens next.
+            Create a clear, timed agenda so every{'\n'}
+            committee member knows what happens next.
           </Text>
-          <TouchableOpacity style={styles.createFirstBtn} onPress={onCreateRundown} activeOpacity={0.85}>
-            <Text style={styles.createFirstBtnText}>+ Create Your First Rundown</Text>
+
+          <TouchableOpacity
+            style={styles.createFirstBtn}
+            onPress={onCreateRundown}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.createFirstBtnText}>
+              + Create Your First Rundown
+            </Text>
           </TouchableOpacity>
-          <Text style={styles.calendarHint}>You can also attach a rundown from Calendar.</Text>
+
+          <Text style={styles.calendarHint}>
+            You can also attach a rundown from Calendar.
+          </Text>
         </View>
       ) : (
-        /* ── LIST STATE ── */
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Create New Button */}
-          <TouchableOpacity style={styles.createNewBtn} onPress={onCreateRundown} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.createNewBtn}
+            onPress={onCreateRundown}
+            activeOpacity={0.85}
+          >
             <Text style={styles.createNewBtnText}>+ Create New Rundown</Text>
           </TouchableOpacity>
 
-          {/* List Section */}
           <View style={styles.listSection}>
             <Text style={styles.listSectionTitle}>Your rundowns</Text>
             <TouchableOpacity hitSlop={8}>
@@ -183,28 +239,58 @@ export function RundownListScreen({
               <RundownIcon accentColor={rundown.accentColor} />
 
               <View style={styles.cardInfo}>
-                <Text style={styles.cardTitle} numberOfLines={1}>{rundown.title}</Text>
+                <Text style={styles.cardTitle} numberOfLines={1}>
+                  {rundown.title}
+                </Text>
+
                 <View style={styles.cardMeta}>
-                  <Svg width={12} height={12} viewBox="0 0 24 24" style={{ marginRight: 4 }}>
-                    <Rect x="3" y="4" width="18" height="18" rx="3" stroke={colors.muted} strokeWidth={2} fill="none" />
-                    <Path d="M16 2V6M8 2V6M3 10H21" stroke={colors.muted} strokeWidth={2} strokeLinecap="round" />
+                  <Svg
+                    width={12}
+                    height={12}
+                    viewBox="0 0 24 24"
+                    style={{ marginRight: 4 }}
+                  >
+                    <Rect
+                      x="3"
+                      y="4"
+                      width="18"
+                      height="18"
+                      rx="3"
+                      stroke={colors.muted}
+                      strokeWidth={2}
+                      fill="none"
+                    />
+                    <Path
+                      d="M16 2V6M8 2V6M3 10H21"
+                      stroke={colors.muted}
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                    />
                   </Svg>
                   <Text style={styles.cardDate}>{rundown.eventDate}</Text>
                 </View>
+
                 <Text style={styles.cardUpdated}>
                   Updated {rundown.updatedLabel}
                   {'  ·  '}
-                  <Text style={styles.cardItemCount}>{rundown.itemCount} items</Text>
+                  <Text style={styles.cardItemCount}>
+                    {rundown.itemCount} items
+                  </Text>
                 </Text>
               </View>
 
-              {/* Three-dot menu */}
               <TouchableOpacity style={styles.dotMenu} hitSlop={10}>
                 <Text style={styles.dotMenuText}>⋮</Text>
               </TouchableOpacity>
 
               <Svg width={14} height={14} viewBox="0 0 20 20">
-                <Path d="M7 4L13 10L7 16" fill="none" stroke="#C0C3D4" strokeWidth={2} strokeLinecap="round" />
+                <Path
+                  d="M7 4L13 10L7 16"
+                  fill="none"
+                  stroke="#C0C3D4"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                />
               </Svg>
             </TouchableOpacity>
           ))}
@@ -280,7 +366,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 44,
   },
-  searchIcon: { marginRight: 8 },
+  searchIcon: {
+    marginRight: 8,
+  },
   searchInput: {
     flex: 1,
     fontSize: 13,
@@ -298,8 +386,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  /* ── EMPTY ── */
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
@@ -370,9 +456,9 @@ const styles = StyleSheet.create({
     color: colors.muted,
     textAlign: 'center',
   },
-
-  /* ── LIST ── */
-  scroll: { flex: 1 },
+  scroll: {
+    flex: 1,
+  },
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 40,

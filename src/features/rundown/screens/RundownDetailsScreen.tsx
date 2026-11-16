@@ -6,73 +6,47 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
+import { Rundown, RundownItem } from '../types';
 
 interface RundownDetailsScreenProps {
+  rundown: Rundown | null;
+  items: RundownItem[];
   onBack: () => void;
   onEdit: () => void;
 }
 
-const timelineData = [
-  {
-    step: 1,
-    title: 'Guest arrival & registration',
-    time: '18.30',
-    duration: '20 min',
-    description: 'Welcome desk opens; distribute name tags and seating cards.',
-    initials: 'MC',
-    responsible: 'Responsible: Maya Chen',
-    isActive: true,
-  },
-  {
-    step: 2,
-    title: 'Opening remarks',
-    time: '18.50',
-    duration: '10 min',
-    description: 'Host welcome, safety note, and overview of the evening.',
-    initials: 'DK',
-    responsible: 'Responsible: Daniel Kim',
-    isActive: false,
-  },
-  {
-    step: 3,
-    title: 'Impact stories',
-    time: '19.00',
-    duration: '35 min',
-    description: 'Three community partners share five-minute stories.',
-    initials: 'PS',
-    responsible: 'Responsible: Priya Shah',
-    isActive: false,
-  },
-  {
-    step: 4,
-    title: 'Volunteer recognition',
-    time: '19.35',
-    duration: '25 min',
-    description: 'Awards, photo moment, and thank-you presentation.',
-    initials: '',
-    responsible: '',
-    isActive: false,
-  },
-];
-
-export function RundownDetailsScreen({ onBack, onEdit }: RundownDetailsScreenProps) {
+export function RundownDetailsScreen({
+  rundown,
+  items,
+  onBack,
+  onEdit,
+}: RundownDetailsScreenProps) {
   const handleMenuOptions = () => {
-    showMessage('Rundown Options', 'Export as PDF, share via link, or duplicate rundown.');
+    showMessage(
+      'Rundown Options',
+      'Export as PDF, share via link, or duplicate rundown.',
+    );
   };
 
-  const handleStepPress = (item: (typeof timelineData)[0]) => {
-    showMessage(item.title, `${item.time} (${item.duration})\n${item.description}`);
+  const handleStepPress = (item: RundownItem) => {
+    showMessage(
+      item.title,
+      `${item.startTime} (${item.durationMinutes} min)\n${item.description}`,
+    );
   };
 
   return (
     <View style={styles.root}>
-      {/* Top Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={10}>
+          <TouchableOpacity
+            onPress={onBack}
+            style={styles.backBtn}
+            hitSlop={10}
+          >
             <Svg width={20} height={20} viewBox="0 0 24 24">
               <Path
                 d="M15 18L9 12L15 6"
@@ -84,16 +58,27 @@ export function RundownDetailsScreen({ onBack, onEdit }: RundownDetailsScreenPro
               />
             </Svg>
           </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>Volunteer</Text>
-            <Text style={styles.headerTitle}>Appreciation</Text>
+
+          <View style={styles.titleContainer}>
+            <Text style={styles.headerTitle} numberOfLines={2}>
+              {rundown?.title ?? 'Untitled Rundown'}
+            </Text>
             <Text style={styles.headerSub}>Rundown details</Text>
           </View>
         </View>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.editBtn} onPress={onEdit} activeOpacity={0.8}>
-            <Svg width={14} height={14} viewBox="0 0 24 24" style={styles.editIcon}>
+          <TouchableOpacity
+            style={styles.editBtn}
+            onPress={onEdit}
+            activeOpacity={0.8}
+          >
+            <Svg
+              width={14}
+              height={14}
+              viewBox="0 0 24 24"
+              style={styles.editIcon}
+            >
               <Path
                 d="M17 3A2.828 2.828 0 1 1 21 7L7.5 20.5 2 22l1.5-5.5L17 3z"
                 fill="none"
@@ -106,7 +91,11 @@ export function RundownDetailsScreen({ onBack, onEdit }: RundownDetailsScreenPro
             <Text style={styles.editBtnText}>Edit</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuCircleBtn} onPress={handleMenuOptions} hitSlop={8}>
+          <TouchableOpacity
+            style={styles.menuCircleBtn}
+            onPress={handleMenuOptions}
+            hitSlop={8}
+          >
             <Svg width={16} height={16} viewBox="0 0 24 24">
               <Circle cx="5" cy="12" r="2" fill="#2D3142" />
               <Circle cx="12" cy="12" r="2" fill="#2D3142" />
@@ -121,97 +110,128 @@ export function RundownDetailsScreen({ onBack, onEdit }: RundownDetailsScreenPro
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Banner Card */}
         <View style={styles.bannerCard}>
           <View style={styles.bannerDateBadge}>
-            <Text style={styles.bannerMonthText}>OCT</Text>
-            <Text style={styles.bannerDayText}>24</Text>
+            <Text style={styles.bannerMonthText}>RUNDOWN</Text>
+            <Text style={styles.bannerDayText}>{items.length}</Text>
           </View>
+
           <View style={styles.bannerInfo}>
-            <Text style={styles.bannerTitle}>Volunteer Appreciation Night</Text>
-            <Text style={styles.bannerTimePlace}>18.30–21.00 · Grand Hall</Text>
-            <Text style={styles.bannerMeta}>8 activities · 2 hr 30 min</Text>
+            <Text style={styles.bannerTitle} numberOfLines={2}>
+              {rundown?.title ?? 'Untitled Rundown'}
+            </Text>
+            <Text style={styles.bannerTimePlace}>
+              {rundown?.eventDate ?? 'No event selected'}
+            </Text>
+            <Text style={styles.bannerMeta}>
+              {items.length} {items.length === 1 ? 'activity' : 'activities'}
+            </Text>
           </View>
         </View>
 
-        {/* Timeline Header */}
         <View style={styles.timelineHeader}>
           <Text style={styles.timelineHeading}>Evening timeline</Text>
           <Text style={styles.readyText}>Ready to share</Text>
         </View>
 
-        {/* Connected Vertical Timeline */}
-        <View style={styles.timelineContainer}>
-          {timelineData.map((item, index) => {
-            const isLast = index === timelineData.length - 1;
-            const isStepOne = item.step === 1;
+        {items.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No rundown items yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Tap Edit to add the first activity to this rundown.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.timelineContainer}>
+            {items.map((item, index) => {
+              const isLast = index === items.length - 1;
+              const isFirst = item.stepNumber === 1;
 
-            return (
-              <View key={item.step} style={styles.timelineItemRow}>
-                {/* Left Node Column (Number Circle + Vertical Line) */}
-                <View style={styles.nodeColumn}>
-                  <View
-                    style={[
-                      styles.nodeCircle,
-                      isStepOne ? styles.nodeCircleActive : styles.nodeCircleInactive,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.nodeNumber,
-                        isStepOne ? styles.nodeNumberActive : styles.nodeNumberInactive,
-                      ]}
-                    >
-                      {item.step}
-                    </Text>
-                  </View>
-
-                  {!isLast && (
+              return (
+                <View key={item.id} style={styles.timelineItemRow}>
+                  <View style={styles.nodeColumn}>
                     <View
                       style={[
-                        styles.verticalLine,
-                        isStepOne ? styles.lineOrange : styles.lineLight,
+                        styles.nodeCircle,
+                        isFirst
+                          ? styles.nodeCircleActive
+                          : styles.nodeCircleInactive,
                       ]}
-                    />
-                  )}
-                </View>
-
-                {/* Right Card */}
-                <TouchableOpacity
-                  style={[
-                    styles.timelineCard,
-                    isStepOne && styles.timelineCardActive,
-                  ]}
-                  onPress={() => handleStepPress(item)}
-                  activeOpacity={0.88}
-                >
-                  <View style={styles.cardHeaderRow}>
-                    <Text style={styles.cardTitle}>{item.title}</Text>
-                    <Svg width={14} height={14} viewBox="0 0 20 20">
-                      <Path d="M7 4L13 10L7 16" fill="none" stroke="#8A8C9F" strokeWidth={2} strokeLinecap="round" />
-                    </Svg>
-                  </View>
-
-                  <View style={styles.timePillRow}>
-                    <Text style={styles.timeText}>{item.time}</Text>
-                    <Text style={styles.durationText}>{item.duration}</Text>
-                  </View>
-
-                  <Text style={styles.cardDescription}>{item.description}</Text>
-
-                  {item.initials ? (
-                    <View style={styles.responsibleRow}>
-                      <View style={styles.responsibleAvatar}>
-                        <Text style={styles.responsibleInitials}>{item.initials}</Text>
-                      </View>
-                      <Text style={styles.responsibleName}>{item.responsible}</Text>
+                    >
+                      <Text
+                        style={[
+                          styles.nodeNumber,
+                          isFirst
+                            ? styles.nodeNumberActive
+                            : styles.nodeNumberInactive,
+                        ]}
+                      >
+                        {item.stepNumber}
+                      </Text>
                     </View>
-                  ) : null}
-                </TouchableOpacity>
-              </View>
-            );
-          })}
-        </View>
+
+                    {!isLast && (
+                      <View
+                        style={[
+                          styles.verticalLine,
+                          isFirst ? styles.lineOrange : styles.lineLight,
+                        ]}
+                      />
+                    )}
+                  </View>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.timelineCard,
+                      isFirst && styles.timelineCardActive,
+                    ]}
+                    onPress={() => handleStepPress(item)}
+                    activeOpacity={0.88}
+                  >
+                    <View style={styles.cardHeaderRow}>
+                      <Text style={styles.cardTitle}>{item.title}</Text>
+                      <Svg width={14} height={14} viewBox="0 0 20 20">
+                        <Path
+                          d="M7 4L13 10L7 16"
+                          fill="none"
+                          stroke="#8A8C9F"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                        />
+                      </Svg>
+                    </View>
+
+                    <View style={styles.timePillRow}>
+                      <Text style={styles.timeText}>{item.startTime}</Text>
+                      <Text style={styles.durationText}>
+                        {item.durationMinutes} min
+                      </Text>
+                    </View>
+
+                    {!!item.description && (
+                      <Text style={styles.cardDescription}>
+                        {item.description}
+                      </Text>
+                    )}
+
+                    {!!item.assigneeName && (
+                      <View style={styles.responsibleRow}>
+                        <View style={styles.responsibleAvatar}>
+                          <Text style={styles.responsibleInitials}>
+                            {item.assigneeInitials}
+                          </Text>
+                        </View>
+                        <Text style={styles.responsibleName}>
+                          Responsible: {item.assigneeName}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -234,6 +254,11 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    flex: 1,
+    marginRight: 8,
+  },
+  titleContainer: {
+    flex: 1,
   },
   backBtn: {
     width: 36,
@@ -311,8 +336,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   bannerDateBadge: {
-    width: 50,
-    height: 50,
+    width: 58,
+    height: 58,
     borderRadius: 14,
     backgroundColor: 'rgba(255, 255, 255, 0.16)',
     alignItems: 'center',
@@ -320,7 +345,7 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   bannerMonthText: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '800',
     color: 'rgba(255, 255, 255, 0.8)',
     letterSpacing: 0.5,
@@ -476,5 +501,26 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: '#4A4D62',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#ECEEF7',
+    borderRadius: 18,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.text,
+    marginBottom: 6,
+  },
+  emptySubtitle: {
+    fontSize: 12,
+    color: colors.muted,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });

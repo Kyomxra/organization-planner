@@ -28,7 +28,8 @@ import { NewNoteScreen } from '../features/notes/screens/NewNoteScreen';
 import { NotificationScreen } from '../features/notifications/screens/NotificationScreen';
 import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
 import { showMessage } from '../features/auth/utils/feedback';
-import { Rundown } from '../features/rundown/types';
+import { Rundown, RundownItem } from '../features/rundown/types';
+import { mockRundowns } from '../features/rundown/data/mockRundowns';
 
 type ActiveView =
   | 'org-list'
@@ -52,18 +53,71 @@ export function RootFlow() {
   const [isInvitesModalVisible, setIsInvitesModalVisible] = useState(false);
   const [previousView, setPreviousView] = useState<ActiveView>('dashboard');
   const [selectedRundown, setSelectedRundown] = useState<Rundown | null>(null);
+  const [rundowns, setRundowns] = useState<Rundown[]>(mockRundowns);
+
+  const getRundownItems = (rundown: Rundown | null): RundownItem[] =>
+    rundown?.items ?? [
+      {
+        id: 'rd-1',
+        stepNumber: 1,
+        title: 'Guest arrival & registration',
+        startTime: '18.30',
+        durationMinutes: 20,
+        description: 'Welcome desk opens; distribute name tags and seating cards.',
+        assigneeInitials: 'MC',
+        assigneeName: 'Maya Chen',
+      },
+      {
+        id: 'rd-2',
+        stepNumber: 2,
+        title: 'Opening remarks',
+        startTime: '18.50',
+        durationMinutes: 10,
+        description: 'Host welcome, safety note, and overview of the evening.',
+        assigneeInitials: 'DK',
+        assigneeName: 'Daniel Kim',
+      },
+      {
+        id: 'rd-3',
+        stepNumber: 3,
+        title: 'Impact stories',
+        startTime: '19.00',
+        durationMinutes: 35,
+        description: 'Three community partners share five-minute stories.',
+        assigneeInitials: 'PS',
+        assigneeName: 'Priya Shah',
+      },
+      {
+        id: 'rd-4',
+        stepNumber: 4,
+        title: 'Volunteer recognition',
+        startTime: '19.35',
+        durationMinutes: 25,
+        description: 'Awards, photo moment, and thank-you presentation.',
+        assigneeInitials: '',
+        assigneeName: '',
+      },
+    ];
+
+  const saveRundown = (updated: Rundown) => {
+    setRundowns((current) =>
+      current.some((item) => item.id === updated.id)
+        ? current.map((item) => (item.id === updated.id ? updated : item))
+        : [updated, ...current],
+    );
+    setSelectedRundown(updated);
+    setActiveView('rundown-details');
+  };
 
   const navigateTo = (view: ActiveView) => {
     setPreviousView(activeView);
     setActiveView(view);
   };
 
-  // Splash screen timeout
   if (!auth.splashDone) {
     return <SplashScreen />;
   }
 
-  // 1. Unauthenticated Auth Flow (Login, SignUp, Password Reset)
   if (!auth.isAuthenticated) {
     return (
       <View style={styles.root}>
@@ -74,7 +128,9 @@ export function RootFlow() {
             rememberMe={auth.rememberMe}
             onEmailChange={auth.setLoginEmail}
             onPasswordChange={auth.setLoginPassword}
-            onRememberChange={() => auth.setRememberMe((current) => !current)}
+            onRememberChange={() =>
+              auth.setRememberMe((current) => !current)
+            }
             onSignIn={auth.handleSignIn}
             onForgotPassword={auth.openForgotPassword}
             onCreateAccount={() => auth.setMainScreen('signup')}
@@ -118,10 +174,8 @@ export function RootFlow() {
     );
   }
 
-  // 2. Authenticated Flow (POV BPH)
   return (
     <View style={styles.root}>
-      {/* 2A. Organizations List Screen */}
       {activeView === 'org-list' && (
         <OrganizationListScreen
           organizations={org.organizations}
@@ -139,7 +193,6 @@ export function RootFlow() {
         />
       )}
 
-      {/* 2B. Create Organization Screen */}
       {activeView === 'create-org' && (
         <CreateOrganizationScreen
           onBack={() => setActiveView('org-list')}
@@ -149,7 +202,6 @@ export function RootFlow() {
         />
       )}
 
-      {/* 2C. Dashboard Home Screen (POV BPH) */}
       {activeView === 'dashboard' && (
         <DashboardHomeScreen
           organizationName={org.selectedOrg.name}
@@ -160,71 +212,84 @@ export function RootFlow() {
           onOpenNotes={() => navigateTo('notes-list')}
           onOpenNotifications={() => navigateTo('notifications')}
           onOpenInvites={() => setIsInvitesModalVisible(true)}
-          onOpenDivisions={() => showMessage('Divisions', 'Divisions management is coming in the next update.')}
+          onOpenDivisions={() =>
+            showMessage(
+              'Divisions',
+              'Divisions management is coming in the next update.',
+            )
+          }
           onOpenProfile={() => setActiveView('profile')}
         />
       )}
 
-      {/* 2D. Calendar Screen */}
       {activeView === 'calendar' && (
         <CalendarScreen
           onSwitchTab={(tab) => {
             if (tab === 'home') setActiveView('dashboard');
             else if (tab === 'profile') setActiveView('profile');
             else if (tab === 'divisions') {
-              showMessage('Divisions', 'Divisions management is coming in the next update.');
+              showMessage(
+                'Divisions',
+                'Divisions management is coming in the next update.',
+              );
             }
           }}
           onOpenRundown={() => navigateTo('rundown-list')}
         />
       )}
 
-      {/* 2E. Budgeting Screen */}
       {activeView === 'budgeting' && (
         <BudgetingScreen onBack={() => setActiveView('dashboard')} />
       )}
 
-      {/* 2F. Rundown List Screen */}
       {activeView === 'rundown-list' && (
         <RundownListScreen
+          rundowns={rundowns}
           onBack={() => setActiveView('dashboard')}
           onOpenRundown={(rundown) => {
-            setSelectedRundown(rundown);
+            const selected =
+              rundowns.find((item) => item.id === rundown.id) ?? rundown;
+            setSelectedRundown(selected);
             navigateTo('rundown-details');
           }}
-          onCreateRundown={() => navigateTo('rundown-edit')}
+          onCreateRundown={() => {
+            setSelectedRundown(null);
+            navigateTo('rundown-edit');
+          }}
         />
       )}
 
-      {/* 2G. Rundown Details Screen */}
       {activeView === 'rundown-details' && (
         <RundownDetailsScreen
+          rundown={selectedRundown}
+          items={getRundownItems(selectedRundown)}
           onBack={() => setActiveView('rundown-list')}
           onEdit={() => navigateTo('rundown-edit')}
         />
       )}
 
-      {/* 2H. Edit Rundown Screen */}
       {activeView === 'rundown-edit' && (
         <EditRundownScreen
+          rundown={selectedRundown}
           onBack={() => setActiveView('rundown-details')}
-          onSave={() => setActiveView('rundown-details')}
+          onSave={saveRundown}
         />
       )}
 
-      {/* 2I. Select Rundown Screen (attach to Calendar event) */}
       {activeView === 'rundown-select' && (
         <SelectRundownScreen
           eventTitle={selectedRundown?.title ?? 'this event'}
           onBack={() => setActiveView('calendar')}
           onAttach={(_selected) => {
-            showMessage('Rundown Attached', 'The rundown has been linked to the event.');
+            showMessage(
+              'Rundown Attached',
+              'The rundown has been linked to the event.',
+            );
             setActiveView('calendar');
           }}
         />
       )}
 
-      {/* 2H. Notes List Screen */}
       {activeView === 'notes-list' && (
         <NotesListScreen
           onBack={() => setActiveView('dashboard')}
@@ -232,7 +297,6 @@ export function RootFlow() {
         />
       )}
 
-      {/* 2I. New Note Screen */}
       {activeView === 'notes-new' && (
         <NewNoteScreen
           onBack={() => setActiveView('notes-list')}
@@ -240,12 +304,10 @@ export function RootFlow() {
         />
       )}
 
-      {/* 2J. Notifications Screen */}
       {activeView === 'notifications' && (
         <NotificationScreen onBack={() => setActiveView('dashboard')} />
       )}
 
-      {/* 2K. Profile Screen */}
       {activeView === 'profile' && (
         <ProfileScreen
           userName={auth.userName ? `${auth.userName} Morgan` : 'Alex Morgan'}
@@ -258,7 +320,6 @@ export function RootFlow() {
         />
       )}
 
-      {/* Modals */}
       <OrganizationStatusModal
         visible={!!org.statusModalOrg}
         organization={org.statusModalOrg}
