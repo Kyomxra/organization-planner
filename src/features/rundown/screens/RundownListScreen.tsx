@@ -21,6 +21,16 @@ interface RundownListScreenProps {
   onCreateRundown: () => void;
 }
 
+type RundownRow = {
+  id: string;
+  title: string;
+  event_id: string | null;
+  updated_at: string;
+};
+
+type RundownItemCountRow = { rundown_id: string };
+type EventDateRow = { id: string; start_at: string | null };
+
 function RundownIcon({ accentColor = '#6C63FF' }: { accentColor?: string }) {
   return (
     <View style={[styles.rdIcon, { backgroundColor: `${accentColor}1A` }]}>
@@ -86,9 +96,10 @@ export function RundownListScreen({
         return;
       }
 
-      const rundownIds = (rows ?? []).map((row) => row.id);
-      const eventIds = [...new Set((rows ?? [])
-        .map((row) => row.event_id)
+      const rundownRows = (rows ?? []) as unknown as RundownRow[];
+      const rundownIds = rundownRows.map((row: RundownRow) => row.id);
+      const eventIds = [...new Set(rundownRows
+        .map((row: RundownRow) => row.event_id)
         .filter((id): id is string => Boolean(id)))];
       const [itemsResult, eventsResult] = await Promise.all([
         rundownIds.length
@@ -108,12 +119,16 @@ export function RundownListScreen({
         return;
       }
 
+      const countRows = (itemsResult.data ?? []) as unknown as RundownItemCountRow[];
+      const eventRows = (eventsResult.data ?? []) as unknown as EventDateRow[];
       const itemCounts = new Map<string, number>();
-      for (const item of itemsResult.data ?? []) {
+      for (const item of countRows) {
         itemCounts.set(item.rundown_id, (itemCounts.get(item.rundown_id) ?? 0) + 1);
       }
-      const eventDates = new Map((eventsResult.data ?? []).map((event) => [event.id, event.start_at]));
-      setRundowns((rows ?? []).map((row, index) => {
+      const eventDates = new Map<string, string | null>(
+        eventRows.map((event: EventDateRow): [string, string | null] => [event.id, event.start_at]),
+      );
+      setRundowns(rundownRows.map((row: RundownRow, index: number) => {
         const eventDate = row.event_id ? eventDates.get(row.event_id) : null;
         return {
           id: row.id,

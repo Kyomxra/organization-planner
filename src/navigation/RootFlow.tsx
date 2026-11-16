@@ -31,9 +31,24 @@ import { NewNoteScreen } from '../features/notes/screens/NewNoteScreen';
 import { NotificationScreen } from '../features/notifications/screens/NotificationScreen';
 import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
 import { showMessage } from '../features/auth/utils/feedback';
-import { Rundown, RundownItem } from '../features/rundown/types';
+import { Rundown } from '../features/rundown/types';
 import { supabase } from '../lib/supabase';
-import { mockRundowns } from '../features/rundown/data/mockRundowns';
+
+type DivisionRow = {
+  id: string;
+  name: string;
+  color: string | null;
+  background_color: string | null;
+};
+
+type OrganizationMemberRow = {
+  id: string;
+  user_id: string;
+  division_id: string | null;
+  role: string;
+};
+
+type ProfileRow = { id: string; full_name: string | null; email: string | null };
 
 type ActiveView =
   | 'org-list'
@@ -94,7 +109,9 @@ export function RootFlow() {
         return;
       }
 
-      const memberIds = (memberResult.data ?? []).map((member) => member.user_id);
+      const memberRows = (memberResult.data ?? []) as unknown as OrganizationMemberRow[];
+      const divisionRows = (divisionResult.data ?? []) as unknown as DivisionRow[];
+      const memberIds = memberRows.map((member: OrganizationMemberRow) => member.user_id);
       const { data: profiles, error: profilesError } = memberIds.length
         ? await supabase.from('profiles').select('id, full_name, email').in('id', memberIds)
         : { data: [], error: null };
@@ -105,86 +122,17 @@ export function RootFlow() {
         return;
       }
 
-      const profilesById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
-      setDivisions((divisionResult.data ?? []).map((division) => ({
-        id: division.id,
-        name: division.name,
-        color: division.color ?? '#5145E8',
-        backgroundColor: division.background_color ?? '#EEECFF',
-      })));
-      setDivisionMembers((memberResult.data ?? []).map((member) => {
-        const profile = profilesById.get(member.user_id);
-        return {
-          id: member.id,
-          name: profile?.full_name || profile?.email || 'Member',
-          email: profile?.email ?? '',
-          role: member.role === 'coordinator'
-            ? 'Coordinator'
-            : member.role === 'executive'
-              ? 'Executive'
-              : 'Member',
-          divisionId: member.division_id,
-        };
-      }));
-    };
-
-    void loadDivisionData().catch((error: unknown) => {
-      if (!active) return;
-      showMessage(
-        'Could not load divisions',
-        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+      const profileRows = (profiles ?? []) as unknown as ProfileRow[];
+      const profilesById = new Map<string, ProfileRow>(
+        profileRows.map((profile: ProfileRow): [string, ProfileRow] => [profile.id, profile]),
       );
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [activeView, selectedOrg?.id]);
-
-  useEffect(() => {
-    if (activeView !== 'divisions' || !selectedOrg) return;
-
-    let active = true;
-    const loadDivisionData = async () => {
-      const [divisionResult, memberResult] = await Promise.all([
-        supabase
-          .from('divisions')
-          .select('id, name, color, background_color')
-          .eq('organization_id', selectedOrg.id)
-          .order('name'),
-        supabase
-          .from('organization_members')
-          .select('id, user_id, division_id, role')
-          .eq('organization_id', selectedOrg.id)
-          .eq('status', 'active'),
-      ]);
-
-      if (!active) return;
-      if (divisionResult.error || memberResult.error) {
-        const error = divisionResult.error ?? memberResult.error;
-        showMessage('Could not load divisions', error?.message ?? 'Could not load organization data.');
-        return;
-      }
-
-      const memberIds = (memberResult.data ?? []).map((member) => member.user_id);
-      const { data: profiles, error: profilesError } = memberIds.length
-        ? await supabase.from('profiles').select('id, full_name, email').in('id', memberIds)
-        : { data: [], error: null };
-
-      if (!active) return;
-      if (profilesError) {
-        showMessage('Could not load members', profilesError.message);
-        return;
-      }
-
-      const profilesById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
-      setDivisions((divisionResult.data ?? []).map((division) => ({
+      setDivisions(divisionRows.map((division: DivisionRow) => ({
         id: division.id,
         name: division.name,
         color: division.color ?? '#5145E8',
         backgroundColor: division.background_color ?? '#EEECFF',
       })));
-      setDivisionMembers((memberResult.data ?? []).map((member) => {
+      setDivisionMembers(memberRows.map((member: OrganizationMemberRow) => {
         const profile = profilesById.get(member.user_id);
         return {
           id: member.id,
@@ -304,7 +252,7 @@ export function RootFlow() {
         />
       )}
 
-      {activeView === 'dashboard' && (
+      {activeView === 'dashboard' && selectedOrg && (
         <DashboardHomeScreen
           organizationId={selectedOrg.id}
           organizationName={selectedOrg.name}
@@ -376,15 +324,13 @@ export function RootFlow() {
         />
       )}
 
-      {activeView === 'rundown-list' && (
+      {activeView === 'rundown-list' && selectedOrg && (
         <RundownListScreen
           organizationId={selectedOrg?.id ?? ''}
           organizationName={selectedOrg?.name ?? ''}
           onBack={() => setActiveView('dashboard')}
           onOpenRundown={(rundown) => {
-            const selected =
-              rundowns.find((item) => item.id === rundown.id) ?? rundown;
-            setSelectedRundown(selected);
+            setSelectedRundown(rundown);
             navigateTo('rundown-details');
           }}
           onCreateRundown={() => {
@@ -426,11 +372,13 @@ export function RootFlow() {
           onBack={() => setActiveView('calendar')}
           onAttach={async (selected) => {
             const rundown = selected[0];
-            if (!rundown) return;
+            const organizationId = selectedOrg?.id;
+            const eventId = selectedCalendarEvent?.id;
+            if (!rundown || !organizationId || !eventId) return;
             const { data, error } = await supabase
               .from('rundowns')
-              .update({ event_id: selectedCalendarEvent.id })
-              .eq('organization_id', selectedOrg.id)
+              .update({ event_id: eventId })
+              .eq('organization_id', organizationId)
               .eq('id', rundown.id)
               .select('id')
               .maybeSingle();
