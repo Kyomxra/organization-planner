@@ -221,8 +221,27 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
       }
 
       const rundownQuery = rundown
-        ? supabase.from('rundowns').update({ title: title.trim() }).eq('organization_id', organizationId).eq('id', rundown.id).select('id, updated_at').single()
-        : supabase.from('rundowns').insert({ organization_id: organizationId, title: title.trim(), created_by: user.id }).select('id, updated_at').single();
+        ? supabase
+            .from('rundowns')
+            .update({
+              title: title.trim(),
+              event_date: eventDate || null,
+            })
+            .eq('organization_id', organizationId)
+            .eq('id', rundown.id)
+            .select('id, updated_at')
+            .single()
+        : supabase
+            .from('rundowns')
+            .insert({
+              organization_id: organizationId,
+              title: title.trim(),
+              event_date: eventDate || null,
+              created_by: user.id,
+            })
+            .select('id, updated_at')
+            .single();
+
       const { data: savedRundown, error: rundownError } = await rundownQuery;
       if (rundownError) {
         showMessage('Could not save rundown', rundownError.message);
@@ -252,7 +271,12 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
       }
 
       const itemRows = items.map((item, index) => ({
-        ...(item.id.startsWith('new-') ? {} : { id: item.id }),
+        id:
+          typeof item.id === 'string' &&
+          item.id.length > 0 &&
+          !item.id.startsWith('new-')
+            ? item.id
+            : crypto.randomUUID(),
         organization_id: organizationId,
         rundown_id: savedRundown.id,
         sort_order: index + 1,
@@ -420,11 +444,11 @@ const styles = StyleSheet.create({
   stepNumber: { fontSize: 12, fontWeight: '800', color: colors.primary },
   itemBody: { flex: 1 },
   itemTitle: { fontSize: 13, fontWeight: '800', color: colors.text, marginBottom: 6, paddingVertical: 2 },
-  timeBadgesRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
-  timeBadgePurple: { backgroundColor: '#EEECFF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  timeBadgePurpleText: { fontSize: 11, fontWeight: '800', color: colors.primary, minWidth: 48, paddingVertical: 0 },
-  timeBadgeGrey: { backgroundColor: '#F3F4F8', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  timeBadgeGreyText: { fontSize: 11, fontWeight: '700', color: '#5A5D75', minWidth: 36, paddingVertical: 0 },
+  timeBadgesRow: { flexDirection: 'row', gap: 6, marginBottom: 8, width: '100%',},
+  timeBadgePurple: { flex: 1, minWidth: 0, backgroundColor: '#EEECFF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  timeBadgePurpleText: { width: '100%', fontSize: 11, fontWeight: '800', color: colors.primary, paddingVertical: 0 },
+  timeBadgeGrey: { width: 64, flexShrink: 0, backgroundColor: '#F3F4F8', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  timeBadgeGreyText: { width: '100%', fontSize: 11, fontWeight: '700', color: '#5A5D75', paddingVertical: 0 },
   itemDescription: { fontSize: 12, color: colors.muted, lineHeight: 17, marginBottom: 8, paddingVertical: 2 },
   assigneeRow: { flexDirection: 'row', alignItems: 'center' },
   assigneeAvatar: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#EEECFF', alignItems: 'center', justifyContent: 'center', marginRight: 6 },
