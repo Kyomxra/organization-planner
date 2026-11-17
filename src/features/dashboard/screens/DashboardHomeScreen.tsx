@@ -133,21 +133,11 @@ export function DashboardHomeScreen({
     : 0;
   const money = (amount: number) => amount.toLocaleString('id-ID');
 
-  const handleQuickAccess = (name: string) => {
+  const handleQuickAccess = (name: 'Rundown' | 'Notes') => {
     if (name === 'Rundown') {
       onOpenRundown();
-      return;
-    }
-    if (name === 'Notes') {
+    } else {
       onOpenNotes();
-      return;
-    }
-    if (name === 'Divisions') {
-      onOpenDivisions();
-      return;
-    }
-    if (name === 'Budgeting') {
-      onOpenBudgeting();
     }
   };
 
@@ -306,43 +296,6 @@ export function DashboardHomeScreen({
             <Text style={styles.quickAccessLabel}>Notes</Text>
           </TouchableOpacity>
 
-          {/* 3. Divisions */}
-          <TouchableOpacity
-            style={styles.quickAccessItem}
-            onPress={() => handleQuickAccess('Divisions')}
-            activeOpacity={0.75}
-          >
-            <View style={[styles.iconCircle, { backgroundColor: '#E6F4FF' }]}>
-              <Svg width={22} height={22} viewBox="0 0 24 24">
-                <Path
-                  d="M3 7V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V9C21 7.9 20.1 7 19 7H13L11 5H5C3.9 5 3 5.9 3 7Z"
-                  fill="none"
-                  stroke="#2B88E8"
-                  strokeWidth={1.8}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
-            </View>
-            <Text style={styles.quickAccessLabel}>Divisions</Text>
-          </TouchableOpacity>
-
-          {/* 4. Budgeting */}
-          <TouchableOpacity
-            style={styles.quickAccessItem}
-            onPress={() => handleQuickAccess('Budgeting')}
-            activeOpacity={0.75}
-          >
-            <View style={[styles.iconCircle, { backgroundColor: '#FFEFEA' }]}>
-              <Svg width={22} height={22} viewBox="0 0 24 24">
-                <Rect x="3" y="3" width="7" height="7" rx="2" stroke="#E85845" strokeWidth={1.8} fill="none" />
-                <Rect x="14" y="3" width="7" height="7" rx="2" stroke="#E85845" strokeWidth={1.8} fill="none" />
-                <Rect x="14" y="14" width="7" height="7" rx="2" stroke="#E85845" strokeWidth={1.8} fill="none" />
-                <Rect x="3" y="14" width="7" height="7" rx="2" stroke="#E85845" strokeWidth={1.8} fill="none" />
-              </Svg>
-            </View>
-            <Text style={styles.quickAccessLabel}>Budgeting</Text>
-          </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickAccessItem}
             onPress={onOpenTasks}
@@ -355,6 +308,16 @@ export function DashboardHomeScreen({
               </Svg>
             </View>
             <Text style={styles.quickAccessLabel}>Tasks</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickAccessItem}
+            disabled
+            accessibilityRole="button"
+            accessibilityLabel="Menu 4 unavailable"
+            accessibilityState={{ disabled: true }}
+          >
+            <View style={[styles.iconCircle, styles.disabledQuickAccessIcon]} />
+            <Text style={[styles.quickAccessLabel, styles.disabledQuickAccessLabel]}>Menu 4</Text>
           </TouchableOpacity>
         </View>
 
@@ -674,7 +637,7 @@ const styles = StyleSheet.create({
   },
   quickAccessItem: {
     alignItems: 'center',
-    width: '18%',
+    width: '22%',
   },
   iconCircle: {
     width: 54,
@@ -688,6 +651,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#5C5F74',
+  },
+  disabledQuickAccessIcon: {
+    backgroundColor: '#F0F1F5',
+  },
+  disabledQuickAccessLabel: {
+    color: '#A1A3B1',
   },
   budgetCard: {
     backgroundColor: '#FFFFFF',

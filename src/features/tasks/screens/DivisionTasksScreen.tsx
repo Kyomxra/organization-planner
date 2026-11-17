@@ -11,6 +11,7 @@ interface DivisionTasksScreenProps {
   assignedToUserId?: string;
   canCreateTask?: boolean;
   screenTitle?: string;
+  onBack?: () => void;
   onCreateTask?: () => void;
   onOpenTask: (task: DivisionTask) => void;
 }
@@ -24,6 +25,7 @@ export function DivisionTasksScreen({
   assignedToUserId,
   canCreateTask = assignedToUserId === undefined,
   screenTitle,
+  onBack,
   onCreateTask,
   onOpenTask,
 }: DivisionTasksScreenProps) {
@@ -104,6 +106,11 @@ export function DivisionTasksScreen({
   return (
     <View style={styles.root}>
       <View style={styles.header}>
+        {onBack ? (
+          <TouchableOpacity style={styles.backButton} onPress={onBack} accessibilityRole="button" accessibilityLabel="Go back">
+            <Text style={styles.backButtonText}>‹ Back</Text>
+          </TouchableOpacity>
+        ) : null}
         <Text style={styles.title}>{screenTitle ?? (memberView ? 'My Tasks' : 'Division Tasks')}</Text>
         <Text style={styles.subtitle}>{tasks.length} tasks</Text>
       </View>
@@ -172,6 +179,8 @@ export function DivisionTasksScreen({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FAFBFD' },
   header: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 8 },
+  backButton: { alignSelf: 'flex-start', marginBottom: 10 },
+  backButtonText: { color: colors.primary, fontSize: 13, fontWeight: '700' },
   title: { color: colors.text, fontSize: 22, fontWeight: '800' },
   subtitle: { color: colors.muted, fontSize: 12, marginTop: 4 },
   filters: { paddingHorizontal: 20, paddingVertical: 10, gap: 8 },

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
+import { OrganizationBottomTabBar, OrganizationTab } from '../../../navigation/OrganizationBottomTabBar';
 import { Division, DivisionMember } from '../types/division';
 
 interface DivisionManagementScreenProps {
@@ -19,6 +20,7 @@ interface DivisionManagementScreenProps {
   members: DivisionMember[];
   readOnly?: boolean;
   onBack: () => void;
+  onSwitchTab: (tab: OrganizationTab) => void;
   onAssignMember: (memberId: string, divisionId: string | null) => void;
 }
 
@@ -28,6 +30,7 @@ export function DivisionManagementScreen({
   members,
   readOnly = false,
   onBack,
+  onSwitchTab,
   onAssignMember,
 }: DivisionManagementScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -288,6 +291,7 @@ export function DivisionManagementScreen({
           </View>
         </View>
       </Modal>}
+      <OrganizationBottomTabBar activeTab="divisions" onSelect={onSwitchTab} />
     </View>
   );
 }

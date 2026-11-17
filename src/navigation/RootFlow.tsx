@@ -87,7 +87,6 @@ export function RootFlow() {
   const org = useOrganizationFlow();
   const [activeView, setActiveView] = useState<ActiveView>('org-list');
   const [isInvitesModalVisible, setIsInvitesModalVisible] = useState(false);
-  const [previousView, setPreviousView] = useState<ActiveView>('dashboard');
   const [selectedRundown, setSelectedRundown] = useState<Rundown | null>(null);
   const [selectedCalendarEvent, setSelectedCalendarEvent] = useState<CalendarEvent | null>(null);
   const [selectedTask, setSelectedTask] = useState<DivisionTask | null>(null);
@@ -98,7 +97,6 @@ export function RootFlow() {
   const [divisionMembers, setDivisionMembers] = useState<DivisionMember[]>([]);
 
   const navigateTo = (view: ActiveView) => {
-    setPreviousView(activeView);
     setActiveView(view);
   };
   const isCoordinator = selectedOrg?.role === 'Coordinator';
@@ -328,7 +326,6 @@ export function RootFlow() {
           onOpenCreateOrg={() => setActiveView('create-org')}
           onOpenJoinOrg={() => org.setIsJoinModalVisible(true)}
           onOpenStatusModal={(item) => org.setStatusModalOrg(item)}
-          onOpenProfile={() => setActiveView('profile')}
         />
       )}
 
@@ -366,6 +363,7 @@ export function RootFlow() {
           divisionId={null}
           canCreateTask={isCoordinator || isExecutive}
           screenTitle="Tasks"
+          onBack={() => setActiveView('dashboard')}
           onCreateTask={isCoordinator || isExecutive ? () => {
             if (isCoordinator && !selectedOrg.divisionId) {
               showMessage('No division assigned', 'Ask an executive to assign you to a division first.');
@@ -415,6 +413,11 @@ export function RootFlow() {
           members={divisionMembers}
           readOnly={!isExecutive}
           onBack={() => setActiveView('dashboard')}
+          onSwitchTab={(tab) => {
+            if (tab === 'home') setActiveView('dashboard');
+            else if (tab === 'calendar') setActiveView('calendar');
+            else if (tab === 'profile') setActiveView('profile');
+          }}
           onAssignMember={async (memberId, divisionId) => {
             const { data, error } = await supabase
               .from('organization_members')
@@ -593,7 +596,12 @@ export function RootFlow() {
           userEmail={auth.userEmail || auth.loginEmail}
           roleLabel={isCoordinator ? 'Coordinator' : isMember ? 'Member' : undefined}
           divisionName={isCoordinator || isMember ? assignedDivisionName : undefined}
-          onBack={() => setActiveView(isCoordinator || isMember ? 'dashboard' : previousView)}
+          onBack={() => setActiveView('dashboard')}
+          onSwitchTab={(tab) => {
+            if (tab === 'home') setActiveView('dashboard');
+            else if (tab === 'calendar') setActiveView('calendar');
+            else if (tab === 'divisions') setActiveView('divisions');
+          }}
           onSaveName={async (name) => {
             const { data: { user }, error: userError } = await supabase.auth.getUser();
             if (userError || !user) {

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
+import { OrganizationBottomTabBar, OrganizationTab } from '../../../navigation/OrganizationBottomTabBar';
 import { showMessage } from '../../auth/utils/feedback';
 
 interface ProfileScreenProps {
@@ -17,6 +18,7 @@ interface ProfileScreenProps {
   roleLabel?: string;
   divisionName?: string;
   onBack: () => void;
+  onSwitchTab: (tab: OrganizationTab) => void;
   onSaveName: (name: string) => Promise<boolean>;
   onSignOut: () => void;
 }
@@ -27,6 +29,7 @@ export function ProfileScreen({
   roleLabel,
   divisionName,
   onBack,
+  onSwitchTab,
   onSaveName,
   onSignOut,
 }: ProfileScreenProps) {
@@ -147,6 +150,7 @@ export function ProfileScreen({
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <OrganizationBottomTabBar activeTab="profile" onSelect={onSwitchTab} />
     </View>
   );
 }
