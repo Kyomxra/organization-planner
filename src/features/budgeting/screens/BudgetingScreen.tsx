@@ -21,6 +21,9 @@ interface BudgetingScreenProps {
   organizationId: string;
   onBack: () => void;
   openAddExpense?: boolean;
+  canAddRevenue?: boolean;
+  canAddExpense?: boolean;
+  canReviewTransactions?: boolean;
 }
 
 function displayDate(date: string): string {
@@ -38,6 +41,9 @@ export function BudgetingScreen({
   organizationId,
   onBack,
   openAddExpense = false,
+  canAddRevenue = true,
+  canAddExpense = true,
+  canReviewTransactions = true,
 }: BudgetingScreenProps) {
   const today = new Date();
   const defaultFromDate = formatLocalDate(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -51,12 +57,12 @@ export function BudgetingScreen({
   const [isLoading, setIsLoading] = useState(true);
   const [isReceiptModalVisible, setIsReceiptModalVisible] = useState(false);
   const [isAddRevenueModalVisible, setIsAddRevenueModalVisible] = useState(false);
-  const [isAddExpenseModalVisible, setIsAddExpenseModalVisible] = useState(openAddExpense);
+  const [isAddExpenseModalVisible, setIsAddExpenseModalVisible] = useState(openAddExpense && canAddExpense);
   const [selectedExpense, setSelectedExpense] = useState<ExpenseItem | null>(null);
 
   useEffect(() => {
-    setIsAddExpenseModalVisible(openAddExpense);
-  }, [openAddExpense]);
+    setIsAddExpenseModalVisible(openAddExpense && canAddExpense);
+  }, [canAddExpense, openAddExpense]);
 
   const loadTransactions = useCallback(async () => {
     setIsLoading(true);
@@ -354,9 +360,11 @@ export function BudgetingScreen({
             </View>
           </View>
 
-          <TouchableOpacity style={styles.addIncomeBtn} onPress={handleAddIncome} activeOpacity={0.8}>
-            <Text style={styles.addIncomeBtnText}>+ Add Revenue</Text>
-          </TouchableOpacity>
+          {canAddRevenue && (
+            <TouchableOpacity style={styles.addIncomeBtn} onPress={handleAddIncome} activeOpacity={0.8}>
+              <Text style={styles.addIncomeBtnText}>+ Add Revenue</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Expense Details Table */}
@@ -410,9 +418,11 @@ export function BudgetingScreen({
             </View>
           </View>
 
-          <TouchableOpacity style={styles.addExpenseBtn} onPress={handleAddExpense} activeOpacity={0.85}>
-            <Text style={styles.addExpenseBtnText}>+ Add Expense</Text>
-          </TouchableOpacity>
+          {canAddExpense && (
+            <TouchableOpacity style={styles.addExpenseBtn} onPress={handleAddExpense} activeOpacity={0.85}>
+              <Text style={styles.addExpenseBtnText}>+ Add Expense</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Pending Verification Banner */}
@@ -447,6 +457,7 @@ export function BudgetingScreen({
         expense={selectedExpense}
         onApprove={() => reviewExpense('APPROVED')}
         onReject={() => reviewExpense('REJECTED')}
+        canReview={canReviewTransactions}
       />
 
       {/* Add Revenue Modal */}

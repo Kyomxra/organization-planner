@@ -15,6 +15,7 @@ import { formatLocalDate } from '../../../lib/date';
 interface DashboardHomeScreenProps {
   organizationId: string;
   organizationName: string;
+  role: 'Executive' | 'Coordinator' | 'Participant';
   onBackToOrgList: () => void;
   onOpenCalendar: () => void;
   onOpenDivisions: () => void;
@@ -25,11 +26,13 @@ interface DashboardHomeScreenProps {
   onOpenAddExpense: () => void;
   onOpenNotes: () => void;
   onOpenNotifications: () => void;
+  onOpenTasks: () => void;
 }
 
 export function DashboardHomeScreen({
   organizationId,
   organizationName,
+  role,
   onBackToOrgList,
   onOpenCalendar,
   onOpenDivisions,
@@ -40,6 +43,7 @@ export function DashboardHomeScreen({
   onOpenAddExpense,
   onOpenNotes,
   onOpenNotifications,
+  onOpenTasks,
 }: DashboardHomeScreenProps) {
   const [activeTab, setActiveTab] = useState<'home' | 'calendar' | 'divisions' | 'profile'>('home');
   const [nextActivity, setNextActivity] = useState<{ title: string; date: string } | null>(null);
@@ -129,21 +133,11 @@ export function DashboardHomeScreen({
     : 0;
   const money = (amount: number) => amount.toLocaleString('id-ID');
 
-  const handleQuickAccess = (name: string) => {
+  const handleQuickAccess = (name: 'Rundown' | 'Notes') => {
     if (name === 'Rundown') {
       onOpenRundown();
-      return;
-    }
-    if (name === 'Notes') {
+    } else {
       onOpenNotes();
-      return;
-    }
-    if (name === 'Divisions') {
-      onOpenDivisions();
-      return;
-    }
-    if (name === 'Budgeting') {
-      onOpenBudgeting();
     }
   };
 
@@ -181,7 +175,7 @@ export function DashboardHomeScreen({
         </View>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity
+          {role === 'Executive' && <TouchableOpacity
             style={styles.headerIconBtn}
             onPress={onOpenInvites}
             hitSlop={8}
@@ -192,7 +186,7 @@ export function DashboardHomeScreen({
               <Circle cx="18" cy="19" r="3" fill="none" stroke="#2D3142" strokeWidth={1.8} />
               <Path d="M8.59 13.51L15.42 17.49M15.41 6.51L8.59 10.49" stroke="#2D3142" strokeWidth={1.8} />
             </Svg>
-          </TouchableOpacity>
+          </TouchableOpacity>}
           <TouchableOpacity
             style={styles.headerIconBtn}
             onPress={onOpenNotifications}
@@ -302,42 +296,28 @@ export function DashboardHomeScreen({
             <Text style={styles.quickAccessLabel}>Notes</Text>
           </TouchableOpacity>
 
-          {/* 3. Divisions */}
           <TouchableOpacity
             style={styles.quickAccessItem}
-            onPress={() => handleQuickAccess('Divisions')}
+            onPress={onOpenTasks}
             activeOpacity={0.75}
           >
-            <View style={[styles.iconCircle, { backgroundColor: '#E6F4FF' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: '#E8F8F2' }]}>
               <Svg width={22} height={22} viewBox="0 0 24 24">
-                <Path
-                  d="M3 7V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V9C21 7.9 20.1 7 19 7H13L11 5H5C3.9 5 3 5.9 3 7Z"
-                  fill="none"
-                  stroke="#2B88E8"
-                  strokeWidth={1.8}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                <Rect x="4" y="3" width="16" height="18" rx="2" fill="none" stroke="#2C9B76" strokeWidth={1.8} />
+                <Path d="M8 8H16M8 12H16M8 16H13" stroke="#2C9B76" strokeWidth={1.8} strokeLinecap="round" />
               </Svg>
             </View>
-            <Text style={styles.quickAccessLabel}>Divisions</Text>
+            <Text style={styles.quickAccessLabel}>Tasks</Text>
           </TouchableOpacity>
-
-          {/* 4. Budgeting */}
           <TouchableOpacity
             style={styles.quickAccessItem}
-            onPress={() => handleQuickAccess('Budgeting')}
-            activeOpacity={0.75}
+            disabled
+            accessibilityRole="button"
+            accessibilityLabel="Menu 4 unavailable"
+            accessibilityState={{ disabled: true }}
           >
-            <View style={[styles.iconCircle, { backgroundColor: '#FFEFEA' }]}>
-              <Svg width={22} height={22} viewBox="0 0 24 24">
-                <Rect x="3" y="3" width="7" height="7" rx="2" stroke="#E85845" strokeWidth={1.8} fill="none" />
-                <Rect x="14" y="3" width="7" height="7" rx="2" stroke="#E85845" strokeWidth={1.8} fill="none" />
-                <Rect x="14" y="14" width="7" height="7" rx="2" stroke="#E85845" strokeWidth={1.8} fill="none" />
-                <Rect x="3" y="14" width="7" height="7" rx="2" stroke="#E85845" strokeWidth={1.8} fill="none" />
-              </Svg>
-            </View>
-            <Text style={styles.quickAccessLabel}>Budgeting</Text>
+            <View style={[styles.iconCircle, styles.disabledQuickAccessIcon]} />
+            <Text style={[styles.quickAccessLabel, styles.disabledQuickAccessLabel]}>Menu 4</Text>
           </TouchableOpacity>
         </View>
 
@@ -405,7 +385,7 @@ export function DashboardHomeScreen({
               <Text style={styles.viewDetailsBtnText}>View Details</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
+            {role !== 'Participant' && <TouchableOpacity
               style={styles.addReceiptBtn}
               onPress={() => handleBudgetAction('Add Expense')}
               activeOpacity={0.85}
@@ -414,7 +394,7 @@ export function DashboardHomeScreen({
                 <Path d="M10 4V16M4 10H16" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" />
               </Svg>
               <Text style={styles.addReceiptBtnText}>Add Expense</Text>
-            </TouchableOpacity>
+            </TouchableOpacity>}
           </View>
 
           {/* Pending Verification Notice */}
@@ -671,6 +651,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#5C5F74',
+  },
+  disabledQuickAccessIcon: {
+    backgroundColor: '#F0F1F5',
+  },
+  disabledQuickAccessLabel: {
+    color: '#A1A3B1',
   },
   budgetCard: {
     backgroundColor: '#FFFFFF',

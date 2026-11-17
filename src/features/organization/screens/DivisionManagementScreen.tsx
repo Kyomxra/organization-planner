@@ -11,13 +11,16 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
+import { OrganizationBottomTabBar, OrganizationTab } from '../../../navigation/OrganizationBottomTabBar';
 import { Division, DivisionMember } from '../types/division';
 
 interface DivisionManagementScreenProps {
   organizationName: string;
   divisions: Division[];
   members: DivisionMember[];
+  readOnly?: boolean;
   onBack: () => void;
+  onSwitchTab: (tab: OrganizationTab) => void;
   onAssignMember: (memberId: string, divisionId: string | null) => void;
 }
 
@@ -25,7 +28,9 @@ export function DivisionManagementScreen({
   organizationName,
   divisions,
   members,
+  readOnly = false,
   onBack,
+  onSwitchTab,
   onAssignMember,
 }: DivisionManagementScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,11 +75,11 @@ export function DivisionManagementScreen({
           </Svg>
         </TouchableOpacity>
         <View style={styles.headerCopy}>
-          <Text style={styles.headerTitle}>Division Management</Text>
+          <Text style={styles.headerTitle}>{readOnly ? 'Divisions & Members' : 'Division Management'}</Text>
           <Text style={styles.headerSubtitle}>{organizationName}</Text>
         </View>
         <View style={styles.executiveBadge}>
-          <Text style={styles.executiveBadgeText}>EXECUTIVE</Text>
+          <Text style={styles.executiveBadgeText}>{readOnly ? 'VIEW ONLY' : 'EXECUTIVE'}</Text>
         </View>
       </View>
 
@@ -91,8 +96,10 @@ export function DivisionManagementScreen({
             </Svg>
           </View>
           <View style={styles.summaryCopy}>
-            <Text style={styles.summaryTitle}>Organize your team</Text>
-            <Text style={styles.summarySubtitle}>Assign members to a division or move them anytime.</Text>
+            <Text style={styles.summaryTitle}>{readOnly ? 'Organization divisions' : 'Organize your team'}</Text>
+            <Text style={styles.summarySubtitle}>
+              {readOnly ? 'View divisions and the members assigned to each team.' : 'Assign members to a division or move them anytime.'}
+            </Text>
           </View>
           <View style={styles.summaryCount}>
             <Text style={styles.summaryCountValue}>{members.length}</Text>
@@ -204,17 +211,19 @@ export function DivisionManagementScreen({
                     </Text>
                   </View>
                 </View>
-                <TouchableOpacity
-                  style={[styles.assignButton, !division && styles.assignButtonPrimary]}
-                  onPress={() => setSelectedMember(member)}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${division ? 'Change division for' : 'Assign'} ${member.name}`}
-                >
-                  <Text style={[styles.assignButtonText, !division && styles.assignButtonTextPrimary]}>
-                    {division ? 'Change' : 'Assign'}
-                  </Text>
-                </TouchableOpacity>
+                {!readOnly && (
+                  <TouchableOpacity
+                    style={[styles.assignButton, !division && styles.assignButtonPrimary]}
+                    onPress={() => setSelectedMember(member)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${division ? 'Change division for' : 'Assign'} ${member.name}`}
+                  >
+                    <Text style={[styles.assignButtonText, !division && styles.assignButtonTextPrimary]}>
+                      {division ? 'Change' : 'Assign'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             );
           })}
@@ -227,7 +236,7 @@ export function DivisionManagementScreen({
         </View>
       </ScrollView>
 
-      <Modal
+      {!readOnly && <Modal
         visible={!!selectedMember}
         transparent
         animationType="fade"
@@ -281,7 +290,8 @@ export function DivisionManagementScreen({
             )}
           </View>
         </View>
-      </Modal>
+      </Modal>}
+      <OrganizationBottomTabBar activeTab="divisions" onSelect={onSwitchTab} />
     </View>
   );
 }

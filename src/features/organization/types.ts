@@ -3,6 +3,7 @@ export type OrgStatus = 'Active' | 'Inactive';
 export interface OrganizationItem {
   id: string;
   name: string;
+  divisionId: string | null;
   roleTitle: string; // e.g. "Executive Committee"
   role: 'Executive' | 'Coordinator' | 'Participant';
   memberCount: number;

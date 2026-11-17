@@ -14,16 +14,26 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
-import { NewCalendarEvent } from '../types';
+import { CalendarEvent, NewCalendarEvent } from '../types';
+import { formatLocalDate } from '../../../lib/date';
 
 interface NewEventModalProps {
   visible: boolean;
   initialDate: string;
+  initialEvent?: CalendarEvent | null;
+  fixedDivisionId?: string | null;
   onClose: () => void;
   onSave: (newEvent: NewCalendarEvent) => Promise<boolean>;
 }
 
-export function NewEventModal({ visible, initialDate, onClose, onSave }: NewEventModalProps) {
+export function NewEventModal({
+  visible,
+  initialDate,
+  initialEvent,
+  fixedDivisionId = null,
+  onClose,
+  onSave,
+}: NewEventModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState(initialDate);
@@ -34,6 +44,18 @@ export function NewEventModal({ visible, initialDate, onClose, onSave }: NewEven
 
   useEffect(() => {
     if (!visible) return;
+    if (initialEvent) {
+      const start = new Date(initialEvent.startAt);
+      const end = new Date(initialEvent.endAt);
+      setTitle(initialEvent.title);
+      setDescription(initialEvent.description);
+      setStartDate(formatLocalDate(start));
+      setStartTime(`${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`);
+      setEndDate(formatLocalDate(end));
+      setEndTime(`${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`);
+      setNotes(initialEvent.notes ?? '');
+      return;
+    }
     setTitle('');
     setDescription('');
     setStartDate(initialDate);
@@ -41,7 +63,7 @@ export function NewEventModal({ visible, initialDate, onClose, onSave }: NewEven
     setEndDate(initialDate);
     setEndTime('10:00');
     setNotes('');
-  }, [initialDate, visible]);
+  }, [initialDate, initialEvent, visible]);
 
   const handleSave = async () => {
     const startAt = new Date(`${startDate}T${startTime}:00`);
@@ -71,7 +93,7 @@ export function NewEventModal({ visible, initialDate, onClose, onSave }: NewEven
 
     const saved = await onSave({
       title: title.trim(),
-      category: 'organization meeting',
+      category: initialEvent?.category.toLowerCase() ?? 'organization meeting',
       description,
       notes,
       startAt: startAt.toISOString(),
@@ -98,7 +120,7 @@ export function NewEventModal({ visible, initialDate, onClose, onSave }: NewEven
               <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={10}>
                 <Text style={styles.closeIcon}>✕</Text>
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>New Event</Text>
+              <Text style={styles.headerTitle}>{initialEvent ? 'Edit Event' : 'New Event'}</Text>
               <TouchableOpacity onPress={handleSave} style={styles.saveCheckBtn} hitSlop={10}>
                 <Svg width={14} height={14} viewBox="0 0 20 20">
                   <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
@@ -107,6 +129,12 @@ export function NewEventModal({ visible, initialDate, onClose, onSave }: NewEven
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+              {fixedDivisionId ? (
+                <View style={styles.scopeCard}>
+                  <Text style={styles.scopeTitle}>DIVISION EVENT</Text>
+                  <Text style={styles.scopeText}>This event will be added to your assigned division.</Text>
+                </View>
+              ) : null}
               {/* Card 1: Title & Description */}
               <View style={styles.card}>
                 <View style={styles.fieldRow}>
@@ -274,6 +302,15 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     gap: 12,
   },
+  scopeCard: {
+    backgroundColor: '#F7F6FF',
+    borderWidth: 1,
+    borderColor: '#E4E1FF',
+    borderRadius: 14,
+    padding: 12,
+  },
+  scopeTitle: { color: colors.primary, fontSize: 10, fontWeight: '800', marginBottom: 5 },
+  scopeText: { color: colors.text, fontSize: 11 },
   card: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1.2,

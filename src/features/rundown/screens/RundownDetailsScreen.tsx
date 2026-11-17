@@ -30,6 +30,7 @@ type ProfileRow = { id: string; full_name: string | null };
 interface RundownDetailsScreenProps {
   organizationId: string;
   rundown: Rundown | null;
+  canEdit?: boolean;
   onBack: () => void;
   onEdit: () => void;
 }
@@ -37,6 +38,7 @@ interface RundownDetailsScreenProps {
 export function RundownDetailsScreen({
   organizationId,
   rundown,
+  canEdit = true,
   onBack,
   onEdit,
 }: RundownDetailsScreenProps) {
@@ -135,6 +137,7 @@ export function RundownDetailsScreen({
   };
 
   const handleMenuOptions = () => {
+    if (!canEdit) return;
     Alert.alert('Rundown options', undefined, [
       { text: 'Edit rundown', onPress: onEdit },
       { text: 'Close', style: 'cancel' },
@@ -157,19 +160,19 @@ export function RundownDetailsScreen({
         </View>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.editBtn} onPress={onEdit} activeOpacity={0.8}>
+          {canEdit && <TouchableOpacity style={styles.editBtn} onPress={onEdit} activeOpacity={0.8}>
             <Svg width={14} height={14} viewBox="0 0 24 24" style={styles.editIcon}>
               <Path d="M17 3A2.828 2.828 0 1 1 21 7L7.5 20.5 2 22l1.5-5.5L17 3z" fill="none" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
             <Text style={styles.editBtnText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuCircleBtn} onPress={handleMenuOptions} hitSlop={8} accessibilityLabel="Rundown options">
+          </TouchableOpacity>}
+          {canEdit && <TouchableOpacity style={styles.menuCircleBtn} onPress={handleMenuOptions} hitSlop={8} accessibilityLabel="Rundown options">
             <Svg width={16} height={16} viewBox="0 0 24 24">
               <Circle cx="5" cy="12" r="2" fill="#2D3142" />
               <Circle cx="12" cy="12" r="2" fill="#2D3142" />
               <Circle cx="19" cy="12" r="2" fill="#2D3142" />
             </Svg>
-          </TouchableOpacity>
+          </TouchableOpacity>}
         </View>
       </View>
 

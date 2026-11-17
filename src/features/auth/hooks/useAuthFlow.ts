@@ -12,6 +12,7 @@ export function useAuthFlow() {
   const [mainScreen, setMainScreen] = useState<MainScreen>('login');
   const [passwordSheet, setPasswordSheet] = useState<PasswordSheet>('none');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState('Alex');
   const [userEmail, setUserEmail] = useState('');
 
@@ -33,6 +34,7 @@ export function useAuthFlow() {
     let isMounted = true;
     const applySession = (session: Session | null) => {
       setIsAuthenticated(Boolean(session));
+      setUserId(session?.user.id ?? null);
       setUserEmail(session?.user.email ?? '');
       const name = session?.user.user_metadata?.full_name
         || session?.user.email?.split('@')[0]
@@ -291,6 +293,7 @@ export function useAuthFlow() {
     setConfirmNewPassword,
     isAuthenticated,
     setIsAuthenticated,
+    userId,
     userName,
     userEmail,
     openForgotPassword,

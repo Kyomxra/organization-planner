@@ -32,6 +32,9 @@ interface NoteAudienceModalProps {
   selection: AudienceSelection;
   divisions: NoteDivision[];
   organizationName: string;
+  divisionOnly?: boolean;
+  fixedDivisionId?: string | null;
+  fixedDivisionName?: string;
   onSave: (selection: AudienceSelection) => void;
 }
 
@@ -41,6 +44,9 @@ export function NoteAudienceModal({
   selection: initialSelection,
   divisions,
   organizationName,
+  divisionOnly = false,
+  fixedDivisionId = null,
+  fixedDivisionName,
   onSave,
 }: NoteAudienceModalProps) {
   const [selection, setSelection] = useState<AudienceSelection>(initialSelection);
@@ -64,12 +70,16 @@ export function NoteAudienceModal({
   };
 
   const toggleDivision = () => {
+    if (divisionOnly && !fixedDivisionId) return;
     setSelection((prev) => {
+      const isTurningOn = !prev.isDivision;
       return {
         ...prev,
         isOnlyMe: false,
-        isDivision: !prev.isDivision,
-        selectedDivisions: prev.isDivision ? [] : prev.selectedDivisions,
+        isDivision: isTurningOn,
+        selectedDivisions: isTurningOn
+          ? fixedDivisionId ? [fixedDivisionId] : prev.selectedDivisions
+          : [],
       };
     });
   };
@@ -150,7 +160,9 @@ export function NoteAudienceModal({
                 <Path d="M12 16V12M12 8H12.01" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
               </Svg>
               <Text style={styles.infoText}>
-                Only Me is the default. Group access can be combined after it is turned off.
+                {fixedDivisionId
+                  ? 'Choose whether this note is personal or visible to your assigned division.'
+                  : 'Only Me is the default. Group access can be combined after it is turned off.'}
               </Text>
             </View>
 
@@ -180,7 +192,7 @@ export function NoteAudienceModal({
             </TouchableOpacity>
 
             {/* Option 2: Division */}
-            <TouchableOpacity
+            {(!divisionOnly || fixedDivisionId) && <TouchableOpacity
               style={[styles.audienceCard, selection.isDivision && styles.audienceCardBorder]}
               onPress={toggleDivision}
               activeOpacity={0.8}
@@ -192,8 +204,10 @@ export function NoteAudienceModal({
                 </Svg>
               </View>
               <View style={styles.textCol}>
-                <Text style={styles.optionTitle}>Division</Text>
-                <Text style={styles.optionSub}>Share with selected divisions</Text>
+                <Text style={styles.optionTitle}>{fixedDivisionId ? 'My Division' : 'Division'}</Text>
+                <Text style={styles.optionSub}>
+                  {fixedDivisionId ? `Share with ${fixedDivisionName || 'your division'}` : 'Share with selected divisions'}
+                </Text>
               </View>
               <View style={[styles.checkbox, selection.isDivision && styles.checkboxActive]}>
                 {selection.isDivision && (
@@ -202,10 +216,15 @@ export function NoteAudienceModal({
                   </Svg>
                 )}
               </View>
-            </TouchableOpacity>
+            </TouchableOpacity>}
 
             {/* Division Sub-selector */}
-            {selection.isDivision && (
+            {selection.isDivision && fixedDivisionId ? (
+              <View style={styles.divisionSelectorCard}>
+                <Text style={styles.divisionSelectorTitle}>VISIBLE TO</Text>
+                <Text style={styles.divisionSelectorType}>{fixedDivisionName || 'Your assigned division'}</Text>
+              </View>
+            ) : selection.isDivision ? (
               <View style={styles.divisionSelectorCard}>
                 <View style={styles.divisionHeaderRow}>
                   <Text style={styles.divisionSelectorTitle}>SELECT DIVISIONS</Text>
@@ -238,9 +257,10 @@ export function NoteAudienceModal({
                   <Text style={styles.divisionSelectorType}>Create a division before sharing by division.</Text>
                 )}
               </View>
-            )}
+            ) : null}
 
             {/* Option 3: Executive */}
+            {!divisionOnly && <>
             <TouchableOpacity
               style={styles.audienceCard}
               onPress={toggleExecutive}
@@ -329,6 +349,12 @@ export function NoteAudienceModal({
             <TouchableOpacity style={styles.doneBtn} onPress={handleDone} activeOpacity={0.85}>
               <Text style={styles.doneBtnText}>Done</Text>
             </TouchableOpacity>
+            </>}
+            {divisionOnly && (
+              <TouchableOpacity style={styles.doneBtn} onPress={handleDone} activeOpacity={0.85}>
+                <Text style={styles.doneBtnText}>Done</Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
         </View>
       </View>

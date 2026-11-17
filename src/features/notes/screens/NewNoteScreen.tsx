@@ -14,10 +14,15 @@ import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
 import { AudienceSelection, NoteAudienceModal } from '../components/NoteAudienceModal';
 import { supabase } from '../../../lib/supabase';
+import { NoteItem } from '../types';
 
 interface NewNoteScreenProps {
   organizationId: string;
   organizationName: string;
+  role?: 'executive' | 'coordinator' | 'member';
+  divisionId?: string | null;
+  divisionName?: string;
+  note?: NoteItem | null;
   onBack: () => void;
   onSaveSuccess?: () => void;
 }
@@ -25,6 +30,10 @@ interface NewNoteScreenProps {
 export function NewNoteScreen({
   organizationId,
   organizationName,
+  role = 'executive',
+  divisionId = null,
+  divisionName,
+  note = null,
   onBack,
   onSaveSuccess,
 }: NewNoteScreenProps) {
@@ -43,6 +52,16 @@ export function NewNoteScreen({
   const [divisions, setDivisions] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
+    if (note) {
+      setTitle(note.title);
+      setContent(note.content);
+      setAudienceText(note.scopeLabel);
+      return;
+    }
+    if (role !== 'executive') {
+      setDivisions(divisionId && divisionName ? [{ id: divisionId, name: divisionName }] : []);
+      return;
+    }
     let active = true;
 
     const loadDivisions = async () => {
@@ -67,7 +86,7 @@ export function NewNoteScreen({
     return () => {
       active = false;
     };
-  }, [organizationId]);
+  }, [divisionId, divisionName, note, organizationId, role]);
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -99,48 +118,45 @@ export function NewNoteScreen({
       return;
     }
 
-    // Diagnostic check: test membership using the current app session.
-    const {
-      data: memberCheck,
-      error: memberCheckError,
-    } = await supabase.rpc('is_org_member', {
-      p_organization_id: organizationId,
-    });
+    if (note) {
+      const { data, error } = await supabase
+        .from('notes')
+        .update({ title: title.trim(), content: content.trim() })
+        .eq('organization_id', organizationId)
+        .eq('id', note.id)
+        .select('id')
+        .maybeSingle();
+      if (error || !data) {
+        showMessage('Could not update note', error?.message ?? 'You may not have permission to edit this note.');
+        return;
+      }
+      showMessage('Note updated', `Your note "${title.trim()}" has been updated.`, () => {
+        onSaveSuccess?.();
+        onBack();
+      });
+      return;
+    }
 
-    console.log('NOTE DEBUG', {
-      currentUserId: user.id,
-      organizationId,
-      memberCheck,
-      memberCheckError: memberCheckError?.message ?? null,
-    });
-
-    const { data: note, error } = await supabase
+    const { data: createdNote, error } = await supabase
       .from('notes')
       .insert({
         organization_id: organizationId,
         author_id: user.id,
         title: title.trim(),
         content: content.trim(),
-        share_with_all_members: audienceSelection.isAllMembers,
+        share_with_all_members: role === 'executive' && audienceSelection.isAllMembers,
       })
       .select('id')
       .single();
 
     if (error) {
-      console.error('NOTE INSERT ERROR', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
-      });
-
       showMessage('Could not save note', error.message);
       return;
     }
 
     const roles = [
-      ...(audienceSelection.isExecutive ? ['executive'] : []),
-      ...(audienceSelection.isCoordinators ? ['coordinator'] : []),
+      ...(role === 'executive' && audienceSelection.isExecutive ? ['executive'] : []),
+      ...(role === 'executive' && audienceSelection.isCoordinators ? ['coordinator'] : []),
     ];
 
     const audienceWrites = await Promise.all([
@@ -148,7 +164,7 @@ export function NewNoteScreen({
         ? supabase.from('note_audience_roles').insert(
             roles.map((role) => ({
               organization_id: organizationId,
-              note_id: note.id,
+              note_id: createdNote.id,
               role,
             })),
           )
@@ -158,7 +174,7 @@ export function NewNoteScreen({
         ? supabase.from('note_audience_divisions').insert(
             audienceSelection.selectedDivisions.map((divisionId) => ({
               organization_id: organizationId,
-              note_id: note.id,
+              note_id: createdNote.id,
               division_id: divisionId,
             })),
           )
@@ -171,7 +187,7 @@ export function NewNoteScreen({
       const { error: rollbackError } = await supabase
         .from('notes')
         .delete()
-        .eq('id', note.id);
+        .eq('id', createdNote.id);
 
       showMessage(
         'Could not save note audience',
@@ -204,7 +220,7 @@ export function NewNoteScreen({
     } else {
       const parts: string[] = [];
 
-      if (newSelection.isDivision) parts.push('Division');
+      if (newSelection.isDivision) parts.push(role === 'executive' ? 'Division' : `My Division${divisionName ? ` · ${divisionName}` : ''}`);
       if (newSelection.isExecutive) parts.push('Executive');
       if (newSelection.isCoordinators) parts.push('Coordinators');
       if (newSelection.isAllMembers) parts.push('All Members');
@@ -232,7 +248,7 @@ export function NewNoteScreen({
           </Svg>
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>New Note</Text>
+        <Text style={styles.headerTitle}>{note ? 'Edit Note' : 'New Note'}</Text>
 
         <TouchableOpacity
           style={styles.savePill}
@@ -276,8 +292,9 @@ export function NewNoteScreen({
 
         <TouchableOpacity
           style={styles.visibleCard}
-          onPress={handleOpenAudienceModal}
+          onPress={note ? undefined : handleOpenAudienceModal}
           activeOpacity={0.85}
+          disabled={!!note}
         >
           <View style={styles.eyeIconBox}>
             <Svg width={18} height={18} viewBox="0 0 24 24">
@@ -300,7 +317,7 @@ export function NewNoteScreen({
 
           <View style={styles.visibleInfo}>
             <Text style={styles.visibleTitle}>Visible to</Text>
-            <Text style={styles.visibleSub}>Choose who can access this note</Text>
+            <Text style={styles.visibleSub}>{note ? 'Scope cannot be changed while editing' : 'Choose who can access this note'}</Text>
           </View>
 
           <View style={styles.visiblePill}>
@@ -353,6 +370,9 @@ export function NewNoteScreen({
         selection={audienceSelection}
         divisions={divisions}
         organizationName={organizationName}
+        divisionOnly={role !== 'executive'}
+        fixedDivisionId={role !== 'executive' ? divisionId : null}
+        fixedDivisionName={divisionName}
         onSave={handleSaveAudience}
       />
     </KeyboardAvoidingView>

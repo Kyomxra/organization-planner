@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme/colors';
 import { useAuthFlow } from '../features/auth/hooks/useAuthFlow';
 import { SplashScreen } from '../features/auth/screens/SplashScreen';
@@ -21,6 +21,7 @@ import { Division, DivisionMember } from '../features/organization/types/divisio
 import { DashboardHomeScreen } from '../features/dashboard/screens/DashboardHomeScreen';
 import { CalendarScreen } from '../features/calendar/screens/CalendarScreen';
 import { CalendarEvent } from '../features/calendar/types';
+import { DivisionMembersScreen } from '../features/organization/screens/DivisionMembersScreen';
 import { BudgetingScreen } from '../features/budgeting/screens/BudgetingScreen';
 import { RundownListScreen } from '../features/rundown/screens/RundownListScreen';
 import { RundownDetailsScreen } from '../features/rundown/screens/RundownDetailsScreen';
@@ -28,8 +29,12 @@ import { EditRundownScreen } from '../features/rundown/screens/EditRundownScreen
 import { SelectRundownScreen } from '../features/rundown/screens/SelectRundownScreen';
 import { NotesListScreen } from '../features/notes/screens/NotesListScreen';
 import { NewNoteScreen } from '../features/notes/screens/NewNoteScreen';
+import { NoteItem } from '../features/notes/types';
 import { NotificationScreen } from '../features/notifications/screens/NotificationScreen';
 import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
+import { DivisionTasksScreen } from '../features/tasks/screens/DivisionTasksScreen';
+import { TaskDetailsScreen } from '../features/tasks/screens/TaskDetailsScreen';
+import { DivisionTask } from '../features/tasks/types';
 import { showMessage } from '../features/auth/utils/feedback';
 import { Rundown } from '../features/rundown/types';
 import { supabase } from '../lib/supabase';
@@ -54,6 +59,16 @@ type ActiveView =
   | 'org-list'
   | 'create-org'
   | 'dashboard'
+  | 'coordinator-home'
+  | 'coordinator-tasks'
+  | 'coordinator-members'
+  | 'coordinator-task-edit'
+  | 'member-home'
+  | 'member-tasks'
+  | 'member-task-details'
+  | 'member-division'
+  | 'organization-tasks'
+  | 'task-details'
   | 'divisions'
   | 'calendar'
   | 'budgeting'
@@ -72,17 +87,88 @@ export function RootFlow() {
   const org = useOrganizationFlow();
   const [activeView, setActiveView] = useState<ActiveView>('org-list');
   const [isInvitesModalVisible, setIsInvitesModalVisible] = useState(false);
-  const [previousView, setPreviousView] = useState<ActiveView>('dashboard');
   const [selectedRundown, setSelectedRundown] = useState<Rundown | null>(null);
   const [selectedCalendarEvent, setSelectedCalendarEvent] = useState<CalendarEvent | null>(null);
+  const [selectedTask, setSelectedTask] = useState<DivisionTask | null>(null);
+  const [editingNote, setEditingNote] = useState<NoteItem | null>(null);
+  const [assignedDivisionName, setAssignedDivisionName] = useState('');
   const selectedOrg = org.selectedOrg;
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [divisionMembers, setDivisionMembers] = useState<DivisionMember[]>([]);
 
   const navigateTo = (view: ActiveView) => {
-    setPreviousView(activeView);
     setActiveView(view);
   };
+  const isCoordinator = selectedOrg?.role === 'Coordinator';
+  const isMember = selectedOrg?.role === 'Participant';
+  const isExecutive = selectedOrg?.role === 'Executive';
+  const noteRole = selectedOrg?.role === 'Coordinator'
+    ? 'coordinator'
+    : selectedOrg?.role === 'Participant'
+      ? 'member'
+      : 'executive';
+
+  useEffect(() => {
+    if (!selectedOrg?.divisionId) {
+      setAssignedDivisionName('');
+      return;
+    }
+
+    let active = true;
+    const loadAssignedDivision = async () => {
+      const { data, error } = await supabase
+        .from('divisions')
+        .select('name')
+        .eq('id', selectedOrg.divisionId)
+        .maybeSingle();
+      if (!active) return;
+      if (error) {
+        showMessage('Could not load assigned division', error.message);
+        return;
+      }
+      setAssignedDivisionName(data?.name ?? '');
+    };
+    void loadAssignedDivision();
+    return () => { active = false; };
+  }, [selectedOrg?.divisionId]);
+
+  useEffect(() => {
+    if (activeView === 'coordinator-home' || activeView === 'member-home') {
+      setActiveView('dashboard');
+      return;
+    }
+    if (activeView === 'coordinator-members' || activeView === 'member-division') {
+      setActiveView('divisions');
+      return;
+    }
+    if (activeView === 'coordinator-tasks' || activeView === 'member-tasks') {
+      setActiveView('organization-tasks');
+      return;
+    }
+    if (activeView === 'coordinator-task-edit' && !isCoordinator && !isExecutive) {
+      setActiveView('dashboard');
+      return;
+    }
+    if (activeView === 'member-task-details' && !isMember && !isCoordinator) {
+      setActiveView('dashboard');
+      return;
+    }
+    if (activeView === 'budgeting-add-expense' && isMember) {
+      setActiveView('budgeting');
+      return;
+    }
+    if (activeView === 'rundown-select' && !isExecutive) {
+      setActiveView('calendar');
+      return;
+    }
+    if (activeView === 'rundown-edit' && (isMember || (isCoordinator && selectedRundown))) {
+      setActiveView(isCoordinator && selectedRundown ? 'rundown-details' : 'rundown-list');
+      return;
+    }
+    if (activeView === 'notes-new' && isMember) {
+      setActiveView('notes-list');
+    }
+  }, [activeView, isCoordinator, isExecutive, isMember, selectedRundown]);
 
   useEffect(() => {
     if (activeView !== 'divisions' || !selectedOrg) return;
@@ -234,12 +320,12 @@ export function RootFlow() {
           onDismissToast={() => org.setShowJoinedToast(false)}
           onSelectOrganization={(selected) => {
             org.setSelectedOrg(selected);
+            setIsInvitesModalVisible(false);
             setActiveView('dashboard');
           }}
           onOpenCreateOrg={() => setActiveView('create-org')}
           onOpenJoinOrg={() => org.setIsJoinModalVisible(true)}
           onOpenStatusModal={(item) => org.setStatusModalOrg(item)}
-          onOpenProfile={() => setActiveView('profile')}
         />
       )}
 
@@ -256,6 +342,7 @@ export function RootFlow() {
         <DashboardHomeScreen
           organizationId={selectedOrg.id}
           organizationName={selectedOrg.name}
+          role={selectedOrg.role}
           onBackToOrgList={() => setActiveView('org-list')}
           onOpenCalendar={() => setActiveView('calendar')}
           onOpenBudgeting={() => setActiveView('budgeting')}
@@ -266,6 +353,56 @@ export function RootFlow() {
           onOpenInvites={() => setIsInvitesModalVisible(true)}
           onOpenDivisions={() => setActiveView('divisions')}
           onOpenProfile={() => setActiveView('profile')}
+          onOpenTasks={() => setActiveView('organization-tasks')}
+        />
+      )}
+
+      {activeView === 'organization-tasks' && selectedOrg && (
+        <DivisionTasksScreen
+          organizationId={selectedOrg.id}
+          divisionId={null}
+          canCreateTask={isCoordinator || isExecutive}
+          screenTitle="Tasks"
+          onBack={() => setActiveView('dashboard')}
+          onCreateTask={isCoordinator || isExecutive ? () => {
+            if (isCoordinator && !selectedOrg.divisionId) {
+              showMessage('No division assigned', 'Ask an executive to assign you to a division first.');
+              return;
+            }
+            setSelectedTask(null);
+            setActiveView('coordinator-task-edit');
+          } : undefined}
+          onOpenTask={(task) => {
+            setSelectedTask(task);
+            setActiveView(
+              isExecutive || (isCoordinator && task.division_id === selectedOrg.divisionId)
+                ? 'coordinator-task-edit'
+                : 'member-task-details',
+            );
+          }}
+        />
+      )}
+
+      {activeView === 'coordinator-task-edit' && selectedOrg && (isExecutive || (isCoordinator && selectedOrg.divisionId)) && (
+        <TaskDetailsScreen
+          organizationId={selectedOrg.id}
+          divisionId={isExecutive ? selectedTask?.division_id ?? null : selectedOrg.divisionId ?? null}
+          task={selectedTask}
+          canChooseDivision={isExecutive}
+          readOnly={Boolean(isCoordinator && selectedTask && selectedTask.division_id !== selectedOrg.divisionId)}
+          onBack={() => setActiveView('organization-tasks')}
+          onSaved={() => setActiveView('organization-tasks')}
+        />
+      )}
+
+      {activeView === 'member-task-details' && selectedOrg && selectedTask && (
+        <TaskDetailsScreen
+          organizationId={selectedOrg.id}
+          divisionId={selectedTask.division_id}
+          task={selectedTask}
+          readOnly
+          onBack={() => setActiveView('organization-tasks')}
+          onSaved={() => setActiveView('organization-tasks')}
         />
       )}
 
@@ -274,7 +411,13 @@ export function RootFlow() {
           organizationName={selectedOrg.name}
           divisions={divisions}
           members={divisionMembers}
+          readOnly={!isExecutive}
           onBack={() => setActiveView('dashboard')}
+          onSwitchTab={(tab) => {
+            if (tab === 'home') setActiveView('dashboard');
+            else if (tab === 'calendar') setActiveView('calendar');
+            else if (tab === 'profile') setActiveView('profile');
+          }}
           onAssignMember={async (memberId, divisionId) => {
             const { data, error } = await supabase
               .from('organization_members')
@@ -303,24 +446,29 @@ export function RootFlow() {
         <CalendarScreen
           organizationId={selectedOrg.id}
           organizationName={selectedOrg.name}
+          role={isCoordinator ? 'Coordinator' : isMember ? 'Member' : 'Executive'}
+          divisionId={selectedOrg.divisionId}
           onSwitchTab={(tab) => {
             if (tab === 'home') setActiveView('dashboard');
             else if (tab === 'profile') setActiveView('profile');
             else if (tab === 'divisions') setActiveView('divisions');
           }}
-          onAttachRundown={(event) => {
+          onAttachRundown={isExecutive ? (event) => {
             setSelectedCalendarEvent(event);
             setActiveView('rundown-select');
-          }}
+          } : undefined}
         />
       )}
 
       {/* 2E. Budgeting Screen */}
-      {(activeView === 'budgeting' || activeView === 'budgeting-add-expense') && (
+      {(activeView === 'budgeting' || activeView === 'budgeting-add-expense') && selectedOrg && (
         <BudgetingScreen
-          organizationId={selectedOrg?.id ?? ''}
+          organizationId={selectedOrg.id}
           onBack={() => setActiveView('dashboard')}
           openAddExpense={activeView === 'budgeting-add-expense'}
+          canAddRevenue={isExecutive}
+          canAddExpense={isExecutive || isCoordinator}
+          canReviewTransactions={isExecutive}
         />
       )}
 
@@ -328,6 +476,8 @@ export function RootFlow() {
         <RundownListScreen
           organizationId={selectedOrg?.id ?? ''}
           organizationName={selectedOrg?.name ?? ''}
+          canCreate={!isMember}
+          canAttach={isExecutive}
           onBack={() => setActiveView('dashboard')}
           onOpenRundown={(rundown) => {
             setSelectedRundown(rundown);
@@ -345,13 +495,14 @@ export function RootFlow() {
         <RundownDetailsScreen
           organizationId={selectedOrg.id}
           rundown={selectedRundown}
+          canEdit={isExecutive}
           onBack={() => setActiveView('rundown-list')}
           onEdit={() => navigateTo('rundown-edit')}
         />
       )}
 
       {/* 2H. Edit Rundown Screen */}
-      {activeView === 'rundown-edit' && selectedOrg && (
+      {activeView === 'rundown-edit' && selectedOrg && (isExecutive || (isCoordinator && !selectedRundown)) && (
         <EditRundownScreen
           organizationId={selectedOrg.id}
           rundown={selectedRundown}
@@ -364,7 +515,7 @@ export function RootFlow() {
       )}
 
       {/* 2I. Select Rundown Screen (attach to Calendar event) */}
-      {activeView === 'rundown-select' && selectedOrg && selectedCalendarEvent && (
+      {activeView === 'rundown-select' && selectedOrg && isExecutive && selectedCalendarEvent && (
         <SelectRundownScreen
           organizationId={selectedOrg.id}
           eventId={selectedCalendarEvent.id}
@@ -398,8 +549,17 @@ export function RootFlow() {
         <NotesListScreen
           organizationId={selectedOrg?.id ?? ''}
           organizationName={selectedOrg?.name ?? ''}
+          role={noteRole}
+          divisionId={selectedOrg?.divisionId}
           onBack={() => setActiveView('dashboard')}
-          onOpenNewNote={() => navigateTo('notes-new')}
+          onOpenNewNote={() => {
+            setEditingNote(null);
+            navigateTo('notes-new');
+          }}
+          onOpenEditNote={(note) => {
+            setEditingNote(note);
+            navigateTo('notes-new');
+          }}
         />
       )}
 
@@ -407,8 +567,18 @@ export function RootFlow() {
         <NewNoteScreen
           organizationId={selectedOrg?.id ?? ''}
           organizationName={selectedOrg?.name ?? ''}
-          onBack={() => setActiveView('notes-list')}
-          onSaveSuccess={() => setActiveView('notes-list')}
+          role={noteRole}
+          divisionId={selectedOrg?.divisionId}
+          divisionName={assignedDivisionName}
+          note={editingNote}
+          onBack={() => {
+            setEditingNote(null);
+            setActiveView('notes-list');
+          }}
+          onSaveSuccess={() => {
+            setEditingNote(null);
+            setActiveView('notes-list');
+          }}
         />
       )}
 
@@ -424,7 +594,14 @@ export function RootFlow() {
         <ProfileScreen
           userName={auth.userName || 'User'}
           userEmail={auth.userEmail || auth.loginEmail}
-          onBack={() => setActiveView(previousView)}
+          roleLabel={isCoordinator ? 'Coordinator' : isMember ? 'Member' : undefined}
+          divisionName={isCoordinator || isMember ? assignedDivisionName : undefined}
+          onBack={() => setActiveView('dashboard')}
+          onSwitchTab={(tab) => {
+            if (tab === 'home') setActiveView('dashboard');
+            else if (tab === 'calendar') setActiveView('calendar');
+            else if (tab === 'divisions') setActiveView('divisions');
+          }}
           onSaveName={async (name) => {
             const { data: { user }, error: userError } = await supabase.auth.getUser();
             if (userError || !user) {
@@ -467,6 +644,18 @@ export function RootFlow() {
         />
       )}
 
+      {isCoordinator
+        && !selectedOrg?.divisionId
+        && activeView === 'coordinator-task-edit'
+        && (
+          <View style={styles.missingDivision}>
+            <Text style={styles.missingDivisionTitle}>No division assigned</Text>
+            <Text style={styles.missingDivisionText}>
+              Ask an executive to assign you to a division before managing members and tasks.
+            </Text>
+          </View>
+        )}
+
       <OrganizationStatusModal
         visible={!!org.statusModalOrg}
         organization={org.statusModalOrg}
@@ -490,7 +679,7 @@ export function RootFlow() {
       />
 
       <InvitesModal
-        visible={isInvitesModalVisible}
+        visible={isInvitesModalVisible && isExecutive}
         organizationId={selectedOrg?.id ?? ''}
         onClose={() => setIsInvitesModalVisible(false)}
       />
@@ -502,5 +691,25 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  missingDivision: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    backgroundColor: colors.background,
+  },
+  missingDivisionTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  missingDivisionText: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+    marginTop: 8,
   },
 });
