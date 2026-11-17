@@ -16,6 +16,8 @@ import { supabase } from '../../../lib/supabase';
 interface RundownListScreenProps {
   organizationId: string;
   organizationName: string;
+  canCreate?: boolean;
+  canAttach?: boolean;
   onBack: () => void;
   onOpenRundown: (rundown: Rundown) => void;
   onCreateRundown: () => void;
@@ -73,6 +75,8 @@ function RundownIcon({ accentColor = '#6C63FF' }: { accentColor?: string }) {
 export function RundownListScreen({
   organizationId,
   organizationName,
+  canCreate = true,
+  canAttach = true,
   onBack,
   onOpenRundown,
   onCreateRundown,
@@ -290,25 +294,24 @@ export function RundownListScreen({
             </View>
           </View>
 
-          <Text style={styles.emptyTitle}>Plan the day, together</Text>
+          <Text style={styles.emptyTitle}>{canCreate ? 'Plan the day, together' : 'No rundowns yet'}</Text>
           <Text style={styles.emptySubtitle}>
-            Create a clear, timed agenda so every{'\n'}
-            committee member knows what happens next.
+            {canCreate
+              ? <>Create a clear, timed agenda so every{'\n'}committee member knows what happens next.</>
+              : 'Organization rundowns will appear here when they are created.'}
           </Text>
 
-          <TouchableOpacity
-            style={styles.createFirstBtn}
-            onPress={onCreateRundown}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.createFirstBtnText}>
-              + Create Your First Rundown
-            </Text>
-          </TouchableOpacity>
+          {canCreate && (
+            <TouchableOpacity
+              style={styles.createFirstBtn}
+              onPress={onCreateRundown}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.createFirstBtnText}>+ Create Your First Rundown</Text>
+            </TouchableOpacity>
+          )}
 
-          <Text style={styles.calendarHint}>
-            You can also attach a rundown from Calendar.
-          </Text>
+          {canAttach && <Text style={styles.calendarHint}>You can also attach a rundown from Calendar.</Text>}
         </View>
       ) : (
         <ScrollView
@@ -316,13 +319,15 @@ export function RundownListScreen({
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <TouchableOpacity
-            style={styles.createNewBtn}
-            onPress={onCreateRundown}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.createNewBtnText}>+ Create New Rundown</Text>
-          </TouchableOpacity>
+          {canCreate && (
+            <TouchableOpacity
+              style={styles.createNewBtn}
+              onPress={onCreateRundown}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.createNewBtnText}>+ Create New Rundown</Text>
+            </TouchableOpacity>
+          )}
 
           <View style={styles.listSection}>
             <Text style={styles.listSectionTitle}>Your rundowns</Text>

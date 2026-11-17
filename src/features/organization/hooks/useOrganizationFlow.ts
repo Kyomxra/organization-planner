@@ -47,7 +47,7 @@ export function useOrganizationFlow() {
     try {
       const { data: memberships, error: membershipsError } = await supabase
         .from('organization_members')
-        .select('organization_id, role, status')
+        .select('organization_id, role, status, division_id')
         .eq('user_id', userId)
         .eq('status', 'active');
 
@@ -96,6 +96,7 @@ export function useOrganizationFlow() {
         return [{
           id: organization.id,
           name: organization.name,
+          divisionId: membership.division_id,
           roleTitle: role.title,
           role: role.role,
           memberCount: memberCounts.get(organization.id) ?? 0,

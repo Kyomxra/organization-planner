@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,8 +20,10 @@ import { NewEventModal } from '../components/NewEventModal';
 interface CalendarScreenProps {
   organizationId: string;
   organizationName: string;
+  role?: 'Executive' | 'Coordinator' | 'Member';
+  divisionId?: string | null;
   onSwitchTab: (tab: 'home' | 'calendar' | 'divisions' | 'profile') => void;
-  onAttachRundown: (event: CalendarEvent) => void;
+  onAttachRundown?: (event: CalendarEvent) => void;
 }
 
 function formatEventTime(date: Date): string {
@@ -29,6 +33,8 @@ function formatEventTime(date: Date): string {
 export function CalendarScreen({
   organizationId,
   organizationName,
+  role = 'Executive',
+  divisionId = null,
   onSwitchTab,
   onAttachRundown,
 }: CalendarScreenProps) {
@@ -40,6 +46,7 @@ export function CalendarScreen({
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isNewEventModalVisible, setIsNewEventModalVisible] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const monthYear = visibleMonth.getFullYear();
   const monthIndex = visibleMonth.getMonth();
   const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
@@ -135,31 +142,78 @@ export function CalendarScreen({
 
   const dayEvents = events.filter((event) => event.dayOfMonth === selectedDay);
 
-  const handleAddEvent = async (event: NewCalendarEvent): Promise<boolean> => {
+  const handleSaveEvent = async (event: NewCalendarEvent): Promise<boolean> => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       showMessage('Could not save event', userError?.message ?? 'Sign in again and retry.');
       return false;
     }
 
-    const { error } = await supabase.from('events').insert({
-      organization_id: organizationId,
+    if (role === 'Coordinator' && !divisionId) {
+      showMessage('No division assigned', 'Ask an executive to assign you to a division before managing events.');
+      return false;
+    }
+
+    const eventData = {
       title: event.title,
-      category: event.category,
+      category: event.category.toLowerCase(),
       description: event.description,
       notes: event.notes,
       start_at: event.startAt,
       end_at: event.endAt,
-      created_by: user.id,
-    });
+      division_id: role === 'Coordinator' ? divisionId : editingEvent?.divisionId ?? null,
+    };
+    const result = editingEvent
+      ? await supabase
+          .from('events')
+          .update(eventData)
+          .eq('organization_id', organizationId)
+          .eq('id', editingEvent.id)
+          .select('id')
+          .maybeSingle()
+      : await supabase
+          .from('events')
+          .insert({ ...eventData, organization_id: organizationId, created_by: user.id })
+          .select('id')
+          .single();
 
-    if (error) {
-      showMessage('Could not save event', error.message);
+    if (result.error || !result.data) {
+      showMessage('Could not save event', result.error?.message ?? 'You may not have permission to change this event.');
       return false;
     }
 
     await loadEvents();
     return true;
+  };
+
+  const deleteSelectedEvent = async () => {
+    if (!selectedEvent) return;
+    const { data, error } = await supabase
+      .from('events')
+      .delete()
+      .eq('organization_id', organizationId)
+      .eq('id', selectedEvent.id)
+      .select('id')
+      .maybeSingle();
+    if (error || !data) {
+      showMessage('Could not delete event', error?.message ?? 'You may not have permission to delete this event.');
+      return;
+    }
+    setSelectedEvent(null);
+    await loadEvents();
+  };
+
+  const confirmDeleteEvent = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm(`Delete "${selectedEvent?.title ?? 'this event'}"? This cannot be undone.`)) {
+        void deleteSelectedEvent();
+      }
+      return;
+    }
+    Alert.alert('Delete event?', `Delete "${selectedEvent?.title ?? 'this event'}"? This cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => { void deleteSelectedEvent(); } },
+    ]);
   };
 
   return (
@@ -304,7 +358,7 @@ export function CalendarScreen({
                     <Path d="M14 12 C15.5 12.5, 17 13.5, 17 15" fill="none" stroke={colors.muted} strokeWidth={1.4} />
                   </Svg>
                   <Text style={styles.divisionMetaText}>
-                    {ev.orgName} · {ev.divisionName}
+                    {ev.divisionId ? `Division · ${ev.divisionName}` : 'Organization-wide'}
                   </Text>
                 </View>
               </View>
@@ -322,13 +376,22 @@ export function CalendarScreen({
         )}
 
         {/* Add Event Button */}
-        <TouchableOpacity
-          style={styles.addEventBtn}
-          onPress={() => setIsNewEventModalVisible(true)}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.addEventBtnText}>+ Add Event</Text>
-        </TouchableOpacity>
+        {role === 'Executive' || (role === 'Coordinator' && divisionId) ? (
+          <TouchableOpacity
+            style={styles.addEventBtn}
+            onPress={() => {
+              setEditingEvent(null);
+              setIsNewEventModalVisible(true);
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.addEventBtnText}>+ Add Event</Text>
+          </TouchableOpacity>
+        ) : role === 'Coordinator' ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>A division assignment is required to manage events.</Text>
+          </View>
+        ) : null}
       </ScrollView>
 
       {/* Bottom Tab Bar */}
@@ -373,17 +436,34 @@ export function CalendarScreen({
         visible={!!selectedEvent}
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
-        onAttachRundown={() => {
+        canManageEvent={role === 'Executive' || (
+          role === 'Coordinator'
+          && !!divisionId
+          && selectedEvent?.divisionId === divisionId
+        )}
+        onEdit={() => {
+          if (!selectedEvent) return;
+          setEditingEvent(selectedEvent);
+          setSelectedEvent(null);
+          setIsNewEventModalVisible(true);
+        }}
+        onDelete={confirmDeleteEvent}
+        onAttachRundown={role === 'Executive' && onAttachRundown ? () => {
           if (selectedEvent) onAttachRundown(selectedEvent);
           setSelectedEvent(null);
-        }}
+        } : undefined}
       />
 
       <NewEventModal
         visible={isNewEventModalVisible}
+        initialEvent={editingEvent}
+        fixedDivisionId={role === 'Coordinator' ? divisionId : null}
         initialDate={formatLocalDate(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), selectedDay))}
-        onClose={() => setIsNewEventModalVisible(false)}
-        onSave={handleAddEvent}
+        onClose={() => {
+          setIsNewEventModalVisible(false);
+          setEditingEvent(null);
+        }}
+        onSave={handleSaveEvent}
       />
     </View>
   );

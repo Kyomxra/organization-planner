@@ -1,4 +1,13 @@
-export type NoteAudience = 'All' | 'Private' | 'Division' | 'Executive' | 'Coordinators' | 'Members';
+export type NoteAudience =
+  | 'All'
+  | 'Private'
+  | 'Division'
+  | 'Organization'
+  | 'My Division'
+  | 'Personal'
+  | 'Executive'
+  | 'Coordinators'
+  | 'Members';
 
 export interface NoteBadge {
   label: string;
@@ -15,4 +24,8 @@ export interface NoteItem {
   dateLabel: string;
   badges: NoteBadge[];
   audienceCategory: NoteAudience[];
+  divisionIds: string[];
+  roleAudiences: string[];
+  shareWithAllMembers: boolean;
+  scopeLabel: 'Organization' | 'Division' | 'Personal';
 }

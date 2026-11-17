@@ -20,6 +20,7 @@ interface TransactionDetailsModalProps {
   expense: ExpenseItem | null;
   onApprove: () => void;
   onReject: () => void;
+  canReview?: boolean;
 }
 
 export function TransactionDetailsModal({
@@ -28,6 +29,7 @@ export function TransactionDetailsModal({
   expense,
   onApprove,
   onReject,
+  canReview = true,
 }: TransactionDetailsModalProps) {
   const handleViewFull = () => {
     showMessage(
@@ -166,7 +168,7 @@ export function TransactionDetailsModal({
               </TouchableOpacity>
             </View>
 
-            {expense?.status === 'PENDING' && (
+            {canReview && expense?.status === 'PENDING' && (
               <View style={styles.reviewActions}>
                 <TouchableOpacity
                   style={styles.rejectBtn}

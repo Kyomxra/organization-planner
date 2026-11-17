@@ -17,7 +17,10 @@ interface EventDetailsModalProps {
   visible: boolean;
   event: CalendarEvent | null;
   onClose: () => void;
-  onAttachRundown: () => void;
+  onAttachRundown?: () => void;
+  canManageEvent?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 export function EventDetailsModal({
@@ -25,6 +28,9 @@ export function EventDetailsModal({
   event,
   onClose,
   onAttachRundown,
+  canManageEvent = false,
+  onEdit,
+  onDelete,
 }: EventDetailsModalProps) {
   if (!event) return null;
 
@@ -58,7 +64,9 @@ export function EventDetailsModal({
 
             {/* Title & Subtitle */}
             <Text style={styles.eventTitle}>{event.title}</Text>
-            <Text style={styles.eventSub}>{event.orgName} · {event.divisionName}</Text>
+            <Text style={styles.eventSub}>
+              {event.orgName} · {event.divisionId ? `Division · ${event.divisionName}` : 'Organization-wide'}
+            </Text>
 
             {/* Date & Time Card */}
             <View style={styles.card}>
@@ -104,7 +112,17 @@ export function EventDetailsModal({
                 <Text style={styles.descBody}>{event.notes}</Text>
               </View>
             ) : null}
-            <View style={styles.rundownCard}>
+            {canManageEvent && (
+              <View style={styles.manageRow}>
+                <TouchableOpacity style={styles.editButton} onPress={onEdit}>
+                  <Text style={styles.editButtonText}>Edit event</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
+                  <Text style={styles.deleteButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {onAttachRundown ? <View style={styles.rundownCard}>
               <Text style={styles.rundownText}>
                 {event.linkedRundown
                   ? `Linked rundown: ${event.linkedRundown.title}`
@@ -115,7 +133,7 @@ export function EventDetailsModal({
                   {event.linkedRundown ? 'Change rundown' : 'Attach rundown'}
                 </Text>
               </TouchableOpacity>
-            </View>
+            </View> : null}
           </ScrollView>
         </View>
       </View>
@@ -266,4 +284,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  manageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  editButton: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 11,
+  },
+  editButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+  deleteButton: {
+    borderWidth: 1,
+    borderColor: '#F2D2D4',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 13,
+  },
+  deleteButtonText: { color: colors.danger, fontSize: 12, fontWeight: '800' },
 });

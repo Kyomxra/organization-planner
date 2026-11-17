@@ -18,8 +18,11 @@ import { supabase } from '../../../lib/supabase';
 interface NotesListScreenProps {
   organizationId: string;
   organizationName: string;
+  role?: 'executive' | 'coordinator' | 'member';
+  divisionId?: string | null;
   onBack: () => void;
   onOpenNewNote: () => void;
+  onOpenEditNote: (note: NoteItem) => void;
 }
 
 const filterTabs: NoteAudience[] = [
@@ -30,6 +33,8 @@ const filterTabs: NoteAudience[] = [
   'Coordinators',
   'Members',
 ];
+const coordinatorFilterTabs: NoteAudience[] = ['Organization', 'My Division', 'Personal'];
+const memberFilterTabs: NoteAudience[] = ['Personal'];
 
 const roleBadges = {
   executive: { label: 'Executive', type: 'executive' as const, bgColor: '#E6F4FF', textColor: '#2B88E8' },
@@ -40,10 +45,15 @@ const roleBadges = {
 export function NotesListScreen({
   organizationId,
   organizationName,
+  role = 'executive',
+  divisionId = null,
   onBack,
   onOpenNewNote,
+  onOpenEditNote,
 }: NotesListScreenProps) {
-  const [activeFilter, setActiveFilter] = useState<NoteAudience>('All');
+  const [activeFilter, setActiveFilter] = useState<NoteAudience>(
+    role === 'executive' ? 'All' : role === 'member' ? 'Personal' : 'Organization',
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [notes, setNotes] = useState<NoteItem[]>([]);
@@ -99,6 +109,13 @@ export function NotesListScreen({
     setNotes((noteRows ?? []).map((note) => {
       const roles = (roleResult.data ?? []).filter((row) => row.note_id === note.id);
       const noteDivisions = (divisionResult.data ?? []).filter((row) => row.note_id === note.id);
+      const roleAudiences = roles.map((row) => row.role);
+      const hasOrganizationAudience = note.share_with_all_members || roleAudiences.length > 0;
+      const scopeLabel: NoteItem['scopeLabel'] = hasOrganizationAudience
+        ? 'Organization'
+        : noteDivisions.length
+          ? 'Division'
+          : 'Personal';
       const badges: NoteItem['badges'] = [
         ...roles.flatMap((row) => row.role in roleBadges ? [roleBadges[row.role as keyof typeof roleBadges]] : []),
         ...noteDivisions.flatMap((row) => {
@@ -118,12 +135,16 @@ export function NotesListScreen({
         }] : []),
       ];
       const audienceCategory: NoteAudience[] = ['All'];
+      if (hasOrganizationAudience) audienceCategory.push('Organization');
       if (note.share_with_all_members) audienceCategory.push('Members');
       if (roles.some((row) => row.role === 'executive')) audienceCategory.push('Executive');
       if (roles.some((row) => row.role === 'coordinator')) audienceCategory.push('Coordinators');
       if (noteDivisions.length) audienceCategory.push('Division');
+      if (divisionId && noteDivisions.some((row) => row.division_id === divisionId)) {
+        audienceCategory.push('My Division');
+      }
       if (!badges.length) {
-        audienceCategory.push('Private');
+        audienceCategory.push('Private', 'Personal');
         badges.push({ label: 'Private', type: 'private', bgColor: '#F0F1F7', textColor: '#5A5D75' });
       }
 
@@ -138,6 +159,10 @@ export function NotesListScreen({
         }),
         badges,
         audienceCategory,
+        divisionIds: noteDivisions.map((row) => row.division_id),
+        roleAudiences,
+        shareWithAllMembers: note.share_with_all_members,
+        scopeLabel,
       };
     }));
     setIsLoading(false);
@@ -168,6 +193,21 @@ export function NotesListScreen({
     }
     setNotes((current) => current.filter((note) => note.id !== noteId));
   };
+
+  const canDeleteNote = (note: NoteItem) => (
+    role !== 'member' && (
+    note.scopeLabel === 'Personal'
+      ? note.authorId === currentUserId
+      : role === 'executive'
+        || (
+          note.scopeLabel === 'Division'
+          && !!divisionId
+          && note.divisionIds.length > 0
+          && note.divisionIds.every((id) => id === divisionId)
+          && (role === 'coordinator' || note.authorId === currentUserId)
+        )
+    )
+  );
 
   const confirmDeleteNote = (note: NoteItem) => {
     const onConfirm = () => { void deleteNote(note.id); };
@@ -242,7 +282,12 @@ export function NotesListScreen({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabsScrollContent}
         >
-          {filterTabs.map((tab) => {
+          {(role === 'executive'
+            ? filterTabs
+            : role === 'member'
+              ? memberFilterTabs
+              : coordinatorFilterTabs
+          ).map((tab) => {
             const isActive = activeFilter === tab;
             return (
               <TouchableOpacity
@@ -281,27 +326,40 @@ export function NotesListScreen({
             <View key={note.id} style={styles.noteCard}>
               <View style={styles.noteTopRow}>
                 <Text style={styles.noteTitle}>{note.title}</Text>
-                {note.authorId === currentUserId && (
-                  <TouchableOpacity
-                    onPress={() => confirmDeleteNote(note)}
-                    hitSlop={8}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Delete ${note.title}`}
-                  >
-                    <Svg width={16} height={16} viewBox="0 0 24 24">
-                      <Path
-                        d="M3 6H5H21M8 6V4C8 3.4 8.4 3 9 3H15C15.6 3 16 3.4 16 4V6M19 6V20C19 20.6 18.6 21 18 21H6C5.4 21 5 20.6 5 20V6H19Z"
-                        fill="none"
-                        stroke="#85879A"
-                        strokeWidth={1.8}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </Svg>
-                  </TouchableOpacity>
-                )}
+                <View style={styles.noteActions}>
+                  {canDeleteNote(note) && (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => onOpenEditNote(note)}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Edit ${note.title}`}
+                      >
+                        <Text style={styles.editNoteAction}>Edit</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => confirmDeleteNote(note)}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Delete ${note.title}`}
+                      >
+                        <Svg width={16} height={16} viewBox="0 0 24 24">
+                          <Path
+                            d="M3 6H5H21M8 6V4C8 3.4 8.4 3 9 3H15C15.6 3 16 3.4 16 4V6M19 6V20C19 20.6 18.6 21 18 21H6C5.4 21 5 20.6 5 20V6H19Z"
+                            fill="none"
+                            stroke="#85879A"
+                            strokeWidth={1.8}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </Svg>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
               </View>
 
+              {role !== 'executive' && <Text style={styles.scopeLabel}>{note.scopeLabel}</Text>}
               <Text style={styles.noteBody}>{note.content}</Text>
 
               {/* Bottom Meta & Badges */}
@@ -358,17 +416,19 @@ export function NotesListScreen({
       </ScrollView>
 
       {/* Floating Action Button (FAB) */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={onOpenNewNote}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel="Create note"
-      >
-        <Svg width={22} height={22} viewBox="0 0 24 24">
-          <Path d="M12 5V19M5 12H19" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" />
-        </Svg>
-      </TouchableOpacity>
+      {role !== 'member' && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={onOpenNewNote}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Create note"
+        >
+          <Svg width={22} height={22} viewBox="0 0 24 24">
+            <Path d="M12 5V19M5 12H19" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" />
+          </Svg>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -499,6 +559,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  noteActions: { flexDirection: 'row', alignItems: 'center', gap: 12, marginLeft: 10 },
+  editNoteAction: { color: colors.primary, fontSize: 11, fontWeight: '800' },
+  scopeLabel: { color: colors.primary, fontSize: 9, fontWeight: '800', textTransform: 'uppercase', marginBottom: 7 },
   noteTitle: {
     fontSize: 14,
     fontWeight: '800',
