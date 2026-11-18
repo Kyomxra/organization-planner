@@ -22,7 +22,7 @@ interface CalendarScreenProps {
   organizationName: string;
   role?: 'Executive' | 'Coordinator' | 'Member';
   divisionId?: string | null;
-  onSwitchTab: (tab: 'home' | 'calendar' | 'divisions' | 'profile') => void;
+  onSwitchTab: (tab: 'home' | 'calendar' | 'divisions') => void;
   onAttachRundown?: (event: CalendarEvent) => void;
 }
 
@@ -396,20 +396,20 @@ export function CalendarScreen({
 
       {/* Bottom Tab Bar */}
       <View style={styles.tabBar}>
-        <TouchableOpacity style={[styles.tabItem, styles.tabItemActive]} onPress={() => onSwitchTab('calendar')}>
-          <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Rect x="3" y="4" width="18" height="18" rx="3" stroke={colors.primary} strokeWidth={2} fill="none" />
-            <Path d="M16 2V6M8 2V6M3 10H21" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
-          </Svg>
-          <Text style={[styles.tabLabel, styles.tabLabelActive]}>Calendar</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.tabItem} onPress={() => onSwitchTab('home')}>
           <Svg width={20} height={20} viewBox="0 0 24 24">
             <Path d="M3 10.5L12 3L21 10.5V20C21 20.6 20.6 21 20 21H4C3.4 21 3 20.6 3 20V10.5Z" fill="none" stroke="#8A8C9F" strokeWidth={1.8} strokeLinejoin="round" />
             <Path d="M9 21V12H15V21" fill="none" stroke="#8A8C9F" strokeWidth={1.8} />
           </Svg>
           <Text style={styles.tabLabel}>Home</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.tabItem, styles.tabItemActive]} onPress={() => onSwitchTab('calendar')}>
+          <Svg width={20} height={20} viewBox="0 0 24 24">
+            <Rect x="3" y="4" width="18" height="18" rx="3" stroke={colors.primary} strokeWidth={2} fill="none" />
+            <Path d="M16 2V6M8 2V6M3 10H21" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
+          </Svg>
+          <Text style={[styles.tabLabel, styles.tabLabelActive]}>Calendar</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabItem} onPress={() => onSwitchTab('divisions')}>
@@ -422,13 +422,6 @@ export function CalendarScreen({
           <Text style={styles.tabLabel}>Divisions</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem} onPress={() => onSwitchTab('profile')}>
-          <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Circle cx="12" cy="8" r="4" stroke="#8A8C9F" strokeWidth={1.8} fill="none" />
-            <Path d="M4 20C4 16 7.5 14 12 14C16.5 14 20 16 20 20" stroke="#8A8C9F" strokeWidth={1.8} fill="none" strokeLinecap="round" />
-          </Svg>
-          <Text style={styles.tabLabel}>Profile</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Modals */}

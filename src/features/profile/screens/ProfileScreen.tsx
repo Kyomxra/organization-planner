@@ -9,16 +9,12 @@ import {
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
-import { OrganizationBottomTabBar, OrganizationTab } from '../../../navigation/OrganizationBottomTabBar';
 import { showMessage } from '../../auth/utils/feedback';
 
 interface ProfileScreenProps {
   userName: string;
   userEmail: string;
-  roleLabel?: string;
-  divisionName?: string;
   onBack: () => void;
-  onSwitchTab: (tab: OrganizationTab) => void;
   onSaveName: (name: string) => Promise<boolean>;
   onSignOut: () => void;
 }
@@ -26,10 +22,7 @@ interface ProfileScreenProps {
 export function ProfileScreen({
   userName,
   userEmail,
-  roleLabel,
-  divisionName,
   onBack,
-  onSwitchTab,
   onSaveName,
   onSignOut,
 }: ProfileScreenProps) {
@@ -90,14 +83,6 @@ export function ProfileScreen({
         <Text style={styles.sectionHeading}>Account info</Text>
 
         <View style={styles.formGroup}>
-          {roleLabel ? (
-            <View style={styles.organizationRoleCard}>
-              <Text style={styles.roleLabel}>ORGANIZATION ROLE</Text>
-              <Text style={styles.roleValue}>{roleLabel}</Text>
-              <Text style={styles.roleDivision}>{divisionName || 'No division assigned'}</Text>
-            </View>
-          ) : null}
-
           {/* Account name */}
           <View style={styles.fieldBoxWhite}>
             <Svg width={18} height={18} viewBox="0 0 24 24" style={styles.fieldIcon}>
@@ -150,7 +135,6 @@ export function ProfileScreen({
           </TouchableOpacity>
         </View>
       </ScrollView>
-      <OrganizationBottomTabBar activeTab="profile" onSelect={onSwitchTab} />
     </View>
   );
 }
@@ -224,30 +208,6 @@ const styles = StyleSheet.create({
   },
   formGroup: {
     gap: 12,
-  },
-  organizationRoleCard: {
-    backgroundColor: '#F3F2FF',
-    borderWidth: 1,
-    borderColor: '#E4E1FF',
-    borderRadius: 16,
-    padding: 14,
-  },
-  roleLabel: {
-    color: colors.primary,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-  },
-  roleValue: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '800',
-    marginTop: 5,
-  },
-  roleDivision: {
-    color: colors.muted,
-    fontSize: 11,
-    marginTop: 3,
   },
   fieldBoxGrey: {
     flexDirection: 'row',

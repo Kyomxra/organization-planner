@@ -19,7 +19,6 @@ interface DashboardHomeScreenProps {
   onBackToOrgList: () => void;
   onOpenCalendar: () => void;
   onOpenDivisions: () => void;
-  onOpenProfile: () => void;
   onOpenInvites: () => void;
   onOpenRundown: () => void;
   onOpenBudgeting: () => void;
@@ -36,7 +35,6 @@ export function DashboardHomeScreen({
   onBackToOrgList,
   onOpenCalendar,
   onOpenDivisions,
-  onOpenProfile,
   onOpenInvites,
   onOpenRundown,
   onOpenBudgeting,
@@ -45,7 +43,7 @@ export function DashboardHomeScreen({
   onOpenNotifications,
   onOpenTasks,
 }: DashboardHomeScreenProps) {
-  const [activeTab, setActiveTab] = useState<'home' | 'calendar' | 'divisions' | 'profile'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'calendar' | 'divisions'>('home');
   const [nextActivity, setNextActivity] = useState<{ title: string; date: string } | null>(null);
   const [budgetSummary, setBudgetSummary] = useState({ income: 0, expenses: 0, pending: 0 });
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -419,22 +417,6 @@ export function DashboardHomeScreen({
 
       {/* Bottom Tab Bar */}
       <View style={styles.tabBar}>
-        {/* Calendar Tab */}
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => {
-            setActiveTab('calendar');
-            onOpenCalendar();
-          }}
-          activeOpacity={0.7}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Rect x="3" y="4" width="18" height="18" rx="3" stroke="#8A8C9F" strokeWidth={1.8} fill="none" />
-            <Path d="M16 2V6M8 2V6M3 10H21" stroke="#8A8C9F" strokeWidth={1.8} strokeLinecap="round" />
-          </Svg>
-          <Text style={styles.tabLabel}>Calendar</Text>
-        </TouchableOpacity>
-
         {/* Home Tab (Active) */}
         <TouchableOpacity
           style={[styles.tabItem, activeTab === 'home' && styles.tabItemActive]}
@@ -452,6 +434,22 @@ export function DashboardHomeScreen({
             <Path d="M9 21V12H15V21" fill="#FFFFFF" stroke={colors.primary} strokeWidth={1.8} />
           </Svg>
           <Text style={[styles.tabLabel, styles.tabLabelActive]}>Home</Text>
+        </TouchableOpacity>
+
+        {/* Calendar Tab */}
+        <TouchableOpacity
+          style={styles.tabItem}
+          onPress={() => {
+            setActiveTab('calendar');
+            onOpenCalendar();
+          }}
+          activeOpacity={0.7}
+        >
+          <Svg width={20} height={20} viewBox="0 0 24 24">
+            <Rect x="3" y="4" width="18" height="18" rx="3" stroke="#8A8C9F" strokeWidth={1.8} fill="none" />
+            <Path d="M16 2V6M8 2V6M3 10H21" stroke="#8A8C9F" strokeWidth={1.8} strokeLinecap="round" />
+          </Svg>
+          <Text style={styles.tabLabel}>Calendar</Text>
         </TouchableOpacity>
 
         {/* Divisions Tab */}
@@ -472,21 +470,6 @@ export function DashboardHomeScreen({
           <Text style={styles.tabLabel}>Divisions</Text>
         </TouchableOpacity>
 
-        {/* Profile Tab */}
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => {
-            setActiveTab('profile');
-            onOpenProfile();
-          }}
-          activeOpacity={0.7}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Circle cx="12" cy="8" r="4" stroke="#8A8C9F" strokeWidth={1.8} fill="none" />
-            <Path d="M4 20C4 16 7.5 14 12 14C16.5 14 20 16 20 20" stroke="#8A8C9F" strokeWidth={1.8} fill="none" strokeLinecap="round" />
-          </Svg>
-          <Text style={styles.tabLabel}>Profile</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );

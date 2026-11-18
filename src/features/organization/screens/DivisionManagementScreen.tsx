@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
-import { OrganizationBottomTabBar, OrganizationTab } from '../../../navigation/OrganizationBottomTabBar';
+import { OrganizationBottomTabBar } from '../../../navigation/OrganizationBottomTabBar';
 import { Division, DivisionMember } from '../types/division';
 
 interface DivisionManagementScreenProps {
@@ -20,7 +20,7 @@ interface DivisionManagementScreenProps {
   members: DivisionMember[];
   readOnly?: boolean;
   onBack: () => void;
-  onSwitchTab: (tab: OrganizationTab) => void;
+  onSwitchTab: (tab: 'home' | 'calendar' | 'divisions') => void;
   onAssignMember: (memberId: string, divisionId: string | null) => void;
 }
 

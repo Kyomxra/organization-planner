@@ -326,6 +326,7 @@ export function RootFlow() {
           onOpenCreateOrg={() => setActiveView('create-org')}
           onOpenJoinOrg={() => org.setIsJoinModalVisible(true)}
           onOpenStatusModal={(item) => org.setStatusModalOrg(item)}
+          onOpenProfile={() => setActiveView('profile')}
         />
       )}
 
@@ -352,7 +353,6 @@ export function RootFlow() {
           onOpenNotifications={() => navigateTo('notifications')}
           onOpenInvites={() => setIsInvitesModalVisible(true)}
           onOpenDivisions={() => setActiveView('divisions')}
-          onOpenProfile={() => setActiveView('profile')}
           onOpenTasks={() => setActiveView('organization-tasks')}
         />
       )}
@@ -416,7 +416,6 @@ export function RootFlow() {
           onSwitchTab={(tab) => {
             if (tab === 'home') setActiveView('dashboard');
             else if (tab === 'calendar') setActiveView('calendar');
-            else if (tab === 'profile') setActiveView('profile');
           }}
           onAssignMember={async (memberId, divisionId) => {
             const { data, error } = await supabase
@@ -450,7 +449,6 @@ export function RootFlow() {
           divisionId={selectedOrg.divisionId}
           onSwitchTab={(tab) => {
             if (tab === 'home') setActiveView('dashboard');
-            else if (tab === 'profile') setActiveView('profile');
             else if (tab === 'divisions') setActiveView('divisions');
           }}
           onAttachRundown={isExecutive ? (event) => {
@@ -594,14 +592,7 @@ export function RootFlow() {
         <ProfileScreen
           userName={auth.userName || 'User'}
           userEmail={auth.userEmail || auth.loginEmail}
-          roleLabel={isCoordinator ? 'Coordinator' : isMember ? 'Member' : undefined}
-          divisionName={isCoordinator || isMember ? assignedDivisionName : undefined}
-          onBack={() => setActiveView('dashboard')}
-          onSwitchTab={(tab) => {
-            if (tab === 'home') setActiveView('dashboard');
-            else if (tab === 'calendar') setActiveView('calendar');
-            else if (tab === 'divisions') setActiveView('divisions');
-          }}
+          onBack={() => setActiveView('org-list')}
           onSaveName={async (name) => {
             const { data: { user }, error: userError } = await supabase.auth.getUser();
             if (userError || !user) {

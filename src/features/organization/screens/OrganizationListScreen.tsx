@@ -20,6 +20,7 @@ interface OrganizationListScreenProps {
   onOpenCreateOrg: () => void;
   onOpenJoinOrg: () => void;
   onOpenStatusModal: (org: OrganizationItem) => void;
+  onOpenProfile: () => void;
   isLoading?: boolean;
   loadError?: string | null;
   onRetry?: () => void;
@@ -34,6 +35,7 @@ export function OrganizationListScreen({
   onOpenCreateOrg,
   onOpenJoinOrg,
   onOpenStatusModal,
+  onOpenProfile,
   isLoading = false,
   loadError,
   onRetry,
@@ -55,6 +57,23 @@ export function OrganizationListScreen({
         {/* Top Header */}
         <View style={styles.topHeader}>
           <Text style={styles.welcomeText}>Welcome, {userName}!</Text>
+          <TouchableOpacity
+            style={styles.profileAvatar}
+            onPress={onOpenProfile}
+            accessibilityRole="button"
+            accessibilityLabel="User profile"
+          >
+            <Svg width={22} height={22} viewBox="0 0 24 24">
+              <Circle cx="12" cy="8" r="4" fill="none" stroke="#2D3142" strokeWidth={1.8} />
+              <Path
+                d="M5 19 C5 15.5, 8 13.5, 12 13.5 C16 13.5, 19 15.5, 19 19"
+                fill="none"
+                stroke="#2D3142"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+              />
+            </Svg>
+          </TouchableOpacity>
         </View>
 
         {/* Successfully Joined Toast Banner */}
@@ -266,6 +285,16 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.text,
     letterSpacing: -0.5,
+  },
+  profileAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.2,
+    borderColor: '#E8E9F2',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   toastBanner: {
     flexDirection: 'row',
