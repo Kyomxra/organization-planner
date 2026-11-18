@@ -361,6 +361,7 @@ export function RootFlow() {
           organizationId={selectedOrg.id}
           divisionId={null}
           canCreateTask={isCoordinator || isExecutive}
+          canDeleteTask={(task) => isExecutive || (isCoordinator && task.division_id === selectedOrg.divisionId)}
           screenTitle="Tasks"
           onBack={() => setActiveView('dashboard')}
           onCreateTask={isCoordinator || isExecutive ? () => {

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { supabase } from '../../../lib/supabase';
@@ -11,6 +11,7 @@ interface DivisionTasksScreenProps {
   divisionId: string | null;
   assignedToUserId?: string;
   canCreateTask?: boolean;
+  canDeleteTask?: (task: DivisionTask) => boolean;
   screenTitle?: string;
   onBack?: () => void;
   onCreateTask?: () => void;
@@ -25,6 +26,7 @@ export function DivisionTasksScreen({
   divisionId,
   assignedToUserId,
   canCreateTask = assignedToUserId === undefined,
+  canDeleteTask,
   screenTitle,
   onBack,
   onCreateTask,
@@ -104,6 +106,38 @@ export function DivisionTasksScreen({
     && (activePriority === 'all' || task.priority === activePriority)
   );
   const memberView = assignedToUserId !== undefined;
+  const taskCountLabel = `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'}`;
+
+  const deleteTask = async (task: DivisionTask) => {
+    const { data, error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', task.id)
+      .eq('organization_id', organizationId)
+      .select('id')
+      .maybeSingle();
+    if (error) {
+      showMessage('Could not delete task', error.message);
+      return;
+    }
+    if (!data) {
+      showMessage('Could not delete task', 'You may not have permission to delete this task.');
+      return;
+    }
+    setTasks((current) => current.filter((item) => item.id !== task.id));
+  };
+
+  const confirmDeleteTask = (task: DivisionTask) => {
+    const onConfirm = () => { void deleteTask(task); };
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm(`Delete "${task.title}"? This cannot be undone.`)) onConfirm();
+      return;
+    }
+    Alert.alert('Delete task?', `Delete "${task.title}"? This cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: onConfirm },
+    ]);
+  };
 
   return (
     <View style={styles.root}>
@@ -122,8 +156,11 @@ export function DivisionTasksScreen({
             </Svg>
           </TouchableOpacity>
         ) : null}
-        <Text style={styles.title}>{screenTitle ?? (memberView ? 'My Tasks' : 'Division Tasks')}</Text>
-        <Text style={styles.subtitle}>{tasks.length} tasks</Text>
+        <View style={styles.headerCopy}>
+          <Text style={styles.title}>{screenTitle ?? (memberView ? 'My Tasks' : 'Division Tasks')}</Text>
+          <Text style={styles.subtitle}>{taskCountLabel}</Text>
+        </View>
+        <View style={styles.headerSpacer} />
       </View>
       <View style={styles.statusTabs}>
         {filters.map((filter) => (
@@ -177,22 +214,52 @@ export function DivisionTasksScreen({
           </View>
         ) : null}
         {visibleTasks.map((task) => (
-          <TouchableOpacity key={task.id} style={styles.card} onPress={() => onOpenTask(task)}>
+          <View key={task.id} style={styles.card}>
             <View style={styles.cardHeader}>
-              <Text style={styles.taskTitle}>{task.title}</Text>
-              <Text style={[styles.priority, task.priority === 'urgent' && styles.urgent]}>
-                {task.priority.toUpperCase()}
-              </Text>
+              <TouchableOpacity
+                style={styles.taskMain}
+                onPress={() => onOpenTask(task)}
+                activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel={`Open task ${task.title}`}
+              >
+                <Text style={styles.taskTitle} numberOfLines={2}>{task.title}</Text>
+                <Text style={[styles.priority, task.priority === 'urgent' && styles.urgent]}>
+                  {task.priority.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
+              {canDeleteTask?.(task) ? (
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => confirmDeleteTask(task)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete ${task.title}`}
+                >
+                  <Svg width={16} height={16} viewBox="0 0 24 24">
+                    <Path
+                      d="M3 6H5H21M8 6V4C8 3.4 8.4 3 9 3H15C15.6 3 16 3.4 16 4V6M19 6V20C19 20.6 18.6 21 18 21H6C5.4 21 5 20.6 5 20V6H19Z"
+                      fill="none"
+                      stroke={colors.muted}
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                </TouchableOpacity>
+              ) : null}
             </View>
-            <Text style={styles.description} numberOfLines={2}>{task.description || 'No description'}</Text>
-            <View style={styles.metaRow}>
-              <Text style={styles.meta}>{task.status.toUpperCase()}</Text>
-              <Text style={styles.meta}>{task.due_at ? `Due ${task.due_at}` : 'No deadline'}</Text>
-            </View>
-            <Text style={styles.assignee}>{task.division_name}</Text>
-            {!memberView && <Text style={styles.assignee}>Assigned to {task.assignee_name}</Text>}
-            {task.progress_update ? <Text style={styles.progress} numberOfLines={2}>{task.progress_update}</Text> : null}
-          </TouchableOpacity>
+            <TouchableOpacity onPress={() => onOpenTask(task)} activeOpacity={0.75}>
+              <Text style={styles.description} numberOfLines={2}>{task.description || 'No description'}</Text>
+              <View style={styles.metaRow}>
+                <Text style={styles.meta}>{task.status.toUpperCase()}</Text>
+                <Text style={styles.meta}>{task.due_at ? `Due ${task.due_at}` : 'No deadline'}</Text>
+              </View>
+              <Text style={styles.assignee}>{task.division_name}</Text>
+              {!memberView && <Text style={styles.assignee}>Assigned to {task.assignee_name}</Text>}
+              {task.progress_update ? <Text style={styles.progress} numberOfLines={2}>{task.progress_update}</Text> : null}
+            </TouchableOpacity>
+          </View>
         ))}
       </ScrollView>
       {canCreateTask && onCreateTask ? (
@@ -254,7 +321,13 @@ export function DivisionTasksScreen({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  header: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 8 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
   backButton: {
     width: 36,
     height: 36,
@@ -264,10 +337,12 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginRight: 12,
   },
-  title: { color: colors.text, fontSize: 22, fontWeight: '800' },
-  subtitle: { color: colors.muted, fontSize: 12, marginTop: 4 },
+  headerCopy: { flex: 1 },
+  headerSpacer: { width: 36 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '800' },
+  subtitle: { color: colors.muted, fontSize: 11, marginTop: 2 },
   statusTabs: {
     flexDirection: 'row',
     marginHorizontal: 20,
@@ -358,8 +433,10 @@ const styles = StyleSheet.create({
   taskScroll: { flex: 1 },
   list: { padding: 20, paddingBottom: 24, gap: 10 },
   card: { backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 15 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  taskMain: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   taskTitle: { flex: 1, color: colors.text, fontSize: 14, fontWeight: '800' },
+  deleteButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
   priority: { color: colors.primary, fontSize: 9, fontWeight: '800' },
   urgent: { color: colors.error500 },
   description: { color: colors.text, fontSize: 12, marginTop: 7, lineHeight: 18 },
