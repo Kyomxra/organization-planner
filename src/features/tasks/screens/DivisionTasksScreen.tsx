@@ -129,9 +129,12 @@ export function DivisionTasksScreen({
   };
 
   const confirmDeleteTask = (task: DivisionTask) => {
-    confirmAction('Delete task?', `Are you sure you want to delete "${task.title}"? This cannot be undone.`, () => {
-      void deleteTask(task);
-    });
+    confirmAction(
+      'Delete task?',
+      `Are you sure you want to delete "${task.title}"? This cannot be undone.`,
+      () => { void deleteTask(task); },
+      'Delete',
+    );
   };
 
   return (

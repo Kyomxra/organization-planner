@@ -181,11 +181,16 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
   };
 
   const handleDeleteItem = (id: string) => {
-    confirmAction('Delete item?', 'Are you sure you want to delete this rundown item?', () => {
-      setItems((current) => current
-        .filter((item) => item.id !== id)
-        .map((item, index) => ({ ...item, stepNumber: index + 1 })));
-    });
+    confirmAction(
+      'Delete item?',
+      'Are you sure you want to delete this rundown item?',
+      () => {
+        setItems((current) => current
+          .filter((item) => item.id !== id)
+          .map((item, index) => ({ ...item, stepNumber: index + 1 })));
+      },
+      'Delete',
+    );
   };
 
   const handleSaveRundown = async () => {

@@ -8,6 +8,7 @@ import { SignUpScreen } from '../features/auth/screens/SignUpScreen';
 import { ForgotPasswordScreen } from '../features/auth/screens/ForgotPasswordScreen';
 import { ResetPasswordScreen } from '../features/auth/screens/ResetPasswordScreen';
 import { ToastHost } from '../features/auth/components/ToastHost';
+import { ConfirmationHost } from '../features/auth/components/ConfirmationHost';
 
 import { useOrganizationFlow } from '../features/organization/hooks/useOrganizationFlow';
 import { OrganizationListScreen } from '../features/organization/screens/OrganizationListScreen';
@@ -304,6 +305,7 @@ export function RootFlow() {
           onFinish={auth.handleFinishReset}
         />
         <ToastHost />
+        <ConfirmationHost />
       </View>
     );
   }
@@ -679,6 +681,7 @@ export function RootFlow() {
         onClose={() => setIsInvitesModalVisible(false)}
       />
       <ToastHost />
+      <ConfirmationHost />
     </View>
   );
 }

@@ -208,6 +208,7 @@ export function CalendarScreen({
       'Delete event?',
       `Are you sure you want to delete "${selectedEvent?.title ?? 'this event'}"? This cannot be undone.`,
       () => { void deleteSelectedEvent(); },
+      'Delete',
     );
   };
 

@@ -9,9 +9,20 @@ export interface ToastMessage {
   type: ToastType;
 }
 
+export interface ConfirmationRequest {
+  id: number;
+  title: string;
+  message: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+}
+
 let activeToast: ToastMessage | null = null;
 let nextToastId = 0;
 const toastListeners = new Set<(toast: ToastMessage | null) => void>();
+let activeConfirmation: ConfirmationRequest | null = null;
+let nextConfirmationId = 0;
+const confirmationListeners = new Set<(request: ConfirmationRequest | null) => void>();
 
 export function showMessage(title: string, message: string, onOk?: () => void) {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -44,13 +55,46 @@ export function dismissToast(id: number) {
   toastListeners.forEach((listener) => listener(null));
 }
 
-export function confirmAction(title: string, message: string, onConfirm: () => void) {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    if (window.confirm(`${title}\n\n${message}`)) onConfirm();
-    return;
-  }
-  Alert.alert(title, message, [
-    { text: 'Cancel', style: 'cancel' },
-    { text: 'Confirm', style: 'destructive', onPress: onConfirm },
-  ]);
+export function confirmAction(
+  title: string,
+  message: string,
+  onConfirm: () => void,
+  confirmLabel = 'Confirm',
+) {
+  requestConfirmation(title, message, onConfirm, confirmLabel);
+}
+
+export function requestConfirmation(
+  title: string,
+  message: string,
+  onConfirm: () => void,
+  confirmLabel = 'Confirm',
+) {
+  activeConfirmation = {
+    id: ++nextConfirmationId,
+    title,
+    message,
+    confirmLabel,
+    onConfirm,
+  };
+  confirmationListeners.forEach((listener) => listener(activeConfirmation));
+}
+
+export function getActiveConfirmation() {
+  return activeConfirmation;
+}
+
+export function subscribeToConfirmations(listener: (request: ConfirmationRequest | null) => void) {
+  confirmationListeners.add(listener);
+  return () => {
+    confirmationListeners.delete(listener);
+  };
+}
+
+export function dismissConfirmation(id: number, confirmed = false) {
+  if (activeConfirmation?.id !== id) return;
+  const request = activeConfirmation;
+  activeConfirmation = null;
+  confirmationListeners.forEach((listener) => listener(null));
+  if (confirmed) request.onConfirm();
 }

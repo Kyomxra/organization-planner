@@ -211,9 +211,12 @@ export function NotesListScreen({
   );
 
   const confirmDeleteNote = (note: NoteItem) => {
-    confirmAction('Delete note?', `Are you sure you want to delete "${note.title}"? This cannot be undone.`, () => {
-      void deleteNote(note.id);
-    });
+    confirmAction(
+      'Delete note?',
+      `Are you sure you want to delete "${note.title}"? This cannot be undone.`,
+      () => { void deleteNote(note.id); },
+      'Delete',
+    );
   };
 
   return (

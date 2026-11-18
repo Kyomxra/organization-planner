@@ -42,7 +42,7 @@ export function ProfileScreen({
   };
 
   const handleLogoutPress = () => {
-    confirmAction('Log out?', 'Are you sure you want to log out?', onSignOut);
+    confirmAction('Log out?', 'Are you sure you want to log out?', onSignOut, 'Log out');
   };
 
   return (
