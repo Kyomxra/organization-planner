@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { supabase } from '../../../lib/supabase';
 import { showMessage } from '../../auth/utils/feedback';
@@ -107,40 +108,71 @@ export function DivisionTasksScreen({
     <View style={styles.root}>
       <View style={styles.header}>
         {onBack ? (
-          <TouchableOpacity style={styles.backButton} onPress={onBack} accessibilityRole="button" accessibilityLabel="Go back">
-            <Text style={styles.backButtonText}>‹ Back</Text>
+          <TouchableOpacity style={styles.backButton} onPress={onBack} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={8}>
+            <Svg width={20} height={20} viewBox="0 0 24 24">
+              <Path
+                d="M15 18L9 12L15 6"
+                fill="none"
+                stroke={colors.text}
+                strokeWidth={2.4}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
           </TouchableOpacity>
         ) : null}
         <Text style={styles.title}>{screenTitle ?? (memberView ? 'My Tasks' : 'Division Tasks')}</Text>
         <Text style={styles.subtitle}>{tasks.length} tasks</Text>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
+      <View style={styles.statusTabs}>
         {filters.map((filter) => (
           <TouchableOpacity
             key={filter}
-            style={[styles.filterChip, activeFilter === filter && styles.filterChipActive]}
+            style={[styles.statusTab, activeFilter === filter && styles.statusTabActive]}
             onPress={() => setActiveFilter(filter)}
+            activeOpacity={0.8}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeFilter === filter }}
           >
-            <Text style={[styles.filterText, activeFilter === filter && styles.filterTextActive]}>
-              {filter === 'all' ? 'All' : filter}
+            <Text style={[styles.statusTabText, activeFilter === filter && styles.statusTabTextActive]}>
+              {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)}
             </Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
+      </View>
+      <ScrollView
+        horizontal
+        style={styles.priorityScroll}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filters}
+      >
         {priorities.map((priority) => (
           <TouchableOpacity
             key={priority}
             style={[styles.filterChip, activePriority === priority && styles.filterChipActive]}
             onPress={() => setActivePriority(priority)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityState={{ selected: activePriority === priority }}
           >
+            {priority !== 'all' ? (
+              <View
+                style={[
+                  styles.priorityDot,
+                  priority === 'low' && styles.priorityDotLow,
+                  priority === 'medium' && styles.priorityDotMedium,
+                  priority === 'high' && styles.priorityDotHigh,
+                  priority === 'urgent' && styles.priorityDotUrgent,
+                ]}
+              />
+            ) : null}
             <Text style={[styles.filterText, activePriority === priority && styles.filterTextActive]}>
-              {priority === 'all' ? 'Any priority' : priority}
+              {priority === 'all' ? 'Any priority' : priority.charAt(0).toUpperCase() + priority.slice(1)}
             </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
-      <ScrollView contentContainerStyle={styles.list}>
+      <ScrollView style={styles.taskScroll} contentContainerStyle={styles.list}>
         {isLoading ? <Text style={styles.empty}>Loading tasks…</Text> : null}
         {!isLoading && !visibleTasks.length ? (
           <View style={styles.emptyCard}>
@@ -179,15 +211,63 @@ export function DivisionTasksScreen({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   header: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 8 },
-  backButton: { alignSelf: 'flex-start', marginBottom: 10 },
-  backButtonText: { color: colors.primary, fontSize: 13, fontWeight: '700' },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
   title: { color: colors.text, fontSize: 22, fontWeight: '800' },
   subtitle: { color: colors.muted, fontSize: 12, marginTop: 4 },
-  filters: { paddingHorizontal: 20, paddingVertical: 10, gap: 8 },
-  filterChip: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingVertical: 7, paddingHorizontal: 13, borderRadius: 16 },
+  statusTabs: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: colors.surface,
+  },
+  statusTab: {
+    flex: 1,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+  },
+  statusTabActive: { backgroundColor: colors.primary },
+  statusTabText: { color: colors.muted, fontWeight: '700', fontSize: 10, textTransform: 'capitalize' },
+  statusTabTextActive: { color: colors.surface },
+  priorityScroll: { height: 54, flexGrow: 0, flexShrink: 0 },
+  filters: { paddingHorizontal: 20, paddingVertical: 8, gap: 8, alignItems: 'center' },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    height: 36,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+  },
   filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   filterText: { color: colors.muted, fontWeight: '700', fontSize: 11, textTransform: 'capitalize' },
   filterTextActive: { color: colors.surface },
+  priorityDot: { width: 7, height: 7, borderRadius: 4, marginRight: 6 },
+  priorityDotLow: { backgroundColor: colors.success500 },
+  priorityDotMedium: { backgroundColor: colors.warning500 },
+  priorityDotHigh: { backgroundColor: '#F97316' },
+  priorityDotUrgent: { backgroundColor: colors.error500 },
+  taskScroll: { flex: 1 },
   list: { padding: 20, paddingBottom: 24, gap: 10 },
   card: { backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 15 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
