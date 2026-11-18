@@ -178,6 +178,11 @@ export function NotesListScreen({
       note.content.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+  const visibleTabs = role === 'executive'
+    ? filterTabs
+    : role === 'member'
+      ? memberFilterTabs
+      : coordinatorFilterTabs;
 
   const deleteNote = async (noteId: string) => {
     const { data, error } = await supabase
@@ -280,23 +285,23 @@ export function NotesListScreen({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabsScrollContent}
         >
-          {(role === 'executive'
-            ? filterTabs
-            : role === 'member'
-              ? memberFilterTabs
-              : coordinatorFilterTabs
-          ).map((tab) => {
+          {visibleTabs.map((tab) => {
             const isActive = activeFilter === tab;
             return (
               <TouchableOpacity
                 key={tab}
-                style={[styles.tabChip, isActive && styles.tabChipActive]}
+                style={styles.statusTab}
                 onPress={() => setActiveFilter(tab)}
-                activeOpacity={0.7}
+                activeOpacity={0.8}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isActive }}
               >
-                <Text style={[styles.tabChipText, isActive && styles.tabChipTextActive]}>
-                  {tab}
-                </Text>
+                <View style={styles.statusTabContent}>
+                  <Text style={[styles.statusTabText, isActive && styles.statusTabTextActive]}>
+                    {tab}
+                  </Text>
+                  {isActive && <View style={styles.statusTabIndicator} />}
+                </View>
               </TouchableOpacity>
             );
           })}
@@ -503,31 +508,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   tabsContainer: {
-    paddingVertical: 10,
+    marginHorizontal: 20,
+    marginTop: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   tabsScrollContent: {
-    paddingHorizontal: 20,
-    gap: 8,
+    flexDirection: 'row',
   },
-  tabChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+  statusTab: {
+    width: 110,
+    flexGrow: 0,
+    flexShrink: 0,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  tabChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+  statusTabContent: {
+    flex: 1,
+    width: '100%',
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
-  tabChipText: {
+  statusTabText: {
+    color: colors.muted,
+    fontWeight: '600',
     fontSize: 12,
-    fontWeight: '700',
-    color: colors.text,
   },
-  tabChipTextActive: {
-    color: colors.surface,
+  statusTabTextActive: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  statusTabIndicator: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: colors.primary,
   },
   scroll: {
     flex: 1,
