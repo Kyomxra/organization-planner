@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { colors } from '../../../theme/colors';
 import { supabase } from '../../../lib/supabase';
-import { showMessage } from '../../auth/utils/feedback';
+import { showToast } from '../../auth/utils/feedback';
 import { DivisionTask, TaskStatus } from '../types';
 
 interface MemberTaskDetailsScreenProps {
@@ -38,9 +38,10 @@ export function MemberTaskDetailsScreen({
       .maybeSingle();
     setIsSaving(false);
     if (error || !data) {
-      showMessage('Could not update task', error?.message ?? 'This task is not assigned to your account.');
+      showToast('error', 'Could not update task', error?.message ?? 'This task is not assigned to your account.');
       return;
     }
+    showToast('success', 'Task updated', 'Your task progress has been saved.');
     onSaved();
   };
 

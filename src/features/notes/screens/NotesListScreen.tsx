@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,7 +9,7 @@ import {
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
-import { showMessage } from '../../auth/utils/feedback';
+import { confirmAction, showMessage, showToast } from '../../auth/utils/feedback';
 import { NoteAudience, NoteItem } from '../types';
 import { supabase } from '../../../lib/supabase';
 
@@ -182,16 +180,19 @@ export function NotesListScreen({
   });
 
   const deleteNote = async (noteId: string) => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('notes')
       .delete()
       .eq('id', noteId)
-      .eq('organization_id', organizationId);
-    if (error) {
-      showMessage('Could not delete note', error.message);
+      .eq('organization_id', organizationId)
+      .select('id')
+      .maybeSingle();
+    if (error || !data) {
+      showToast('error', 'Could not delete note', error?.message ?? 'You may not have permission to delete this note.');
       return;
     }
     setNotes((current) => current.filter((note) => note.id !== noteId));
+    showToast('success', 'Note deleted', 'The note was deleted successfully.');
   };
 
   const canDeleteNote = (note: NoteItem) => (
@@ -210,15 +211,9 @@ export function NotesListScreen({
   );
 
   const confirmDeleteNote = (note: NoteItem) => {
-    const onConfirm = () => { void deleteNote(note.id); };
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      if (window.confirm(`Delete "${note.title}"? This cannot be undone.`)) onConfirm();
-      return;
-    }
-    Alert.alert('Delete note?', `Delete "${note.title}"? This cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: onConfirm },
-    ]);
+    confirmAction('Delete note?', `Are you sure you want to delete "${note.title}"? This cannot be undone.`, () => {
+      void deleteNote(note.id);
+    });
   };
 
   return (

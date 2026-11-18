@@ -4,7 +4,7 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { isValidLocalDate } from '../../../lib/date';
 import { supabase } from '../../../lib/supabase';
-import { showMessage } from '../../auth/utils/feedback';
+import { showMessage, showToast } from '../../auth/utils/feedback';
 import { DivisionPerson, DivisionTask, TaskPriority, TaskStatus } from '../types';
 
 interface TaskDetailsScreenProps {
@@ -175,7 +175,7 @@ export function TaskDetailsScreen({
     }
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      showMessage('Could not save task', userError?.message ?? 'Sign in again and retry.');
+      showToast('error', 'Could not save task', userError?.message ?? 'Sign in again and retry.');
       return;
     }
 
@@ -196,13 +196,14 @@ export function TaskDetailsScreen({
       : await supabase.from('tasks').insert({ ...taskData, created_by: user.id }).select('id').single();
     setIsSaving(false);
     if (result.error) {
-      showMessage('Could not save task', result.error.message);
+      showToast('error', 'Could not save task', result.error.message);
       return;
     }
     if (!result.data) {
-      showMessage('Could not save task', 'You may not have permission to change this task.');
+      showToast('error', 'Could not save task', 'You may not have permission to change this task.');
       return;
     }
+    showToast('success', task ? 'Task updated' : 'Task created', task ? 'Your changes have been saved.' : 'The task was created successfully.');
     onSaved();
   };
 

@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,7 +8,7 @@ import {
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
-import { showMessage } from '../../auth/utils/feedback';
+import { confirmAction, showMessage, showToast } from '../../auth/utils/feedback';
 import { supabase } from '../../../lib/supabase';
 import { formatLocalDate } from '../../../lib/date';
 import { CalendarEvent, NewCalendarEvent } from '../types';
@@ -145,7 +143,7 @@ export function CalendarScreen({
   const handleSaveEvent = async (event: NewCalendarEvent): Promise<boolean> => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      showMessage('Could not save event', userError?.message ?? 'Sign in again and retry.');
+      showToast('error', 'Could not save event', userError?.message ?? 'Sign in again and retry.');
       return false;
     }
 
@@ -178,11 +176,12 @@ export function CalendarScreen({
           .single();
 
     if (result.error || !result.data) {
-      showMessage('Could not save event', result.error?.message ?? 'You may not have permission to change this event.');
+      showToast('error', 'Could not save event', result.error?.message ?? 'You may not have permission to change this event.');
       return false;
     }
 
     await loadEvents();
+    showToast('success', editingEvent ? 'Event updated' : 'Event created', 'Your event has been saved.');
     return true;
   };
 
@@ -196,24 +195,20 @@ export function CalendarScreen({
       .select('id')
       .maybeSingle();
     if (error || !data) {
-      showMessage('Could not delete event', error?.message ?? 'You may not have permission to delete this event.');
+      showToast('error', 'Could not delete event', error?.message ?? 'You may not have permission to delete this event.');
       return;
     }
     setSelectedEvent(null);
     await loadEvents();
+    showToast('success', 'Event deleted', 'The event was deleted successfully.');
   };
 
   const confirmDeleteEvent = () => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      if (window.confirm(`Delete "${selectedEvent?.title ?? 'this event'}"? This cannot be undone.`)) {
-        void deleteSelectedEvent();
-      }
-      return;
-    }
-    Alert.alert('Delete event?', `Delete "${selectedEvent?.title ?? 'this event'}"? This cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => { void deleteSelectedEvent(); } },
-    ]);
+    confirmAction(
+      'Delete event?',
+      `Are you sure you want to delete "${selectedEvent?.title ?? 'this event'}"? This cannot be undone.`,
+      () => { void deleteSelectedEvent(); },
+    );
   };
 
   return (

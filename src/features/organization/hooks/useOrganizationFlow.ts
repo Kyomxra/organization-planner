@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { colors } from '../../../theme/colors';
-import { showMessage } from '../../auth/utils/feedback';
+import { showMessage, showToast } from '../../auth/utils/feedback';
 import { CreateOrgFormData, OrganizationItem, OrgStatus } from '../types';
 
 type OrganizationRole = OrganizationItem['role'];
@@ -177,28 +177,31 @@ export function useOrganizationFlow() {
   const handleSaveStatus = async (orgId: string, nextStatus: OrgStatus) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      showMessage('Could not update organization', userError?.message ?? 'Sign in again and retry.');
+      showToast('error', 'Could not update organization', userError?.message ?? 'Sign in again and retry.');
       return;
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('organization_members')
       .update({ status: nextStatus.toLowerCase() })
       .eq('organization_id', orgId)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .select('id')
+      .maybeSingle();
 
-    if (error) {
-      showMessage('Could not update organization', error.message);
+    if (error || !data) {
+      showToast('error', 'Could not update organization', error?.message ?? 'You may not have permission to change this organization.');
       return;
     }
 
     await refreshOrganizations(user.id);
+    showToast('success', 'Organization updated', 'Your organization status has been updated.');
   };
 
   const handleJoinOrganization = async (code: string): Promise<boolean> => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      showMessage('Could not join organization', userError?.message ?? 'Sign in again and retry.');
+      showToast('error', 'Could not join organization', userError?.message ?? 'Sign in again and retry.');
       return false;
     }
 
@@ -206,14 +209,15 @@ export function useOrganizationFlow() {
       p_code: code,
     });
     if (error) {
-      showMessage('Could not join organization', error.message);
+      showToast('error', 'Could not join organization', error.message);
       return false;
     }
 
     const loadedOrganizations = await refreshOrganizations(user.id);
     const joinedOrganization = loadedOrganizations.find((item) => item.id === organizationId);
     if (!joinedOrganization) {
-      showMessage(
+      showToast(
+        'error',
         'Organization joined, but could not load it',
         'Retry loading your organizations before continuing.',
       );
@@ -228,7 +232,7 @@ export function useOrganizationFlow() {
   const handleCreateOrganization = async (data: CreateOrgFormData) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      showMessage('Could not create organization', userError?.message ?? 'Sign in again and retry.');
+      showToast('error', 'Could not create organization', userError?.message ?? 'Sign in again and retry.');
       return;
     }
 
@@ -256,7 +260,8 @@ export function useOrganizationFlow() {
 
         if (divisionError) {
           await refreshOrganizations(user.id);
-          showMessage(
+          showToast(
+            'error',
             'Organization created, divisions not saved',
             divisionError.message,
           );
@@ -269,8 +274,9 @@ export function useOrganizationFlow() {
       if (created) setSelectedOrg(created);
       setCreatedOrgName(data.name);
       setIsCreatedModalVisible(true);
+      showToast('success', 'Organization created', `${data.name} is ready.`);
     } catch (error: unknown) {
-      showMessage('Could not create organization', getErrorMessage(error));
+      showToast('error', 'Could not create organization', getErrorMessage(error));
     }
   };
 

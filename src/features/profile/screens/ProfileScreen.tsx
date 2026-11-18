@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
-import { showMessage } from '../../auth/utils/feedback';
+import { confirmAction, showMessage, showToast } from '../../auth/utils/feedback';
 
 interface ProfileScreenProps {
   userName: string;
@@ -38,11 +38,11 @@ export function ProfileScreen({
     setIsSavingName(true);
     const saved = await onSaveName(name);
     setIsSavingName(false);
-    if (saved) showMessage('Profile updated', 'Your account name has been saved.');
+    if (saved) showToast('success', 'Profile updated', 'Your account name has been saved.');
   };
 
   const handleLogoutPress = () => {
-    showMessage('Log Out', 'Are you sure you want to log out?', onSignOut);
+    confirmAction('Log out?', 'Are you sure you want to log out?', onSignOut);
   };
 
   return (

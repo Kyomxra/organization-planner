@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../../lib/supabase';
-import { showMessage } from '../utils/feedback';
+import { showMessage, showToast } from '../utils/feedback';
 import { isValidEmail } from '../utils/validation';
 
 type MainScreen = 'login' | 'signup';
@@ -112,10 +112,13 @@ export function useAuthFlow() {
         password: loginPassword,
       });
       if (error) {
-        showMessage('Sign in failed', error.message);
+        showToast('error', 'Sign in failed', error.message);
+      } else {
+        showToast('success', 'Signed in', 'Welcome back.');
       }
     } catch (error: unknown) {
-      showMessage(
+      showToast(
+        'error',
         'Sign in failed',
         error instanceof Error ? error.message : 'Could not connect to Supabase.',
       );
@@ -126,14 +129,16 @@ export function useAuthFlow() {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
-        showMessage('Sign out failed', error.message);
+        showToast('error', 'Sign out failed', error.message);
         return false;
       }
       setIsAuthenticated(false);
       setLoginPassword('');
+      showToast('success', 'Signed out', 'You have been logged out.');
       return true;
     } catch (error: unknown) {
-      showMessage(
+      showToast(
+        'error',
         'Sign out failed',
         error instanceof Error ? error.message : 'Could not sign out.',
       );
@@ -168,7 +173,7 @@ export function useAuthFlow() {
         },
       });
       if (error) {
-        showMessage('Account creation failed', error.message);
+        showToast('error', 'Account creation failed', error.message);
         return;
       }
 
@@ -176,14 +181,16 @@ export function useAuthFlow() {
       setLoginPassword('');
       setUserEmail(data.user?.email ?? signupEmail.trim());
       setMainScreen('login');
-      showMessage(
+      showToast(
+        data.session ? 'success' : 'info',
         data.session ? 'Account created' : 'Check your email',
         data.session
           ? 'Your account is ready. You are now signed in.'
           : 'Confirm your email using the link we sent, then sign in.',
       );
     } catch (error: unknown) {
-      showMessage(
+      showToast(
+        'error',
         'Account creation failed',
         error instanceof Error ? error.message : 'Could not connect to Supabase.',
       );
@@ -245,19 +252,19 @@ export function useAuthFlow() {
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) {
-        showMessage('Password update failed', error.message);
+        showToast('error', 'Password update failed', error.message);
         return;
       }
 
-      showMessage('Password updated', 'Your password has been changed.', () => {
-        setPasswordSheet('none');
-        setLoginPassword('');
-        setVerificationCode('');
-        setNewPassword('');
-        setConfirmNewPassword('');
-      });
+      showToast('success', 'Password updated', 'Your password has been changed.');
+      setPasswordSheet('none');
+      setLoginPassword('');
+      setVerificationCode('');
+      setNewPassword('');
+      setConfirmNewPassword('');
     } catch (error: unknown) {
-      showMessage(
+      showToast(
+        'error',
         'Password update failed',
         error instanceof Error ? error.message : 'Could not connect to Supabase.',
       );

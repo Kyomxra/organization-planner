@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
-import { showMessage } from '../../auth/utils/feedback';
+import { showMessage, showToast } from '../../auth/utils/feedback';
 import { AudienceSelection, NoteAudienceModal } from '../components/NoteAudienceModal';
 import { supabase } from '../../../lib/supabase';
 import { NoteItem } from '../types';
@@ -111,7 +111,8 @@ export function NewNoteScreen({
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      showMessage(
+      showToast(
+        'error',
         'Could not save note',
         userError?.message ?? 'Sign in again and retry.',
       );
@@ -127,13 +128,12 @@ export function NewNoteScreen({
         .select('id')
         .maybeSingle();
       if (error || !data) {
-        showMessage('Could not update note', error?.message ?? 'You may not have permission to edit this note.');
+        showToast('error', 'Could not update note', error?.message ?? 'You may not have permission to edit this note.');
         return;
       }
-      showMessage('Note updated', `Your note "${title.trim()}" has been updated.`, () => {
-        onSaveSuccess?.();
-        onBack();
-      });
+      showToast('success', 'Note updated', `Your note "${title.trim()}" has been updated.`);
+      onSaveSuccess?.();
+      onBack();
       return;
     }
 
@@ -150,7 +150,7 @@ export function NewNoteScreen({
       .single();
 
     if (error) {
-      showMessage('Could not save note', error.message);
+      showToast('error', 'Could not save note', error.message);
       return;
     }
 
@@ -189,7 +189,8 @@ export function NewNoteScreen({
         .delete()
         .eq('id', createdNote.id);
 
-      showMessage(
+      showToast(
+        'error',
         'Could not save note audience',
         rollbackError
           ? `${audienceError.message} The note was created but could not be removed; review it in Notes. ${rollbackError.message}`
@@ -198,14 +199,13 @@ export function NewNoteScreen({
       return;
     }
 
-    showMessage(
+    showToast(
+      'success',
       'Note Saved',
       `Your note "${title.trim()}" is visible to ${audienceText}.`,
-      () => {
-        onSaveSuccess?.();
-        onBack();
-      },
     );
+    onSaveSuccess?.();
+    onBack();
   };
 
   const handleOpenAudienceModal = () => {

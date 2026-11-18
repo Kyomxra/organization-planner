@@ -7,6 +7,7 @@ import { LoginScreen } from '../features/auth/screens/LoginScreen';
 import { SignUpScreen } from '../features/auth/screens/SignUpScreen';
 import { ForgotPasswordScreen } from '../features/auth/screens/ForgotPasswordScreen';
 import { ResetPasswordScreen } from '../features/auth/screens/ResetPasswordScreen';
+import { ToastHost } from '../features/auth/components/ToastHost';
 
 import { useOrganizationFlow } from '../features/organization/hooks/useOrganizationFlow';
 import { OrganizationListScreen } from '../features/organization/screens/OrganizationListScreen';
@@ -35,7 +36,7 @@ import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
 import { DivisionTasksScreen } from '../features/tasks/screens/DivisionTasksScreen';
 import { TaskDetailsScreen } from '../features/tasks/screens/TaskDetailsScreen';
 import { DivisionTask } from '../features/tasks/types';
-import { showMessage } from '../features/auth/utils/feedback';
+import { showMessage, showToast } from '../features/auth/utils/feedback';
 import { Rundown } from '../features/rundown/types';
 import { supabase } from '../lib/supabase';
 
@@ -302,6 +303,7 @@ export function RootFlow() {
           onClose={() => auth.setPasswordSheet('none')}
           onFinish={auth.handleFinishReset}
         />
+        <ToastHost />
       </View>
     );
   }
@@ -426,13 +428,14 @@ export function RootFlow() {
               .select('id')
               .maybeSingle();
             if (error) {
-              showMessage('Could not update division', error.message);
+              showToast('error', 'Could not update division', error.message);
               return;
             }
             if (!data) {
-              showMessage('Could not update division', 'You may not have permission to change this member.');
+              showToast('error', 'Could not update division', 'You may not have permission to change this member.');
               return;
             }
+            showToast('success', 'Division updated', 'The member was reassigned successfully.');
             setDivisionMembers((current) => current.map((member) =>
               member.id === memberId ? { ...member, divisionId } : member
             ));
@@ -596,7 +599,7 @@ export function RootFlow() {
           onSaveName={async (name) => {
             const { data: { user }, error: userError } = await supabase.auth.getUser();
             if (userError || !user) {
-              showMessage('Could not update profile', userError?.message ?? 'Sign in again and retry.');
+              showToast('error', 'Could not update profile', userError?.message ?? 'Sign in again and retry.');
               return false;
             }
             const { data, error } = await supabase
@@ -606,7 +609,7 @@ export function RootFlow() {
               .select('id')
               .maybeSingle();
             if (error || !data) {
-              showMessage('Could not update profile', error?.message ?? 'Your profile could not be found.');
+              showToast('error', 'Could not update profile', error?.message ?? 'Your profile could not be found.');
               return false;
             }
             const { error: metadataError } = await supabase.auth.updateUser({
@@ -617,7 +620,8 @@ export function RootFlow() {
                 .from('profiles')
                 .update({ full_name: auth.userName })
                 .eq('id', user.id);
-              showMessage(
+              showToast(
+                'error',
                 'Profile update incomplete',
                 rollbackError
                   ? `${metadataError.message} The profile row could not be restored: ${rollbackError.message}`
@@ -674,6 +678,7 @@ export function RootFlow() {
         organizationId={selectedOrg?.id ?? ''}
         onClose={() => setIsInvitesModalVisible(false)}
       />
+      <ToastHost />
     </View>
   );
 }

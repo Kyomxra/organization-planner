@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { supabase } from '../../../lib/supabase';
-import { showMessage } from '../../auth/utils/feedback';
+import { confirmAction, showMessage, showToast } from '../../auth/utils/feedback';
 import { DivisionTask, TaskStatus } from '../types';
 
 interface DivisionTasksScreenProps {
@@ -117,26 +117,21 @@ export function DivisionTasksScreen({
       .select('id')
       .maybeSingle();
     if (error) {
-      showMessage('Could not delete task', error.message);
+      showToast('error', 'Could not delete task', error.message);
       return;
     }
     if (!data) {
-      showMessage('Could not delete task', 'You may not have permission to delete this task.');
+      showToast('error', 'Could not delete task', 'You may not have permission to delete this task.');
       return;
     }
     setTasks((current) => current.filter((item) => item.id !== task.id));
+    showToast('success', 'Task deleted', 'The task was deleted successfully.');
   };
 
   const confirmDeleteTask = (task: DivisionTask) => {
-    const onConfirm = () => { void deleteTask(task); };
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      if (window.confirm(`Delete "${task.title}"? This cannot be undone.`)) onConfirm();
-      return;
-    }
-    Alert.alert('Delete task?', `Delete "${task.title}"? This cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: onConfirm },
-    ]);
+    confirmAction('Delete task?', `Are you sure you want to delete "${task.title}"? This cannot be undone.`, () => {
+      void deleteTask(task);
+    });
   };
 
   return (

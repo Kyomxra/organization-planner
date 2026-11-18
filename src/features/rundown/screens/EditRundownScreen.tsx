@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,7 +10,7 @@ import {
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
-import { showMessage } from '../../auth/utils/feedback';
+import { confirmAction, showMessage, showToast } from '../../auth/utils/feedback';
 import { Rundown, RundownItem } from '../types';
 import { supabase } from '../../../lib/supabase';
 
@@ -183,17 +181,11 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
   };
 
   const handleDeleteItem = (id: string) => {
-    const deleteItem = () => setItems((current) => current
-      .filter((item) => item.id !== id)
-      .map((item, index) => ({ ...item, stepNumber: index + 1 })));
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      if (window.confirm('Delete this rundown item?')) deleteItem();
-      return;
-    }
-    Alert.alert('Delete item?', 'This rundown item will be deleted.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: deleteItem },
-    ]);
+    confirmAction('Delete item?', 'Are you sure you want to delete this rundown item?', () => {
+      setItems((current) => current
+        .filter((item) => item.id !== id)
+        .map((item, index) => ({ ...item, stepNumber: index + 1 })));
+    });
   };
 
   const handleSaveRundown = async () => {
@@ -216,7 +208,7 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
       const { data: authData, error: userError } = await supabase.auth.getUser();
       const user = authData.user;
       if (userError || !user) {
-        showMessage('Could not save rundown', userError?.message ?? 'Sign in again and retry.');
+        showToast('error', 'Could not save rundown', userError?.message ?? 'Sign in again and retry.');
         return;
       }
 
@@ -244,7 +236,7 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
 
       const { data: savedRundown, error: rundownError } = await rundownQuery;
       if (rundownError) {
-        showMessage('Could not save rundown', rundownError.message);
+        showToast('error', 'Could not save rundown', rundownError.message);
         return;
       }
 
@@ -254,7 +246,7 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
         const { data: originalItems, error } = await supabase.from('rundown_items')
           .select('id').eq('organization_id', organizationId).eq('rundown_id', savedRundown.id);
         if (error) {
-          showMessage('Could not load rundown items', error.message);
+          showToast('error', 'Could not load rundown items', error.message);
           return;
         }
         removedIds = (originalItems ?? [])
@@ -265,7 +257,7 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
         const { error } = await supabase.from('rundown_items').delete()
           .eq('organization_id', organizationId).in('id', removedIds);
         if (error) {
-          showMessage('Could not delete rundown items', error.message);
+          showToast('error', 'Could not delete rundown items', error.message);
           return;
         }
       }
@@ -289,11 +281,12 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
       if (itemRows.length) {
         const { error } = await supabase.from('rundown_items').upsert(itemRows, { onConflict: 'id' });
         if (error) {
-          showMessage('Could not save rundown items', error.message);
+          showToast('error', 'Could not save rundown items', error.message);
           return;
         }
       }
 
+      showToast('success', rundown ? 'Rundown updated' : 'Rundown created', 'Your rundown changes have been saved.');
       onSave({
         id: savedRundown.id,
         title: title.trim(),
@@ -304,7 +297,7 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
         items,
       });
     } catch (error) {
-      showMessage('Could not save rundown', error instanceof Error ? error.message : 'An unexpected error occurred.');
+      showToast('error', 'Could not save rundown', error instanceof Error ? error.message : 'An unexpected error occurred.');
     } finally {
       setIsSaving(false);
     }

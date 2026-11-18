@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
-import { showMessage } from '../../auth/utils/feedback';
+import { showMessage, showToast } from '../../auth/utils/feedback';
 import { ExpenseItem, IncomeItem } from '../types';
 import { TransactionDetailsModal } from '../components/TransactionDetailsModal';
 import { AddRevenueModal } from '../components/AddRevenueModal';
@@ -143,7 +143,7 @@ export function BudgetingScreen({
     if (!selectedExpense) return;
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      showMessage('Could not review transaction', userError?.message ?? 'Sign in again and retry.');
+      showToast('error', 'Could not review transaction', userError?.message ?? 'Sign in again and retry.');
       return;
     }
     const { data, error } = await supabase
@@ -158,7 +158,8 @@ export function BudgetingScreen({
       .select('id')
       .maybeSingle();
     if (error || !data) {
-      showMessage(
+      showToast(
+        'error',
         'Could not review transaction',
         error?.message ?? 'You may not have permission to review this transaction.',
       );
@@ -166,6 +167,7 @@ export function BudgetingScreen({
     }
     await loadTransactions();
     setIsReceiptModalVisible(false);
+    showToast('success', `Transaction ${status.toLowerCase()}`, `The transaction was ${status.toLowerCase()} successfully.`);
   };
 
   const handleAddIncome = () => {
@@ -216,7 +218,7 @@ export function BudgetingScreen({
   const saveIncome = async (income: Partial<IncomeItem>): Promise<boolean> => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      showMessage('Could not save revenue', userError?.message ?? 'Sign in again and retry.');
+      showToast('error', 'Could not save revenue', userError?.message ?? 'Sign in again and retry.');
       return false;
     }
     const { error } = await supabase.from('transactions').insert({
@@ -230,17 +232,18 @@ export function BudgetingScreen({
       submitted_by: user.id,
     });
     if (error) {
-      showMessage('Could not save revenue', error.message);
+      showToast('error', 'Could not save revenue', error.message);
       return false;
     }
     await loadTransactions();
+    showToast('success', 'Revenue saved', 'The revenue entry was added successfully.');
     return true;
   };
 
   const saveExpense = async (expense: Partial<ExpenseItem>): Promise<boolean> => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      showMessage('Could not save expense', userError?.message ?? 'Sign in again and retry.');
+      showToast('error', 'Could not save expense', userError?.message ?? 'Sign in again and retry.');
       return false;
     }
     const { error } = await supabase.from('transactions').insert({
@@ -254,10 +257,11 @@ export function BudgetingScreen({
       submitted_by: user.id,
     });
     if (error) {
-      showMessage('Could not save expense', error.message);
+      showToast('error', 'Could not save expense', error.message);
       return false;
     }
     await loadTransactions();
+    showToast('success', 'Expense saved', 'The expense was submitted successfully.');
     return true;
   };
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
-import { showMessage } from '../../auth/utils/feedback';
+import { showMessage, showToast } from '../../auth/utils/feedback';
 import { supabase } from '../../../lib/supabase';
 
 interface NotificationScreenProps {
@@ -53,18 +53,21 @@ export function NotificationScreen({ organizationId, onBack }: NotificationScree
   const markAsRead = async (item: NotificationItem) => {
     if (item.read_at) return;
     const readAt = new Date().toISOString();
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('notifications')
       .update({ read_at: readAt })
       .eq('id', item.id)
-      .eq('organization_id', organizationId);
-    if (error) {
-      showMessage('Could not mark notification as read', error.message);
+      .eq('organization_id', organizationId)
+      .select('id')
+      .maybeSingle();
+    if (error || !data) {
+      showToast('error', 'Could not mark notification as read', error?.message ?? 'The notification could not be updated.');
       return;
     }
     setNotifications((current) => current.map((notification) =>
       notification.id === item.id ? { ...notification, read_at: readAt } : notification
     ));
+    showToast('success', 'Notification updated', 'The notification was marked as read.');
   };
 
   const hasNotifications = notifications.length > 0;
