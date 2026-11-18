@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { supabase } from '../../../lib/supabase';
@@ -33,6 +33,7 @@ export function DivisionTasksScreen({
   const [tasks, setTasks] = useState<DivisionTask[]>([]);
   const [activeFilter, setActiveFilter] = useState<TaskStatus | 'all'>('all');
   const [activePriority, setActivePriority] = useState<DivisionTask['priority'] | 'all'>('all');
+  const [isPriorityFilterVisible, setIsPriorityFilterVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadTasks = useCallback(async () => {
@@ -128,50 +129,45 @@ export function DivisionTasksScreen({
         {filters.map((filter) => (
           <TouchableOpacity
             key={filter}
-            style={[styles.statusTab, activeFilter === filter && styles.statusTabActive]}
+            style={styles.statusTab}
             onPress={() => setActiveFilter(filter)}
             activeOpacity={0.8}
             accessibilityRole="tab"
             accessibilityState={{ selected: activeFilter === filter }}
           >
-            <Text style={[styles.statusTabText, activeFilter === filter && styles.statusTabTextActive]}>
-              {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)}
-            </Text>
+            <View style={styles.statusTabContent}>
+              <Text style={[styles.statusTabText, activeFilter === filter && styles.statusTabTextActive]}>
+                {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+              </Text>
+              {activeFilter === filter && <View style={styles.statusTabIndicator} />}
+            </View>
           </TouchableOpacity>
         ))}
       </View>
-      <ScrollView
-        horizontal
-        style={styles.priorityScroll}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filters}
-      >
-        {priorities.map((priority) => (
-          <TouchableOpacity
-            key={priority}
-            style={[styles.filterChip, activePriority === priority && styles.filterChipActive]}
-            onPress={() => setActivePriority(priority)}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityState={{ selected: activePriority === priority }}
-          >
-            {priority !== 'all' ? (
-              <View
-                style={[
-                  styles.priorityDot,
-                  priority === 'low' && styles.priorityDotLow,
-                  priority === 'medium' && styles.priorityDotMedium,
-                  priority === 'high' && styles.priorityDotHigh,
-                  priority === 'urgent' && styles.priorityDotUrgent,
-                ]}
-              />
-            ) : null}
-            <Text style={[styles.filterText, activePriority === priority && styles.filterTextActive]}>
-              {priority === 'all' ? 'Any priority' : priority.charAt(0).toUpperCase() + priority.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={styles.filterRow}>
+        <Text style={styles.filterLabel}>Filter by priority</Text>
+        <TouchableOpacity
+          style={[styles.priorityFilterButton, activePriority !== 'all' && styles.priorityFilterButtonActive]}
+          onPress={() => setIsPriorityFilterVisible(true)}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={`Filter by priority, currently ${activePriority === 'all' ? 'any priority' : activePriority}`}
+        >
+          <Text style={[styles.priorityFilterText, activePriority !== 'all' && styles.priorityFilterTextActive]}>
+            {activePriority === 'all' ? 'Any priority' : activePriority.charAt(0).toUpperCase() + activePriority.slice(1)}
+          </Text>
+          <Svg width={14} height={14} viewBox="0 0 24 24" style={styles.priorityFilterChevron}>
+            <Path
+              d="M6 9L12 15L18 9"
+              fill="none"
+              stroke={activePriority !== 'all' ? colors.primary : colors.muted}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
+        </TouchableOpacity>
+      </View>
       <ScrollView style={styles.taskScroll} contentContainerStyle={styles.list}>
         {isLoading ? <Text style={styles.empty}>Loading tasks…</Text> : null}
         {!isLoading && !visibleTasks.length ? (
@@ -204,6 +200,54 @@ export function DivisionTasksScreen({
           <Text style={styles.addButtonText}>+ Create task</Text>
         </TouchableOpacity>
       ) : null}
+      <Modal
+        visible={isPriorityFilterVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsPriorityFilterVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setIsPriorityFilterVisible(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Close priority filter"
+          />
+          <View style={styles.priorityFilterSheet}>
+            <Text style={styles.priorityFilterTitle}>Filter by priority</Text>
+            {priorities.map((priority) => (
+              <TouchableOpacity
+                key={priority}
+                style={styles.priorityOption}
+                onPress={() => {
+                  setActivePriority(priority);
+                  setIsPriorityFilterVisible(false);
+                }}
+                accessibilityRole="button"
+                accessibilityState={{ selected: activePriority === priority }}
+              >
+                <View style={styles.priorityOptionLabel}>
+                  {priority !== 'all' ? (
+                    <View
+                      style={[
+                        styles.priorityDot,
+                        priority === 'low' && styles.priorityDotLow,
+                        priority === 'medium' && styles.priorityDotMedium,
+                        priority === 'high' && styles.priorityDotHigh,
+                        priority === 'urgent' && styles.priorityDotUrgent,
+                      ]}
+                    />
+                  ) : null}
+                  <Text style={[styles.priorityOptionText, activePriority === priority && styles.priorityOptionTextActive]}>
+                    {priority === 'all' ? 'Any priority' : priority.charAt(0).toUpperCase() + priority.slice(1)}
+                  </Text>
+                </View>
+                {activePriority === priority ? <Text style={styles.prioritySelectedMark}>✓</Text> : null}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -228,44 +272,88 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 20,
     marginTop: 12,
-    marginBottom: 2,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: colors.surface,
+    marginBottom: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   statusTab: {
     flex: 1,
-    minHeight: 40,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 2,
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
+    paddingHorizontal: 4,
   },
-  statusTabActive: { backgroundColor: colors.primary },
-  statusTabText: { color: colors.muted, fontWeight: '700', fontSize: 10, textTransform: 'capitalize' },
-  statusTabTextActive: { color: colors.surface },
-  priorityScroll: { height: 54, flexGrow: 0, flexShrink: 0 },
-  filters: { paddingHorizontal: 20, paddingVertical: 8, gap: 8, alignItems: 'center' },
-  filterChip: {
+  statusTabContent: {
+    flex: 1,
+    width: '100%',
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  statusTabText: { color: colors.muted, fontWeight: '600', fontSize: 12, textTransform: 'capitalize' },
+  statusTabTextActive: { color: colors.primary, fontWeight: '700' },
+  statusTabIndicator: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: colors.primary,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  filterLabel: { color: colors.muted, fontSize: 12, fontWeight: '700' },
+  priorityFilterButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    height: 36,
+    minHeight: 36,
     paddingHorizontal: 12,
-    borderRadius: 18,
+    borderRadius: 12,
   },
-  filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  filterText: { color: colors.muted, fontWeight: '700', fontSize: 11, textTransform: 'capitalize' },
-  filterTextActive: { color: colors.surface },
-  priorityDot: { width: 7, height: 7, borderRadius: 4, marginRight: 6 },
+  priorityFilterButtonActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+  priorityFilterText: { color: colors.text, fontWeight: '700', fontSize: 11 },
+  priorityFilterTextActive: { color: colors.primary },
+  priorityFilterChevron: { marginLeft: 8 },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: colors.overlay,
+  },
+  priorityFilterSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    paddingHorizontal: 20,
+    paddingTop: 22,
+    paddingBottom: 28,
+  },
+  priorityFilterTitle: { color: colors.text, fontSize: 17, fontWeight: '800', marginBottom: 10 },
+  priorityOption: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  priorityOptionLabel: { flexDirection: 'row', alignItems: 'center' },
+  priorityOptionText: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  priorityOptionTextActive: { color: colors.primary, fontWeight: '800' },
+  prioritySelectedMark: { color: colors.primary, fontSize: 16, fontWeight: '800' },
+  priorityDot: { width: 7, height: 7, borderRadius: 4, marginRight: 8 },
   priorityDotLow: { backgroundColor: colors.success500 },
   priorityDotMedium: { backgroundColor: colors.warning500 },
-  priorityDotHigh: { backgroundColor: '#F97316' },
+  priorityDotHigh: { backgroundColor: colors.warning400 },
   priorityDotUrgent: { backgroundColor: colors.error500 },
   taskScroll: { flex: 1 },
   list: { padding: 20, paddingBottom: 24, gap: 10 },
