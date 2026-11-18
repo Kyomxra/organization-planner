@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -37,6 +37,19 @@ function formatAmount(amount: number): string {
   return amount.toLocaleString('id-ID');
 }
 
+function getCalendarDays(year: number, month: number): Array<number | null> {
+  const firstDayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const days: Array<number | null> = Array(firstDayOffset).fill(null);
+  for (let day = 1; day <= daysInMonth; day += 1) days.push(day);
+  while (days.length % 7 !== 0) days.push(null);
+  return days;
+}
+
+function toLocalDateString(year: number, month: number, day: number): string {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 export function BudgetingScreen({
   organizationId,
   onBack,
@@ -51,6 +64,8 @@ export function BudgetingScreen({
   const [toDate, setToDate] = useState('');
   const [appliedFromDate, setAppliedFromDate] = useState('');
   const [appliedToDate, setAppliedToDate] = useState('');
+  const [datePickerTarget, setDatePickerTarget] = useState<'from' | 'to' | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [isReceiptModalVisible, setIsReceiptModalVisible] = useState(false);
   const [isAddRevenueModalVisible, setIsAddRevenueModalVisible] = useState(false);
@@ -172,6 +187,32 @@ export function BudgetingScreen({
     setAppliedToDate(toDate);
   };
 
+  const openDatePicker = (target: 'from' | 'to') => {
+    const currentValue = target === 'from' ? fromDate : toDate;
+    setCalendarMonth(currentValue ? new Date(`${currentValue}T12:00:00`) : new Date());
+    setDatePickerTarget(target);
+  };
+
+  const chooseCalendarDate = (day: number) => {
+    const selectedDate = toLocalDateString(
+      calendarMonth.getFullYear(),
+      calendarMonth.getMonth(),
+      day,
+    );
+    if (datePickerTarget === 'from') setFromDate(selectedDate);
+    if (datePickerTarget === 'to') setToDate(selectedDate);
+    setDatePickerTarget(null);
+  };
+
+  const clearCalendarDate = () => {
+    if (datePickerTarget === 'from') setFromDate('');
+    if (datePickerTarget === 'to') setToDate('');
+    setDatePickerTarget(null);
+  };
+
+  const calendarDays = getCalendarDays(calendarMonth.getFullYear(), calendarMonth.getMonth());
+  const selectedCalendarDate = datePickerTarget === 'from' ? fromDate : toDate;
+
   const saveIncome = async (income: Partial<IncomeItem>): Promise<boolean> => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
@@ -278,41 +319,43 @@ export function BudgetingScreen({
         {/* Date Filter Card */}
         <View style={styles.filterCard}>
           <View style={styles.filterRow}>
-            <View style={styles.filterBox}>
+            <TouchableOpacity
+              style={styles.filterBox}
+              onPress={() => openDatePicker('from')}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Choose start date"
+            >
               <Text style={styles.filterLabel}>From</Text>
               <View style={styles.filterValueRow}>
-                <TextInput
-                  style={styles.filterDateInput}
-                  value={fromDate}
-                  onChangeText={setFromDate}
-                  placeholder="YYYY-MM-DD"
-                  keyboardType="numbers-and-punctuation"
-                  accessibilityLabel="Filter start date"
-                />
+                <Text style={[styles.filterDateInput, !fromDate && styles.filterDatePlaceholder]}>
+                  {fromDate || 'YYYY-MM-DD'}
+                </Text>
                 <Svg width={14} height={14} viewBox="0 0 24 24">
                   <Rect x="3" y="4" width="18" height="18" rx="3" stroke={colors.primary} strokeWidth={2} fill="none" />
                   <Path d="M16 2V6M8 2V6M3 10H21" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
                 </Svg>
               </View>
-            </View>
+            </TouchableOpacity>
 
-            <View style={styles.filterBox}>
+            <TouchableOpacity
+              style={styles.filterBox}
+              onPress={() => openDatePicker('to')}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Choose end date"
+            >
               <Text style={styles.filterLabel}>To</Text>
               <View style={styles.filterValueRow}>
-                <TextInput
-                  style={styles.filterDateInput}
-                  value={toDate}
-                  onChangeText={setToDate}
-                  placeholder="YYYY-MM-DD"
-                  keyboardType="numbers-and-punctuation"
-                  accessibilityLabel="Filter end date"
-                />
+                <Text style={[styles.filterDateInput, !toDate && styles.filterDatePlaceholder]}>
+                  {toDate || 'YYYY-MM-DD'}
+                </Text>
                 <Svg width={14} height={14} viewBox="0 0 24 24">
                   <Rect x="3" y="4" width="18" height="18" rx="3" stroke={colors.primary} strokeWidth={2} fill="none" />
                   <Path d="M16 2V6M8 2V6M3 10H21" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
                 </Svg>
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity style={styles.searchBtn} onPress={handleSearchFilter} activeOpacity={0.85}>
@@ -467,6 +510,87 @@ export function BudgetingScreen({
         onClose={() => setIsAddExpenseModalVisible(false)}
         onAdd={saveExpense}
       />
+
+      {/* Compact date picker */}
+      <Modal
+        visible={datePickerTarget !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDatePickerTarget(null)}
+      >
+        <View style={styles.calendarOverlay}>
+          <View style={styles.calendarCard}>
+            <View style={styles.calendarMonthRow}>
+              <TouchableOpacity
+                style={styles.calendarArrow}
+                onPress={() => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+                accessibilityRole="button"
+                accessibilityLabel="Previous month"
+              >
+                <Svg width={16} height={16} viewBox="0 0 24 24">
+                  <Path d="M15 18L9 12L15 6" stroke={colors.text} strokeWidth={2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+              </TouchableOpacity>
+              <Text style={styles.calendarMonthTitle}>
+                {calendarMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+              </Text>
+              <TouchableOpacity
+                style={styles.calendarArrow}
+                onPress={() => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+                accessibilityRole="button"
+                accessibilityLabel="Next month"
+              >
+                <Svg width={16} height={16} viewBox="0 0 24 24">
+                  <Path d="M9 18L15 12L9 6" stroke={colors.text} strokeWidth={2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.calendarWeekdays}>
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((weekday, index) => (
+                <Text key={`${weekday}-${index}`} style={styles.calendarWeekday}>{weekday}</Text>
+              ))}
+            </View>
+
+            <View style={styles.calendarGrid}>
+              {calendarDays.map((day, index) => {
+                if (day === null) {
+                  return <View key={`empty-${index}`} style={styles.calendarDayCell} />;
+                }
+                const dateValue = toLocalDateString(calendarMonth.getFullYear(), calendarMonth.getMonth(), day);
+                const isSelected = dateValue === selectedCalendarDate;
+                return (
+                  <TouchableOpacity
+                    key={dateValue}
+                    style={styles.calendarDayCell}
+                    onPress={() => chooseCalendarDate(day)}
+                    accessibilityRole="button"
+                    accessibilityLabel={dateValue}
+                    accessibilityState={{ selected: isSelected }}
+                  >
+                    <Text style={[styles.calendarDayText, isSelected && styles.calendarDayTextSelected]}>
+                      {day}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={styles.calendarFooter}>
+              <TouchableOpacity onPress={clearCalendarDate} activeOpacity={0.7}>
+                <Text style={styles.calendarClearText}>Clear date</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.calendarCloseButton}
+                onPress={() => setDatePickerTarget(null)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.calendarCloseText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -630,6 +754,112 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
     padding: 0,
+  },
+  filterDatePlaceholder: {
+    color: colors.muted,
+  },
+  calendarOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(20, 16, 18, 0.48)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 18,
+  },
+  calendarCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: colors.surface,
+    borderRadius: 22,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  calendarMonthRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  calendarArrow: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calendarMonthTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.text,
+  },
+  calendarWeekdays: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  calendarWeekday: {
+    width: '14.2857%',
+    textAlign: 'center',
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.muted,
+    paddingVertical: 7,
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  calendarDayCell: {
+    width: '14.2857%',
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calendarDayText: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    overflow: 'hidden',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
+    fontSize: 12,
+    color: colors.text,
+  },
+  calendarDayTextSelected: {
+    backgroundColor: colors.primary,
+    color: colors.surface,
+    fontWeight: '800',
+    lineHeight: 30,
+  },
+  calendarFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  calendarClearText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+  },
+  calendarCloseButton: {
+    minWidth: 92,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  calendarCloseText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.primary,
   },
   emptyTableText: {
     paddingHorizontal: 14,
