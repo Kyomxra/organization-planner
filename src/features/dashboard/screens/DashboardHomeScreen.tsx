@@ -10,7 +10,6 @@ import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-nativ
 import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
 import { supabase } from '../../../lib/supabase';
-import { formatLocalDate } from '../../../lib/date';
 
 interface DashboardHomeScreenProps {
   organizationId: string;
@@ -52,8 +51,6 @@ export function DashboardHomeScreen({
     let active = true;
     const loadDashboardData = async () => {
       const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
       const [eventResult, transactionResult, notificationResult] = await Promise.all([
         supabase
           .from('events')
@@ -66,9 +63,7 @@ export function DashboardHomeScreen({
         supabase
           .from('transactions')
           .select('type, amount, status')
-          .eq('organization_id', organizationId)
-          .gte('occurred_on', formatLocalDate(monthStart))
-          .lt('occurred_on', formatLocalDate(nextMonthStart)),
+          .eq('organization_id', organizationId),
         supabase
           .from('notifications')
           .select('id')
@@ -88,7 +83,7 @@ export function DashboardHomeScreen({
         return;
       }
 
-      const visibleTransactions = transactionResult.data ?? [];
+      const allTransactions = transactionResult.data ?? [];
       setNextActivity(eventResult.data ? {
         title: eventResult.data.title,
         date: new Date(eventResult.data.start_at).toLocaleString(undefined, {
@@ -101,13 +96,13 @@ export function DashboardHomeScreen({
         }),
       } : null);
       setBudgetSummary({
-        income: visibleTransactions
+        income: allTransactions
           .filter((item) => item.type === 'income' && item.status === 'approved')
           .reduce((sum, item) => sum + Number(item.amount), 0),
-        expenses: visibleTransactions
+        expenses: allTransactions
           .filter((item) => item.type === 'expense' && item.status !== 'rejected')
           .reduce((sum, item) => sum + Number(item.amount), 0),
-        pending: visibleTransactions.filter((item) => item.status === 'pending').length,
+        pending: allTransactions.filter((item) => item.status === 'pending').length,
       });
       setUnreadNotifications(notificationResult.data?.length ?? 0);
     };
@@ -337,14 +332,6 @@ export function DashboardHomeScreen({
                 </Svg>
               </View>
               <Text style={styles.budgetTitle}>Budgeting</Text>
-            </View>
-            <View style={styles.octBadge}>
-              <Text style={styles.octBadgeText}>
-                {new Date().toLocaleDateString(undefined, {
-                  month: 'short',
-                  year: 'numeric',
-                }).toUpperCase()}
-              </Text>
             </View>
           </View>
 
@@ -675,18 +662,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     color: colors.text,
-  },
-  octBadge: {
-    backgroundColor: colors.primarySoft,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  octBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.primary,
-    letterSpacing: 0.4,
   },
   budgetSubLabel: {
     fontSize: 11,

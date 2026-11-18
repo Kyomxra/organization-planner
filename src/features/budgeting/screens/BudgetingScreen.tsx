@@ -15,7 +15,7 @@ import { TransactionDetailsModal } from '../components/TransactionDetailsModal';
 import { AddRevenueModal } from '../components/AddRevenueModal';
 import { AddExpenseModal } from '../components/AddExpenseModal';
 import { supabase } from '../../../lib/supabase';
-import { formatLocalDate, isValidLocalDate } from '../../../lib/date';
+import { isValidLocalDate } from '../../../lib/date';
 
 interface BudgetingScreenProps {
   organizationId: string;
@@ -45,15 +45,12 @@ export function BudgetingScreen({
   canAddExpense = true,
   canReviewTransactions = true,
 }: BudgetingScreenProps) {
-  const today = new Date();
-  const defaultFromDate = formatLocalDate(new Date(today.getFullYear(), today.getMonth(), 1));
-  const defaultToDate = formatLocalDate(new Date(today.getFullYear(), today.getMonth() + 1, 0));
   const [incomes, setIncomes] = useState<IncomeItem[]>([]);
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
-  const [fromDate, setFromDate] = useState(defaultFromDate);
-  const [toDate, setToDate] = useState(defaultToDate);
-  const [appliedFromDate, setAppliedFromDate] = useState(defaultFromDate);
-  const [appliedToDate, setAppliedToDate] = useState(defaultToDate);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [appliedFromDate, setAppliedFromDate] = useState('');
+  const [appliedToDate, setAppliedToDate] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isReceiptModalVisible, setIsReceiptModalVisible] = useState(false);
   const [isAddRevenueModalVisible, setIsAddRevenueModalVisible] = useState(false);
@@ -66,13 +63,16 @@ export function BudgetingScreen({
 
   const loadTransactions = useCallback(async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from('transactions')
       .select('id, type, amount, occurred_on, source_or_category, description, status, receipt_path')
       .eq('organization_id', organizationId)
-      .gte('occurred_on', appliedFromDate)
-      .lte('occurred_on', appliedToDate)
       .order('occurred_on', { ascending: false });
+
+    if (appliedFromDate) query = query.gte('occurred_on', appliedFromDate);
+    if (appliedToDate) query = query.lte('occurred_on', appliedToDate);
+
+    const { data, error } = await query;
 
     if (error) {
       showMessage('Could not load transactions', error.message);
@@ -162,8 +162,10 @@ export function BudgetingScreen({
   };
 
   const handleSearchFilter = () => {
-    if (!isValidLocalDate(fromDate) || !isValidLocalDate(toDate) || fromDate > toDate) {
-      showMessage('Check date range', 'Enter dates as YYYY-MM-DD and make sure the start is not after the end.');
+    const hasInvalidDate = (fromDate !== '' && !isValidLocalDate(fromDate))
+      || (toDate !== '' && !isValidLocalDate(toDate));
+    if (hasInvalidDate || (fromDate !== '' && toDate !== '' && fromDate > toDate)) {
+      showMessage('Check date range', 'Enter each date as YYYY-MM-DD and make sure the start is not after the end.');
       return;
     }
     setAppliedFromDate(fromDate);
@@ -238,14 +240,6 @@ export function BudgetingScreen({
           <Text style={styles.headerTitle}>Budgeting</Text>
         </View>
 
-        <View style={styles.octBadge}>
-          <Text style={styles.octBadgeText}>
-            {new Date(`${appliedFromDate}T12:00:00`).toLocaleDateString(undefined, {
-              month: 'short',
-              year: 'numeric',
-            }).toUpperCase()}
-          </Text>
-        </View>
       </View>
 
       <ScrollView
@@ -510,18 +504,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     color: colors.text,
-  },
-  octBadge: {
-    backgroundColor: colors.primarySoft,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  octBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.primary,
-    letterSpacing: 0.5,
   },
   scroll: {
     flex: 1,
