@@ -202,16 +202,7 @@ export function RundownListScreen({
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.filterBtn} hitSlop={10}>
-          <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Path
-              d="M4 6h16M7 12h10M10 18h4"
-              stroke={colors.text}
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
-          </Svg>
-        </TouchableOpacity>
+        <View style={styles.headerSpacer} />
       </View>
 
       <View style={styles.searchRow}>
@@ -240,16 +231,6 @@ export function RundownListScreen({
           />
         </View>
 
-        <TouchableOpacity style={styles.filterSmallBtn} hitSlop={8}>
-          <Svg width={16} height={16} viewBox="0 0 24 24">
-            <Path
-              d="M4 6h16M7 12h10M10 18h4"
-              stroke={colors.primary}
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
-          </Svg>
-        </TouchableOpacity>
       </View>
 
       {isLoading ? (
@@ -456,16 +437,6 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
   },
-  filterBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.2,
-    borderColor: '#ECEEF7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -493,16 +464,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     paddingVertical: 0,
     outlineWidth: 0,
-  },
-  filterSmallBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#ECEEF7',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   emptyContainer: {
     flex: 1,
