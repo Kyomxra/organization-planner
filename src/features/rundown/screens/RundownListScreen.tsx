@@ -27,6 +27,7 @@ type RundownRow = {
   id: string;
   title: string;
   event_id: string | null;
+  event_date: string | null;
   updated_at: string;
 };
 
@@ -90,7 +91,7 @@ export function RundownListScreen({
     const loadRundowns = async () => {
       const { data: rows, error } = await supabase
         .from('rundowns')
-        .select('id, title, event_id, updated_at')
+        .select('id, title, event_id, event_date, updated_at')
         .eq('organization_id', organizationId)
         .order('updated_at', { ascending: false });
       if (!active) return;
@@ -137,14 +138,18 @@ export function RundownListScreen({
         return {
           id: row.id,
           title: row.title,
-          eventDate: eventDate
-            ? new Date(eventDate).toLocaleDateString(undefined, {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })
-            : 'No event linked',
+          eventDate: (() => {
+            const date = row.event_date ?? eventDate;
+            if (!date) return 'No event linked';
+
+            const dateOnly = date.slice(0, 10);
+            return new Date(`${dateOnly}T00:00:00`).toLocaleDateString(undefined, {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            });
+          })(),
           updatedLabel: new Date(row.updated_at).toLocaleDateString(),
           itemCount: itemCounts.get(row.id) ?? 0,
           accentColor: ['#6C63FF', '#E87A35', '#2C9B76'][index % 3],
