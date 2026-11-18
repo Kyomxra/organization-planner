@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useMemo } from 'react';
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -17,7 +18,18 @@ import { useAppTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/ThemeContext';
 import { showMessage } from '../../auth/utils/feedback';
 import { CalendarEvent, NewCalendarEvent } from '../types';
-import { formatLocalDate } from '../../../lib/date';
+import { formatLocalDate, isValidLocalDate } from '../../../lib/date';
+
+type DatePickerTarget = 'start' | 'end';
+
+const getCalendarDays = (year: number, month: number): Array<number | null> => {
+  const mondayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
+  const days: Array<number | null> = Array(mondayOffset).fill(null);
+  const count = new Date(year, month + 1, 0).getDate();
+  for (let day = 1; day <= count; day += 1) days.push(day);
+  while (days.length % 7 !== 0) days.push(null);
+  return days;
+};
 
 interface NewEventModalProps {
   visible: boolean;
@@ -45,9 +57,25 @@ export function NewEventModal({
   const [endDate, setEndDate] = useState(initialDate);
   const [endTime, setEndTime] = useState('10:00');
   const [notes, setNotes] = useState('');
+  const [datePickerTarget, setDatePickerTarget] = useState<DatePickerTarget | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+  const todayDate = formatLocalDate(new Date());
+  const calendarDays = getCalendarDays(calendarMonth.getFullYear(), calendarMonth.getMonth());
+  const calendarMonthLabel = new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    year: 'numeric',
+  }).format(calendarMonth);
+  const currentMonth = new Date();
+  const isPreviousMonthDisabled = calendarMonth.getFullYear() < currentMonth.getFullYear()
+    || (calendarMonth.getFullYear() === currentMonth.getFullYear()
+      && calendarMonth.getMonth() <= currentMonth.getMonth());
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      setDatePickerTarget(null);
+      return;
+    }
+    setDatePickerTarget(null);
     if (initialEvent) {
       const start = new Date(initialEvent.startAt);
       const end = new Date(initialEvent.endAt);
@@ -60,14 +88,39 @@ export function NewEventModal({
       setNotes(initialEvent.notes ?? '');
       return;
     }
+    const defaultDate = isValidLocalDate(initialDate) && initialDate >= formatLocalDate(new Date())
+      ? initialDate
+      : formatLocalDate(new Date());
     setTitle('');
     setDescription('');
-    setStartDate(initialDate);
+    setStartDate(defaultDate);
     setStartTime('09:00');
-    setEndDate(initialDate);
+    setEndDate(defaultDate);
     setEndTime('10:00');
     setNotes('');
   }, [initialDate, initialEvent, visible]);
+
+  const openDatePicker = (target: DatePickerTarget) => {
+    Keyboard.dismiss();
+    const selectedDate = target === 'start' ? startDate : endDate;
+    const dateToShow = isValidLocalDate(selectedDate) && selectedDate >= todayDate
+      ? new Date(`${selectedDate}T12:00:00`)
+      : new Date();
+    setCalendarMonth(new Date(dateToShow.getFullYear(), dateToShow.getMonth(), 1));
+    setDatePickerTarget(target);
+  };
+
+  const chooseDate = (day: number) => {
+    const selectedDate = formatLocalDate(new Date(
+      calendarMonth.getFullYear(),
+      calendarMonth.getMonth(),
+      day,
+    ));
+    if (selectedDate < todayDate) return;
+    if (datePickerTarget === 'start') setStartDate(selectedDate);
+    if (datePickerTarget === 'end') setEndDate(selectedDate);
+    setDatePickerTarget(null);
+  };
 
   const handleSave = async () => {
     const startAt = new Date(`${startDate}T${startTime}:00`);
@@ -88,6 +141,15 @@ export function NewEventModal({
 
     if (!isValidDateTime(startDate, startTime, startAt) || !isValidDateTime(endDate, endTime, endAt)) {
       showMessage('Check date and time', 'Use YYYY-MM-DD for dates and HH:MM for times.');
+      return;
+    }
+    const originalStartDate = initialEvent ? formatLocalDate(new Date(initialEvent.startAt)) : '';
+    const originalEndDate = initialEvent ? formatLocalDate(new Date(initialEvent.endAt)) : '';
+    if (
+      (startDate < todayDate && startDate !== originalStartDate)
+      || (endDate < todayDate && endDate !== originalEndDate)
+    ) {
+      showMessage('Past dates unavailable', 'Events must be scheduled for today or a future date.');
       return;
     }
     if (endAt <= startAt) {
@@ -173,14 +235,14 @@ export function NewEventModal({
                 <View style={styles.timeRow}>
                   <Text style={styles.timeLabel}>Start</Text>
                   <View style={styles.timePills}>
-                    <TextInput
-                      style={[styles.datePill, styles.datePillText]}
-                      value={startDate}
-                      onChangeText={setStartDate}
-                      placeholder="YYYY-MM-DD"
-                      autoCapitalize="none"
-                      keyboardType="numbers-and-punctuation"
-                    />
+                    <TouchableOpacity
+                      style={[styles.datePill, styles.datePickerButton]}
+                      onPress={() => openDatePicker('start')}
+                      accessibilityRole="button"
+                      accessibilityLabel="Choose event start date"
+                    >
+                      <Text style={styles.datePillText}>{startDate}</Text>
+                    </TouchableOpacity>
                     <TextInput
                       style={[styles.timeText, styles.timeInput]}
                       value={startTime}
@@ -195,14 +257,14 @@ export function NewEventModal({
                 <View style={styles.timeRow}>
                   <Text style={styles.timeLabel}>End</Text>
                   <View style={styles.timePills}>
-                    <TextInput
-                      style={[styles.datePill, styles.datePillText]}
-                      value={endDate}
-                      onChangeText={setEndDate}
-                      placeholder="YYYY-MM-DD"
-                      autoCapitalize="none"
-                      keyboardType="numbers-and-punctuation"
-                    />
+                    <TouchableOpacity
+                      style={[styles.datePill, styles.datePickerButton]}
+                      onPress={() => openDatePicker('end')}
+                      accessibilityRole="button"
+                      accessibilityLabel="Choose event end date"
+                    >
+                      <Text style={styles.datePillText}>{endDate}</Text>
+                    </TouchableOpacity>
                     <TextInput
                       style={[styles.timeText, styles.timeInput]}
                       value={endTime}
@@ -252,6 +314,101 @@ export function NewEventModal({
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
+        {datePickerTarget && (
+          <View style={styles.datePickerOverlay}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={() => setDatePickerTarget(null)}
+              accessibilityLabel="Close date picker"
+            />
+            <View style={styles.datePickerCard}>
+              <View style={styles.datePickerHeader}>
+                <View>
+                  <Text style={styles.datePickerTitle}>
+                    Choose {datePickerTarget === 'start' ? 'start' : 'end'} date
+                  </Text>
+                  <Text style={styles.datePickerSubtitle}>Past dates are unavailable</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setDatePickerTarget(null)}
+                  style={styles.datePickerCloseButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close date picker"
+                >
+                  <Text style={styles.datePickerCloseText}>×</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.datePickerMonthNavigation}>
+                <TouchableOpacity
+                  style={[styles.datePickerMonthArrow, isPreviousMonthDisabled && styles.datePickerMonthArrowDisabled]}
+                  disabled={isPreviousMonthDisabled}
+                  onPress={() => setCalendarMonth((month) =>
+                    new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+                  accessibilityRole="button"
+                  accessibilityLabel="Previous month"
+                >
+                  <Text style={styles.datePickerMonthArrowText}>‹</Text>
+                </TouchableOpacity>
+                <Text style={styles.datePickerMonthLabel}>{calendarMonthLabel}</Text>
+                <TouchableOpacity
+                  style={styles.datePickerMonthArrow}
+                  onPress={() => setCalendarMonth((month) =>
+                    new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+                  accessibilityRole="button"
+                  accessibilityLabel="Next month"
+                >
+                  <Text style={styles.datePickerMonthArrowText}>›</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.datePickerGrid}>
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((weekday, index) => (
+                  <View key={`${weekday}-${index}`} style={styles.datePickerCell}>
+                    <Text style={styles.datePickerWeekday}>{weekday}</Text>
+                  </View>
+                ))}
+                {calendarDays.map((day, index) => {
+                  if (day === null) {
+                    return <View key={`empty-${index}`} style={styles.datePickerCell} />;
+                  }
+                  const dateValue = formatLocalDate(new Date(
+                    calendarMonth.getFullYear(),
+                    calendarMonth.getMonth(),
+                    day,
+                  ));
+                  const isPast = dateValue < todayDate;
+                  const selectedDate = datePickerTarget === 'start' ? startDate : endDate;
+                  const isSelected = selectedDate === dateValue;
+                  return (
+                    <View key={dateValue} style={styles.datePickerCell}>
+                      <TouchableOpacity
+                        disabled={isPast}
+                        style={[
+                          styles.datePickerDay,
+                          isSelected && styles.datePickerDaySelected,
+                          isPast && styles.datePickerDayDisabled,
+                        ]}
+                        onPress={() => chooseDate(day)}
+                        accessibilityRole="button"
+                        accessibilityLabel={dateValue}
+                        accessibilityState={{ selected: isSelected, disabled: isPast }}
+                      >
+                        <Text
+                          style={[
+                            styles.datePickerDayText,
+                            isSelected && styles.datePickerDayTextSelected,
+                            isPast && styles.datePickerDayTextDisabled,
+                          ]}
+                        >
+                          {day}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          </View>
+        )}
       </View>
     </Modal>
   );
@@ -396,6 +553,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 100,
     textAlign: 'center',
   },
+  datePickerButton: {
+    width: 100,
+    paddingHorizontal: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   timeText: {
     fontSize: 13,
     fontWeight: '700',
@@ -508,4 +671,73 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     lineHeight: 18,
     padding: 0,
   },
+  datePickerOverlay: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: colors.overlay,
+  },
+  datePickerCard: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 22,
+    padding: 20,
+    backgroundColor: colors.surface,
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 18,
+  },
+  datePickerTitle: { fontSize: 17, fontWeight: '800', color: colors.text },
+  datePickerSubtitle: { marginTop: 4, fontSize: 11, color: colors.muted },
+  datePickerCloseButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  datePickerCloseText: { fontSize: 22, lineHeight: 24, color: colors.muted },
+  datePickerMonthNavigation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  datePickerMonthArrow: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primarySoft,
+  },
+  datePickerMonthArrowDisabled: { opacity: 0.4 },
+  datePickerMonthArrowText: { fontSize: 25, lineHeight: 28, color: colors.text },
+  datePickerMonthLabel: { fontSize: 14, fontWeight: '800', color: colors.text },
+  datePickerGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  datePickerCell: {
+    width: '14.2857%',
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  datePickerWeekday: { color: colors.muted, fontSize: 11, fontWeight: '700' },
+  datePickerDay: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  datePickerDaySelected: { backgroundColor: colors.primary },
+  datePickerDayDisabled: { backgroundColor: colors.surfaceSubtle },
+  datePickerDayText: { fontSize: 12, color: colors.text },
+  datePickerDayTextSelected: { color: colors.surface, fontWeight: '800' },
+  datePickerDayTextDisabled: { color: colors.muted },
 });

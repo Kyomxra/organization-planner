@@ -4,7 +4,7 @@ import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View 
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useAppTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/ThemeContext';
-import { isValidLocalDate } from '../../../lib/date';
+import { formatLocalDate, isValidLocalDate } from '../../../lib/date';
 import { supabase } from '../../../lib/supabase';
 import { showMessage, showToast } from '../../auth/utils/feedback';
 import { DivisionPerson, DivisionTask, TaskPriority, TaskStatus } from '../types';
@@ -88,15 +88,25 @@ export function TaskDetailsScreen({
     const initialDate = task?.due_at ? new Date(`${task.due_at.slice(0, 10)}T12:00:00`) : new Date();
     return Number.isNaN(initialDate.getTime()) ? new Date() : initialDate;
   });
+  const todayDate = formatLocalDate(new Date());
+  const currentMonth = new Date();
+  const isPreviousMonthDisabled = calendarMonth.getFullYear() < currentMonth.getFullYear()
+    || (calendarMonth.getFullYear() === currentMonth.getFullYear()
+      && calendarMonth.getMonth() <= currentMonth.getMonth());
 
   const openCalendar = () => {
     const initialDate = dueDate ? new Date(`${dueDate}T12:00:00`) : new Date();
-    setCalendarMonth(Number.isNaN(initialDate.getTime()) ? new Date() : initialDate);
+    const dateToShow = !Number.isNaN(initialDate.getTime()) && dueDate >= todayDate
+      ? initialDate
+      : new Date();
+    setCalendarMonth(new Date(dateToShow.getFullYear(), dateToShow.getMonth(), 1));
     setIsCalendarVisible(true);
   };
 
   const chooseDeadline = (day: number) => {
-    setDueDate(toLocalDateString(calendarMonth.getFullYear(), calendarMonth.getMonth(), day));
+    const selectedDate = toLocalDateString(calendarMonth.getFullYear(), calendarMonth.getMonth(), day);
+    if (selectedDate < todayDate) return;
+    setDueDate(selectedDate);
     setIsCalendarVisible(false);
   };
 
@@ -173,6 +183,11 @@ export function TaskDetailsScreen({
     }
     if (dueDate && !isValidLocalDate(dueDate)) {
       showMessage('Invalid deadline', 'Use a valid YYYY-MM-DD date.');
+      return;
+    }
+    const originalDueDate = task?.due_at?.slice(0, 10) ?? '';
+    if (dueDate && dueDate < todayDate && dueDate !== originalDueDate) {
+      showMessage('Past dates unavailable', 'Choose today or a future date for this task deadline.');
       return;
     }
     if (!taskDivisionId) {
@@ -346,7 +361,8 @@ export function TaskDetailsScreen({
           <View style={styles.calendarCard}>
             <View style={styles.calendarMonthRow}>
               <TouchableOpacity
-                style={styles.calendarArrow}
+                style={[styles.calendarArrow, isPreviousMonthDisabled && styles.calendarArrowDisabled]}
+                disabled={isPreviousMonthDisabled}
                 onPress={() => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
                 accessibilityRole="button"
                 accessibilityLabel="Previous month"
@@ -380,17 +396,26 @@ export function TaskDetailsScreen({
               {calendarDays.map((day, index) => {
                 if (day === null) return <View key={`empty-${index}`} style={styles.calendarDayCell} />;
                 const dateValue = toLocalDateString(calendarMonth.getFullYear(), calendarMonth.getMonth(), day);
+                const isPast = dateValue < todayDate;
                 const isSelected = dueDate === dateValue;
                 return (
                   <TouchableOpacity
                     key={dateValue}
-                    style={styles.calendarDayCell}
+                    style={[
+                      styles.calendarDayCell,
+                      isPast && styles.calendarDayCellDisabled,
+                    ]}
+                    disabled={isPast}
                     onPress={() => chooseDeadline(day)}
                     accessibilityRole="button"
                     accessibilityLabel={dateValue}
-                    accessibilityState={{ selected: isSelected }}
+                    accessibilityState={{ selected: isSelected, disabled: isPast }}
                   >
-                    <Text style={[styles.calendarDayText, isSelected && styles.calendarDayTextSelected]}>
+                    <Text style={[
+                      styles.calendarDayText,
+                      isSelected && styles.calendarDayTextSelected,
+                      isPast && styles.calendarDayTextDisabled,
+                    ]}>
                       {day}
                     </Text>
                   </TouchableOpacity>
@@ -496,6 +521,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  calendarArrowDisabled: { opacity: 0.4 },
   calendarMonthTitle: { fontSize: 15, fontWeight: '800', color: colors.text },
   calendarWeekdays: { flexDirection: 'row', marginBottom: 4 },
   calendarWeekday: {
@@ -508,6 +534,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   calendarDayCell: { width: '14.2857%', height: 38, alignItems: 'center', justifyContent: 'center' },
+  calendarDayCellDisabled: { opacity: 0.45 },
   calendarDayText: {
     width: 30,
     height: 30,
@@ -524,6 +551,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.surface,
     fontWeight: '800',
     lineHeight: 30,
+  },
+  calendarDayTextDisabled: {
+    backgroundColor: colors.surfaceSubtle,
+    color: colors.muted,
+    fontWeight: '400',
   },
   calendarFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
   calendarClearText: { fontSize: 12, fontWeight: '700', color: colors.primary, paddingVertical: 10, paddingHorizontal: 4 },

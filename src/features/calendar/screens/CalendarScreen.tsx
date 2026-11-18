@@ -51,6 +51,9 @@ export function CalendarScreen({
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const monthYear = visibleMonth.getFullYear();
   const monthIndex = visibleMonth.getMonth();
+  const todayDate = formatLocalDate(today);
+  const selectedDate = formatLocalDate(new Date(monthYear, monthIndex, selectedDay));
+  const isSelectedDatePast = selectedDate < todayDate;
   const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
   const daysInMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0).getDate();
   const startDayOffset = (monthStart.getDay() + 6) % 7;
@@ -145,6 +148,11 @@ export function CalendarScreen({
   const dayEvents = events.filter((event) => event.dayOfMonth === selectedDay);
 
   const handleSaveEvent = async (event: NewCalendarEvent): Promise<boolean> => {
+    if (!editingEvent && formatLocalDate(new Date(event.startAt)) < formatLocalDate(new Date())) {
+      showMessage('Past dates unavailable', 'Events must be scheduled for today or a future date.');
+      return false;
+    }
+
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       showToast('error', 'Could not save event', userError?.message ?? 'Sign in again and retry.');
@@ -286,16 +294,25 @@ export function CalendarScreen({
               const dayNum = i + 1;
               const isSelected = selectedDay === dayNum;
               const hasEvent = eventDays.has(dayNum);
+              const isPastDate = formatLocalDate(new Date(monthYear, monthIndex, dayNum)) < todayDate;
+              const canViewDate = !isPastDate || hasEvent;
 
               return (
                 <TouchableOpacity
                   key={`day-${dayNum}`}
-                  style={styles.dateSlot}
+                  style={[styles.dateSlot, isPastDate && styles.dateSlotPast]}
+                  disabled={!canViewDate}
                   onPress={() => setSelectedDay(dayNum)}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected, disabled: !canViewDate }}
                 >
                   <View style={[styles.dayCircle, isSelected && styles.dayCircleSelected]}>
-                    <Text style={[styles.dayText, isSelected && styles.dayTextSelected]}>
+                    <Text style={[
+                      styles.dayText,
+                      isPastDate && styles.dayTextPast,
+                      isSelected && styles.dayTextSelected,
+                    ]}>
                       {dayNum}
                     </Text>
                   </View>
@@ -377,16 +394,24 @@ export function CalendarScreen({
 
         {/* Add Event Button */}
         {role === 'Executive' || (role === 'Coordinator' && divisionId) ? (
-          <TouchableOpacity
-            style={styles.addEventBtn}
-            onPress={() => {
-              setEditingEvent(null);
-              setIsNewEventModalVisible(true);
-            }}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.addEventBtnText}>+ Add Event</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity
+              style={[styles.addEventBtn, isSelectedDatePast && styles.addEventBtnDisabled]}
+              disabled={isSelectedDatePast}
+              onPress={() => {
+                setEditingEvent(null);
+                setIsNewEventModalVisible(true);
+              }}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isSelectedDatePast }}
+            >
+              <Text style={styles.addEventBtnText}>+ Add Event</Text>
+            </TouchableOpacity>
+            {isSelectedDatePast && (
+              <Text style={styles.pastDateHint}>Past dates cannot be used to add events.</Text>
+            )}
+          </>
         ) : role === 'Coordinator' ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyText}>A division assignment is required to manage events.</Text>
@@ -547,6 +572,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 2,
   },
+  dateSlotPast: {
+    opacity: 0.65,
+  },
   dayCircle: {
     width: 32,
     height: 32,
@@ -565,6 +593,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   dayTextSelected: {
     color: colors.surface,
     fontWeight: '800',
+  },
+  dayTextPast: {
+    color: colors.muted,
   },
   eventDot: {
     width: 4,
@@ -693,10 +724,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  addEventBtnDisabled: {
+    opacity: 0.45,
+  },
   addEventBtnText: {
     color: colors.surface,
     fontSize: 14,
     fontWeight: '800',
+  },
+  pastDateHint: {
+    color: colors.muted,
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: -8,
+    marginBottom: 12,
   },
   tabBar: {
     position: 'absolute',

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Modal,
   ScrollView,
@@ -14,6 +14,7 @@ import type { ThemeColors } from '../../../theme/ThemeContext';
 import { confirmAction, showMessage, showToast } from '../../auth/utils/feedback';
 import { Rundown, RundownItem } from '../types';
 import { supabase } from '../../../lib/supabase';
+import { formatLocalDate } from '../../../lib/date';
 
 type RundownItemWithAssignee = RundownItem & { assigneeUserId?: string | null };
 
@@ -64,11 +65,46 @@ const getCalendarDays = (year: number, month: number): Array<number | null> => {
   return days;
 };
 
+const parseTimeMinutes = (value: string): number | null => {
+  const match = /^(\d{2})\.(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  return hours * 60 + minutes;
+};
+
+const formatTimeMinutes = (value: number): string => {
+  const normalized = ((value % 1440) + 1440) % 1440;
+  const hours = Math.floor(normalized / 60);
+  const minutes = normalized % 60;
+  return `${String(hours).padStart(2, '0')}.${String(minutes).padStart(2, '0')}`;
+};
+
+const recalculateFollowingTimes = (
+  items: RundownItemWithAssignee[],
+  afterIndex: number,
+): RundownItemWithAssignee[] => {
+  const next = [...items];
+  for (let index = Math.max(1, afterIndex + 1); index < next.length; index += 1) {
+    const previousStartMinutes = parseTimeMinutes(next[index - 1].startTime);
+    const previousDuration = next[index - 1].durationMinutes;
+    if (previousStartMinutes === null || !Number.isInteger(previousDuration) || previousDuration < 1) break;
+    next[index] = {
+      ...next[index],
+      startTime: formatTimeMinutes(previousStartMinutes + previousDuration),
+    };
+  }
+  return next;
+};
+
 export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: EditRundownScreenProps) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [title, setTitle] = useState(rundown?.title ?? '');
   const [items, setItems] = useState<RundownItemWithAssignee[]>([]);
+  const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
+  const [dragOffsetY, setDragOffsetY] = useState(0);
   const [isLoading, setIsLoading] = useState(Boolean(rundown));
   const [isSaving, setIsSaving] = useState(false);
   const [eventDate, setEventDate] = useState(() => toIsoDate(rundown?.eventDate));
@@ -79,6 +115,14 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
     const [year, month] = iso.split('-').map(Number);
     return new Date(year, month - 1, 1);
   });
+  const itemLayoutsRef = useRef(new Map<string, { y: number; height: number }>());
+  const dragStateRef = useRef<{
+    itemId: string;
+    startY: number;
+    top: number;
+    height: number;
+    offsetY: number;
+  } | null>(null);
 
   const calendarDays = useMemo(
     () => getCalendarDays(calendarMonth.getFullYear(), calendarMonth.getMonth()),
@@ -88,6 +132,19 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
     month: 'long', year: 'numeric',
   }).format(calendarMonth);
   const selectedDateParts = eventDate ? eventDate.split('-').map(Number) : [];
+  const todayDate = formatLocalDate(new Date());
+  const currentMonth = new Date();
+  const isPreviousMonthDisabled = calendarMonth.getFullYear() < currentMonth.getFullYear()
+    || (calendarMonth.getFullYear() === currentMonth.getFullYear()
+      && calendarMonth.getMonth() <= currentMonth.getMonth());
+
+  const openCalendar = () => {
+    const dateToShow = eventDate && eventDate >= todayDate
+      ? new Date(`${eventDate}T12:00:00`)
+      : new Date();
+    setCalendarMonth(new Date(dateToShow.getFullYear(), dateToShow.getMonth(), 1));
+    setCalendarVisible(true);
+  };
 
   useEffect(() => {
     let active = true;
@@ -169,18 +226,86 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
     setItems((current) => current.map((item) => item.id === id ? { ...item, ...updates } : item));
   };
 
+  const updateStartTime = (id: string, value: string) => {
+    setItems((current) => {
+      const itemIndex = current.findIndex((item) => item.id === id);
+      if (itemIndex < 0) return current;
+
+      const next = current.map((item) => item.id === id ? { ...item, startTime: value } : item);
+      const newStartMinutes = parseTimeMinutes(value);
+      if (newStartMinutes === null) return next;
+
+      if (itemIndex > 0) {
+        const previousStartMinutes = parseTimeMinutes(next[itemIndex - 1].startTime);
+        if (previousStartMinutes !== null) {
+          const previousDuration = (newStartMinutes - previousStartMinutes + 1440) % 1440;
+          if (previousDuration > 0) {
+            next[itemIndex - 1] = {
+              ...next[itemIndex - 1],
+              durationMinutes: previousDuration,
+            };
+          }
+        }
+      }
+
+      return recalculateFollowingTimes(next, itemIndex);
+    });
+  };
+
+  const updateDuration = (id: string, value: string) => {
+    const durationMinutes = Number(value.replace(/\D/g, '')) || 0;
+    setItems((current) => {
+      const itemIndex = current.findIndex((item) => item.id === id);
+      if (itemIndex < 0) return current;
+
+      const next = current.map((item) => item.id === id ? { ...item, durationMinutes } : item);
+      if (!Number.isInteger(durationMinutes) || durationMinutes < 1) return next;
+      return recalculateFollowingTimes(next, itemIndex);
+    });
+  };
+
+  const finishReorder = () => {
+    const drag = dragStateRef.current;
+    dragStateRef.current = null;
+    setDraggingItemId(null);
+    setDragOffsetY(0);
+    if (!drag) return;
+
+    const dropCenter = drag.top + drag.offsetY + drag.height / 2;
+    setItems((current) => {
+      const movedItem = current.find((item) => item.id === drag.itemId);
+      if (!movedItem) return current;
+
+      const remaining = current.filter((item) => item.id !== drag.itemId);
+      const targetIndex = remaining.filter((item) => {
+        const layout = itemLayoutsRef.current.get(item.id);
+        return layout !== undefined && layout.y + layout.height / 2 < dropCenter;
+      }).length;
+      remaining.splice(targetIndex, 0, movedItem);
+      const reordered = remaining.map((item, index) => ({ ...item, stepNumber: index + 1 }));
+      return recalculateFollowingTimes(reordered, 0);
+    });
+  };
+
   const handleAddItem = () => {
-    setItems((current) => [...current, {
-      id: `new-${Date.now()}`,
-      stepNumber: current.length + 1,
-      title: '',
-      startTime: '09.00',
-      durationMinutes: 15,
-      description: '',
-      assigneeInitials: '',
-      assigneeName: 'Unassigned',
-      assigneeUserId: null,
-    }]);
+    setItems((current) => {
+      const lastItem = current[current.length - 1];
+      const lastStartMinutes = lastItem ? parseTimeMinutes(lastItem.startTime) : null;
+      const startTime = lastStartMinutes !== null && lastItem.durationMinutes >= 1
+        ? formatTimeMinutes(lastStartMinutes + lastItem.durationMinutes)
+        : '09.00';
+      return [...current, {
+        id: `new-${Date.now()}`,
+        stepNumber: current.length + 1,
+        title: '',
+        startTime,
+        durationMinutes: 15,
+        description: '',
+        assigneeInitials: '',
+        assigneeName: 'Unassigned',
+        assigneeUserId: null,
+      }];
+    });
   };
 
   const handleDeleteItem = (id: string) => {
@@ -188,9 +313,12 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
       'Delete item?',
       'Are you sure you want to delete this rundown item?',
       () => {
-        setItems((current) => current
-          .filter((item) => item.id !== id)
-          .map((item, index) => ({ ...item, stepNumber: index + 1 })));
+        setItems((current) => {
+          const remaining = current
+            .filter((item) => item.id !== id)
+            .map((item, index) => ({ ...item, stepNumber: index + 1 }));
+          return recalculateFollowingTimes(remaining, 0);
+        });
       },
       'Delete',
     );
@@ -250,16 +378,18 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
 
       const existingIds = items.filter((item) => !item.id.startsWith('new-')).map((item) => item.id);
       let removedIds: string[] = [];
+      let originalItems: Array<{ id: string; sort_order: number }> = [];
       if (rundown) {
-        const { data: originalItems, error } = await supabase.from('rundown_items')
-          .select('id').eq('organization_id', organizationId).eq('rundown_id', savedRundown.id);
+        const { data, error } = await supabase.from('rundown_items')
+          .select('id, sort_order').eq('organization_id', organizationId).eq('rundown_id', savedRundown.id);
         if (error) {
           showToast('error', 'Could not load rundown items', error.message);
           return;
         }
-        removedIds = (originalItems ?? [])
-          .map((item: { id: string }) => item.id)
-          .filter((id: string) => !existingIds.includes(id));
+        originalItems = (data ?? []) as Array<{ id: string; sort_order: number }>;
+        removedIds = originalItems
+          .map((item) => item.id)
+          .filter((id) => !existingIds.includes(id));
       }
       if (removedIds.length) {
         const { error } = await supabase.from('rundown_items').delete()
@@ -267,6 +397,48 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
         if (error) {
           showToast('error', 'Could not delete rundown items', error.message);
           return;
+        }
+      }
+
+      const desiredOrderById = new Map(
+        items
+          .filter((item) => !item.id.startsWith('new-'))
+          .map((item, index) => [item.id, index + 1]),
+      );
+      const needsReordering = originalItems.some((item) =>
+        desiredOrderById.has(item.id) && desiredOrderById.get(item.id) !== item.sort_order
+      );
+      const keptItems = originalItems.filter((item) => desiredOrderById.has(item.id));
+      const restoreOriginalOrder = async (rows: Array<{ id: string; sort_order: number }>) => {
+        let restoreError: string | null = null;
+        for (const item of rows) {
+          const { error } = await supabase.from('rundown_items')
+            .update({ sort_order: item.sort_order })
+            .eq('organization_id', organizationId)
+            .eq('rundown_id', savedRundown.id)
+            .eq('id', item.id);
+          if (error && !restoreError) restoreError = error.message;
+        }
+        return restoreError;
+      };
+      if (needsReordering) {
+        const temporaryOrderStart = Math.max(...originalItems.map((item) => item.sort_order)) + 1;
+        const temporarilyMoved: Array<{ id: string; sort_order: number }> = [];
+        for (const [index, item] of keptItems.entries()) {
+          const { error } = await supabase.from('rundown_items')
+            .update({ sort_order: temporaryOrderStart + index })
+            .eq('organization_id', organizationId)
+            .eq('rundown_id', savedRundown.id)
+            .eq('id', item.id);
+          if (error) {
+            const restoreError = await restoreOriginalOrder(temporarilyMoved);
+            const details = restoreError
+              ? `${error.message} Previous order restoration failed: ${restoreError}`
+              : error.message;
+            showToast('error', 'Could not reorder rundown items', details);
+            return;
+          }
+          temporarilyMoved.push(item);
         }
       }
 
@@ -289,7 +461,11 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
       if (itemRows.length) {
         const { error } = await supabase.from('rundown_items').upsert(itemRows, { onConflict: 'id' });
         if (error) {
-          showToast('error', 'Could not save rundown items', error.message);
+          const restoreError = needsReordering ? await restoreOriginalOrder(keptItems) : null;
+          const details = restoreError
+            ? `${error.message} Previous order restoration failed: ${restoreError}`
+            : error.message;
+          showToast('error', 'Could not save rundown items', details);
           return;
         }
       }
@@ -332,7 +508,7 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
           <View style={styles.divider} />
           <View style={styles.contextRow}>
             <Text style={styles.contextLabel}>Event</Text>
-            <TouchableOpacity style={styles.eventDateButton} onPress={() => setCalendarVisible(true)} accessibilityRole="button" accessibilityLabel="Choose event date" activeOpacity={0.75}>
+            <TouchableOpacity style={styles.eventDateButton} onPress={openCalendar} accessibilityRole="button" accessibilityLabel="Choose event date" activeOpacity={0.75}>
               <Svg width={16} height={16} viewBox="0 0 24 24"><Path d="M7 3v3M17 3v3M4 9h16M6 5h12a2 2 0 0 1 2 2v12H4V7a2 2 0 0 1 2-2Z" fill="none" stroke={colors.primary} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" /></Svg>
               <View style={styles.eventDateCopy}>
                 <Text style={styles.eventDateText}>{eventDate ? formatEventDate(eventDate) : 'Choose event date'}</Text>
@@ -351,15 +527,61 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
           {isLoading && <Text style={styles.itemDescription}>Loading rundown items…</Text>}
           {!isLoading && items.length === 0 && <Text style={styles.itemDescription}>No agenda items yet. Add one below.</Text>}
           {items.map((item) => (
-            <View key={item.id} style={styles.itemCard}>
+            <View
+              key={item.id}
+              onLayout={({ nativeEvent }) => {
+                itemLayoutsRef.current.set(item.id, {
+                  y: nativeEvent.layout.y,
+                  height: nativeEvent.layout.height,
+                });
+              }}
+              style={[
+                styles.itemCard,
+                draggingItemId === item.id && styles.itemCardDragging,
+                draggingItemId === item.id && { transform: [{ translateY: dragOffsetY }] },
+              ]}
+            >
               <View style={styles.itemTopRow}>
-                <View style={styles.dragHandle}><Svg width={14} height={14} viewBox="0 0 20 20"><Circle cx="6" cy="5" r="1.5" fill={colors.placeholder} /><Circle cx="14" cy="5" r="1.5" fill={colors.placeholder} /><Circle cx="6" cy="10" r="1.5" fill={colors.placeholder} /><Circle cx="14" cy="10" r="1.5" fill={colors.placeholder} /><Circle cx="6" cy="15" r="1.5" fill={colors.placeholder} /><Circle cx="14" cy="15" r="1.5" fill={colors.placeholder} /></Svg></View>
+                <View
+                  accessibilityRole="button"
+                  accessibilityLabel={`Reorder ${item.title || 'rundown item'}`}
+                  accessibilityHint="Drag to change the item order"
+                  onStartShouldSetResponder={() => itemLayoutsRef.current.has(item.id)}
+                  onResponderGrant={(event) => {
+                    const layout = itemLayoutsRef.current.get(item.id);
+                    if (!layout) return;
+                    dragStateRef.current = {
+                      itemId: item.id,
+                      startY: event.nativeEvent.pageY,
+                      top: layout.y,
+                      height: layout.height,
+                      offsetY: 0,
+                    };
+                    setDraggingItemId(item.id);
+                  }}
+                  onResponderMove={(event) => {
+                    const drag = dragStateRef.current;
+                    if (!drag || drag.itemId !== item.id) return;
+                    drag.offsetY = event.nativeEvent.pageY - drag.startY;
+                    setDragOffsetY(drag.offsetY);
+                  }}
+                  onResponderRelease={finishReorder}
+                  onResponderTerminate={() => {
+                    dragStateRef.current = null;
+                    setDraggingItemId(null);
+                    setDragOffsetY(0);
+                  }}
+                  onResponderTerminationRequest={() => false}
+                  style={styles.dragHandle}
+                >
+                  <Svg width={14} height={14} viewBox="0 0 20 20"><Circle cx="6" cy="5" r="1.5" fill={colors.placeholder} /><Circle cx="14" cy="5" r="1.5" fill={colors.placeholder} /><Circle cx="6" cy="10" r="1.5" fill={colors.placeholder} /><Circle cx="14" cy="10" r="1.5" fill={colors.placeholder} /><Circle cx="6" cy="15" r="1.5" fill={colors.placeholder} /><Circle cx="14" cy="15" r="1.5" fill={colors.placeholder} /></Svg>
+                </View>
                 <View style={styles.stepCircle}><Text style={styles.stepNumber}>{item.stepNumber}</Text></View>
                 <View style={styles.itemBody}>
                   <TextInput style={styles.itemTitle} value={item.title} onChangeText={(value) => updateItem(item.id, { title: value })} placeholder="Agenda item title" />
                   <View style={styles.timeBadgesRow}>
-                    <View style={styles.timeBadgePurple}><TextInput style={styles.timeBadgePurpleText} value={item.startTime} onChangeText={(value) => updateItem(item.id, { startTime: value })} placeholder="HH.MM" keyboardType="numbers-and-punctuation" /></View>
-                    <View style={styles.timeBadgeGrey}><TextInput style={styles.timeBadgeGreyText} value={String(item.durationMinutes)} onChangeText={(value) => updateItem(item.id, { durationMinutes: Number(value.replace(/\D/g, '')) || 0 })} placeholder="min" keyboardType="numeric" /></View>
+                    <View style={styles.timeBadgePurple}><TextInput style={styles.timeBadgePurpleText} value={item.startTime} onChangeText={(value) => updateStartTime(item.id, value)} placeholder="HH.MM" keyboardType="numbers-and-punctuation" /></View>
+                    <View style={styles.timeBadgeGrey}><TextInput style={styles.timeBadgeGreyText} value={String(item.durationMinutes)} onChangeText={(value) => updateDuration(item.id, value)} placeholder="min" keyboardType="numeric" /></View>
                   </View>
                   <TextInput style={styles.itemDescription} value={item.description} onChangeText={(value) => updateItem(item.id, { description: value })} placeholder="Agenda notes" multiline />
                   <View style={styles.assigneeRow}>
@@ -395,15 +617,45 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
               <TouchableOpacity onPress={() => setCalendarVisible(false)} style={styles.closeButton} accessibilityLabel="Close calendar"><Text style={styles.closeText}>×</Text></TouchableOpacity>
             </View>
             <View style={styles.monthNavigation}>
-              <TouchableOpacity style={styles.monthArrow} onPress={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))} accessibilityLabel="Previous month"><Text style={styles.monthArrowText}>‹</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.monthArrow, isPreviousMonthDisabled && styles.monthArrowDisabled]} disabled={isPreviousMonthDisabled} onPress={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))} accessibilityLabel="Previous month"><Text style={styles.monthArrowText}>‹</Text></TouchableOpacity>
               <Text style={styles.monthLabel}>{calendarMonthLabel}</Text>
               <TouchableOpacity style={styles.monthArrow} onPress={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))} accessibilityLabel="Next month"><Text style={styles.monthArrowText}>›</Text></TouchableOpacity>
             </View>
             <View style={styles.calendarGrid}>
               {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((weekday, index) => <View key={`${weekday}-${index}`} style={styles.calendarCell}><Text style={styles.weekdayText}>{weekday}</Text></View>)}
               {calendarDays.map((day, index) => {
-                const selected = Boolean(day && selectedDateParts.length === 3 && calendarMonth.getFullYear() === selectedDateParts[0] && calendarMonth.getMonth() + 1 === selectedDateParts[1] && day === selectedDateParts[2]);
-                return <View key={`day-${index}`} style={styles.calendarCell}>{day ? <TouchableOpacity style={[styles.calendarDay, selected && styles.calendarDaySelected]} onPress={() => { setEventDate(`${calendarMonth.getFullYear()}-${String(calendarMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`); setCalendarVisible(false); }} accessibilityRole="button" accessibilityLabel={`${day} ${calendarMonthLabel}`}><Text style={[styles.calendarDayText, selected && styles.calendarDayTextSelected]}>{day}</Text></TouchableOpacity> : <View style={styles.calendarEmptyDay} />}</View>;
+                if (!day) return <View key={`day-${index}`} style={styles.calendarCell}><View style={styles.calendarEmptyDay} /></View>;
+                const dateValue = formatLocalDate(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), day));
+                const isPast = dateValue < todayDate;
+                const selected = selectedDateParts.length === 3
+                  && calendarMonth.getFullYear() === selectedDateParts[0]
+                  && calendarMonth.getMonth() + 1 === selectedDateParts[1]
+                  && day === selectedDateParts[2];
+                return (
+                  <View key={dateValue} style={styles.calendarCell}>
+                    <TouchableOpacity
+                      disabled={isPast}
+                      style={[
+                        styles.calendarDay,
+                        selected && styles.calendarDaySelected,
+                        isPast && styles.calendarDayDisabled,
+                      ]}
+                      onPress={() => {
+                        setEventDate(dateValue);
+                        setCalendarVisible(false);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${day} ${calendarMonthLabel}`}
+                      accessibilityState={{ selected, disabled: isPast }}
+                    >
+                      <Text style={[
+                        styles.calendarDayText,
+                        selected && styles.calendarDayTextSelected,
+                        isPast && styles.calendarDayTextDisabled,
+                      ]}>{day}</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
               })}
             </View>
             <TouchableOpacity style={styles.calendarCancelButton} onPress={() => setCalendarVisible(false)}><Text style={styles.calendarCancelText}>Close</Text></TouchableOpacity>
@@ -439,8 +691,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   itemCountBadgeText: { fontSize: 10, fontWeight: '800', color: colors.primary, letterSpacing: 0.5 },
   itemsList: { gap: 12 },
   itemCard: { backgroundColor: colors.surface, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: colors.border },
+  itemCardDragging: { zIndex: 5, elevation: 5 },
   itemTopRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  dragHandle: { paddingTop: 6, marginRight: 6 },
+  dragHandle: { width: 32, height: 36, alignItems: 'center', justifyContent: 'center', marginRight: 4 },
   stepCircle: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
   stepNumber: { fontSize: 12, fontWeight: '800', color: colors.primary },
   itemBody: { flex: 1 },
@@ -473,6 +726,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   calendarSubtitle: { marginTop: 4, fontSize: 11, color: colors.muted },
   monthNavigation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   monthArrow: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primarySoft },
+  monthArrowDisabled: { opacity: 0.4 },
   monthArrowText: { fontSize: 25, lineHeight: 28, color: colors.text },
   monthLabel: { fontSize: 14, fontWeight: '800', color: colors.text },
   calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
@@ -480,8 +734,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   weekdayText: { color: colors.muted, fontSize: 11, fontWeight: '700' },
   calendarDay: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   calendarDaySelected: { backgroundColor: colors.primary },
+  calendarDayDisabled: { backgroundColor: colors.surfaceSubtle },
   calendarDayText: { fontSize: 12, color: colors.text },
   calendarDayTextSelected: { color: colors.surface, fontWeight: '800' },
+  calendarDayTextDisabled: { color: colors.muted },
   calendarEmptyDay: { width: 34, height: 34 },
   calendarCancelButton: { marginTop: 12, paddingVertical: 12, alignItems: 'center', borderRadius: 12, backgroundColor: colors.primarySoft },
   calendarCancelText: { fontSize: 13, fontWeight: '800', color: colors.muted },
