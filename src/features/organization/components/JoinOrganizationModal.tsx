@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -10,7 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 
 interface JoinOrganizationModalProps {
   visible: boolean;
@@ -19,6 +21,8 @@ interface JoinOrganizationModalProps {
 }
 
 export function JoinOrganizationModal({ visible, onClose, onJoin }: JoinOrganizationModalProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [code, setCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
 
@@ -92,7 +96,7 @@ export function JoinOrganizationModal({ visible, onClose, onJoin }: JoinOrganiza
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -122,7 +126,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4.5,
     borderRadius: 3,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 12,
   },

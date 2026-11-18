@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
   Modal,
   Pressable,
@@ -6,7 +7,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import {
   ConfirmationRequest,
   dismissConfirmation,
@@ -15,6 +17,8 @@ import {
 } from '../utils/feedback';
 
 export function ConfirmationHost() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [request, setRequest] = useState<ConfirmationRequest | null>(getActiveConfirmation);
 
   useEffect(() => subscribeToConfirmations(setRequest), []);
@@ -62,7 +66,7 @@ export function ConfirmationHost() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     alignItems: 'center',

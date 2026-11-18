@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useMemo } from 'react';
 import {
   KeyboardTypeOptions,
   StyleSheet,
@@ -9,7 +10,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 
 type AuthFieldIcon = 'email' | 'lock' | 'user';
 
@@ -38,6 +40,8 @@ export function AuthTextField({
   error,
   textContentType,
 }: AuthTextFieldProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [visible, setVisible] = useState(false);
   const isPassword = secureTextEntry;
 
@@ -89,6 +93,8 @@ export function AuthTextField({
 }
 
 function FieldIcon({ name }: { name: AuthFieldIcon }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Svg width={16} height={16} viewBox="0 0 20 20" style={styles.leadingIcon}>
       {name === 'email' ? (
@@ -109,7 +115,7 @@ function FieldIcon({ name }: { name: AuthFieldIcon }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   wrapper: { marginBottom: 14 },
   label: { color: colors.text, fontSize: 12, fontWeight: '700', marginBottom: 7 },
   inputShell: {

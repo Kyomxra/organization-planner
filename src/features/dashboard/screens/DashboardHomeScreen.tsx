@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -7,7 +8,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { showMessage } from '../../auth/utils/feedback';
 import { supabase } from '../../../lib/supabase';
 
@@ -42,6 +44,8 @@ export function DashboardHomeScreen({
   onOpenNotifications,
   onOpenTasks,
 }: DashboardHomeScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [activeTab, setActiveTab] = useState<'home' | 'calendar' | 'divisions'>('home');
   const [nextActivity, setNextActivity] = useState<{ title: string; date: string } | null>(null);
   const [budgetSummary, setBudgetSummary] = useState({ income: 0, expenses: 0, pending: 0 });
@@ -467,7 +471,7 @@ export function DashboardHomeScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,

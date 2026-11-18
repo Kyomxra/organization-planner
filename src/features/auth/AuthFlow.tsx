@@ -1,6 +1,8 @@
 import React from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useAppTheme } from '../../theme/ThemeContext';
+import type { ThemeColors } from '../../theme/ThemeContext';
 import { useAuthFlow } from './hooks/useAuthFlow';
 import { ForgotPasswordScreen } from './screens/ForgotPasswordScreen';
 import { LoginScreen } from './screens/LoginScreen';
@@ -10,6 +12,8 @@ import { SplashScreen } from './screens/SplashScreen';
 
 /** Composes authentication screens. State and form actions live in useAuthFlow. */
 export function AuthFlow() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const auth = useAuthFlow();
 
   if (!auth.splashDone) return <SplashScreen />;
@@ -67,6 +71,6 @@ export function AuthFlow() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
 });

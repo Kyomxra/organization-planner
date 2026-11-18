@@ -1,6 +1,8 @@
 import React from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { AuthBottomSheet } from '../components/AuthBottomSheet';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { VerificationCodeInput } from '../components/VerificationCodeInput';
@@ -25,6 +27,8 @@ export function ForgotPasswordScreen({
   onContinue,
   onResend,
 }: ForgotPasswordScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <AuthBottomSheet visible={visible} title="Reset Password" onClose={onClose}>
       <Text style={styles.heading}>Check your Email</Text>
@@ -49,7 +53,7 @@ export function ForgotPasswordScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   heading: { color: colors.text, fontSize: 18, fontWeight: '800', marginBottom: 7 },
   description: { color: colors.muted, fontSize: 11, lineHeight: 17 },
   resendRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },

@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { supabase } from '../../../lib/supabase';
 import { confirmAction, showMessage, showToast } from '../../auth/utils/feedback';
 import { DivisionTask, TaskStatus } from '../types';
@@ -32,6 +34,8 @@ export function DivisionTasksScreen({
   onCreateTask,
   onOpenTask,
 }: DivisionTasksScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [tasks, setTasks] = useState<DivisionTask[]>([]);
   const [activeFilter, setActiveFilter] = useState<TaskStatus | 'all'>('all');
   const [activePriority, setActivePriority] = useState<DivisionTask['priority'] | 'all'>('all');
@@ -319,7 +323,7 @@ export function DivisionTasksScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
@@ -424,7 +428,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4.5,
     borderRadius: 3,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 14,
   },

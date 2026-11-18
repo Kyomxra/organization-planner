@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -12,7 +13,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { showMessage } from '../../auth/utils/feedback';
 import { CalendarEvent, NewCalendarEvent } from '../types';
 import { formatLocalDate } from '../../../lib/date';
@@ -34,6 +36,8 @@ export function NewEventModal({
   onClose,
   onSave,
 }: NewEventModalProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState(initialDate);
@@ -253,7 +257,7 @@ export function NewEventModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -284,7 +288,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4.5,
     borderRadius: 3,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 12,
   },

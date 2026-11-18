@@ -1,11 +1,15 @@
 import React from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, ClipPath, Defs, G, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 
 type BrandMarkProps = { size?: number };
 
 export function BrandMark({ size = 42 }: BrandMarkProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const id = React.useId().replace(/:/g, '');
   const backgroundId = `${id}-background`;
 
@@ -58,6 +62,8 @@ export function BrandMark({ size = 42 }: BrandMarkProps) {
 }
 
 export function BrandHeader({ compact = false }: { compact?: boolean }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.header}>
       <BrandMark size={compact ? 34 : 40} />
@@ -70,6 +76,8 @@ export function BrandHeader({ compact = false }: { compact?: boolean }) {
 }
 
 export function SplashBrand() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.splashBrand}>
       <View style={styles.concentricOuter}>
@@ -83,7 +91,7 @@ export function SplashBrand() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   mark: {
     backgroundColor: colors.primary,
     alignItems: 'center',

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -10,7 +11,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { showMessage, showToast } from '../../auth/utils/feedback';
 import { AudienceSelection, NoteAudienceModal } from '../components/NoteAudienceModal';
 import { supabase } from '../../../lib/supabase';
@@ -37,6 +39,8 @@ export function NewNoteScreen({
   onBack,
   onSaveSuccess,
 }: NewNoteScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [audienceText, setAudienceText] = useState('Only Me');
@@ -379,7 +383,7 @@ export function NewNoteScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,

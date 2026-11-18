@@ -1,4 +1,4 @@
-export const colors = {
+export const lightColors = {
   // Brand Primary: Deep Royal Navy / Sapphire (Authoritative, modern, premium executive vibe)
   primary: '#1E40AF',       // Deep royal blue
   primaryDark: '#172554',   // Midnight navy
@@ -78,3 +78,67 @@ export const colors = {
 
   overlay: 'rgba(15, 23, 42, 0.65)',
 };
+
+export type ThemeColors = { [K in keyof typeof lightColors]: string };
+
+export const darkColors: ThemeColors = {
+  ...lightColors,
+  primary: '#60A5FA',
+  primaryDark: '#1D4ED8',
+  primaryLight: '#93C5FD',
+  primarySoft: '#172554',
+  primaryMuted: '#1E3A8A',
+  secondary: '#A5B4FC',
+  secondaryDark: '#6366F1',
+  secondaryLight: '#C7D2FE',
+  secondarySoft: '#1E1B4B',
+  accent: '#38BDF8',
+  accentSoft: '#082F49',
+  background: '#0B1220',
+  surface: '#111827',
+  surfaceSubtle: '#1F2937',
+  surfaceHover: '#334155',
+  text: '#F8FAFC',
+  textSecondary: '#CBD5E1',
+  muted: '#94A3B8',
+  placeholder: '#64748B',
+  border: '#334155',
+  borderSubtle: '#1F2937',
+  success: '#34D399',
+  successLight: '#6EE7B7',
+  successSoft: '#052E24',
+  successText: '#A7F3D0',
+  warning: '#FBBF24',
+  warningLight: '#FCD34D',
+  warningSoft: '#422006',
+  warningText: '#FDE68A',
+  danger: '#F87171',
+  dangerLight: '#FCA5A5',
+  dangerSoft: '#450A0A',
+  dangerText: '#FECACA',
+  info: '#60A5FA',
+  infoSoft: '#172554',
+  informative100: '#0C2637',
+  informative200: '#164E63',
+  informative300: '#22D3EE',
+  informative400: '#67E8F9',
+  informative500: '#A5F3FC',
+  success100: '#052E24',
+  success200: '#064E3B',
+  success300: '#10B981',
+  success400: '#34D399',
+  success500: '#6EE7B7',
+  warning100: '#422006',
+  warning200: '#713F12',
+  warning300: '#F59E0B',
+  warning400: '#FBBF24',
+  warning500: '#FDE68A',
+  error100: '#450A0A',
+  error200: '#7F1D1D',
+  error300: '#EF4444',
+  error400: '#F87171',
+  error500: '#FCA5A5',
+  overlay: 'rgba(0, 0, 0, 0.72)',
+};
+
+export const colors = lightColors;

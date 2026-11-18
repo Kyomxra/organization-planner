@@ -1,6 +1,8 @@
 import React, { useRef } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 
 type VerificationCodeInputProps = {
   value: string;
@@ -9,6 +11,8 @@ type VerificationCodeInputProps = {
 };
 
 export function VerificationCodeInput({ value, onChange, digits = 6 }: VerificationCodeInputProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const refs = useRef<Array<React.ElementRef<typeof TextInput> | null>>([]);
 
   const changeDigit = (index: number, input: string) => {
@@ -53,7 +57,7 @@ export function VerificationCodeInput({ value, onChange, digits = 6 }: Verificat
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, marginTop: 20, marginBottom: 13 },
   box: {
     flex: 1,

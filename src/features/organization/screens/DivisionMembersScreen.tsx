@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { supabase } from '../../../lib/supabase';
 import { showMessage } from '../../auth/utils/feedback';
 import { DivisionPerson } from '../../tasks/types';
@@ -20,6 +22,8 @@ export function DivisionMembersScreen({
   showTaskProgress = true,
   screenTitle = 'Division Members',
 }: DivisionMembersScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [members, setMembers] = useState<DivisionPerson[]>([]);
   const [selectedMember, setSelectedMember] = useState<DivisionPerson | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -146,7 +150,7 @@ export function DivisionMembersScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   header: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 8 },
   title: { color: colors.text, fontSize: 22, fontWeight: '800' },

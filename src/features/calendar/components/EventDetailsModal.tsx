@@ -1,4 +1,5 @@
 import React from 'react';
+import { useMemo } from 'react';
 import {
   Modal,
   Platform,
@@ -10,7 +11,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { CalendarEvent } from '../types';
 
 interface EventDetailsModalProps {
@@ -32,6 +34,8 @@ export function EventDetailsModal({
   onEdit,
   onDelete,
 }: EventDetailsModalProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   if (!event) return null;
 
   return (
@@ -144,7 +148,7 @@ export function EventDetailsModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -171,7 +175,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4.5,
     borderRadius: 3,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 12,
   },

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useMemo } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -8,7 +9,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { confirmAction, showMessage, showToast } from '../../auth/utils/feedback';
 
 interface ProfileScreenProps {
@@ -26,6 +28,8 @@ export function ProfileScreen({
   onSaveName,
   onSignOut,
 }: ProfileScreenProps) {
+  const { colors, mode, setMode } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [displayName, setDisplayName] = useState(userName);
   const [isSavingName, setIsSavingName] = useState(false);
 
@@ -115,6 +119,37 @@ export function ProfileScreen({
             <Text style={styles.fieldValueText}>{userEmail}</Text>
           </View>
 
+          <View style={styles.appearanceSection}>
+            <Text style={styles.sectionHeading}>Appearance</Text>
+            <View style={styles.themeOptions}>
+              {([
+                { value: 'system', label: 'System' },
+                { value: 'light', label: 'Light' },
+                { value: 'dark', label: 'Dark' },
+              ] as const).map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: mode === option.value }}
+                  onPress={() => { void setMode(option.value); }}
+                  style={[
+                    styles.themeOption,
+                    mode === option.value && styles.themeOptionActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.themeOptionText,
+                      mode === option.value && styles.themeOptionTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           {/* 5. Log Out Button */}
           <TouchableOpacity
             style={styles.logoutBtn}
@@ -139,7 +174,7 @@ export function ProfileScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
@@ -247,6 +282,35 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 13,
     fontWeight: '800',
+  },
+  appearanceSection: {
+    marginTop: 8,
+  },
+  themeOptions: {
+    flexDirection: 'row',
+    padding: 4,
+    gap: 4,
+    borderRadius: 14,
+    backgroundColor: colors.surfaceSubtle,
+  },
+  themeOption: {
+    flex: 1,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+  },
+  themeOptionActive: {
+    backgroundColor: colors.primary,
+  },
+  themeOptionText: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  themeOptionTextActive: {
+    color: colors.surface,
   },
   logoutBtn: {
     flexDirection: 'row',

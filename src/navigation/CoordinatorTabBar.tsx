@@ -1,6 +1,8 @@
 import React from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '../theme/colors';
+import { useAppTheme } from '../theme/ThemeContext';
+import type { ThemeColors } from '../theme/ThemeContext';
 
 export type CoordinatorTab = 'coordinator-home' | 'coordinator-tasks' | 'coordinator-members' | 'calendar' | 'notes-list' | 'notifications' | 'profile';
 
@@ -20,6 +22,8 @@ const tabs: Array<{ id: CoordinatorTab; label: string }> = [
 ];
 
 export function CoordinatorTabBar({ active, onSelect }: CoordinatorTabBarProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.bar}>
       {tabs.map((tab) => (
@@ -34,7 +38,7 @@ export function CoordinatorTabBar({ active, onSelect }: CoordinatorTabBarProps) 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   bar: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: 8 },
   item: { flex: 1, alignItems: 'center', gap: 5, minWidth: 0 },
   indicator: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.border },

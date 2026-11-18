@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -7,7 +8,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { confirmAction, showMessage, showToast } from '../../auth/utils/feedback';
 import { supabase } from '../../../lib/supabase';
 import { formatLocalDate } from '../../../lib/date';
@@ -36,6 +38,8 @@ export function CalendarScreen({
   onSwitchTab,
   onAttachRundown,
 }: CalendarScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const today = new Date();
   const [visibleMonth, setVisibleMonth] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1),
@@ -458,7 +462,7 @@ export function CalendarScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,

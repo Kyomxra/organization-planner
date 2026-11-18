@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { supabase } from '../../../lib/supabase';
 import { showMessage } from '../../auth/utils/feedback';
 import { formatLocalDate } from '../../../lib/date';
@@ -43,6 +45,8 @@ interface AnnouncementSummary {
 }
 
 export function MemberDashboardScreen(props: MemberDashboardScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [tasks, setTasks] = useState<MemberTaskSummary[]>([]);
   const [events, setEvents] = useState<MemberEventSummary[]>([]);
   const [announcements, setAnnouncements] = useState<AnnouncementSummary[]>([]);
@@ -192,7 +196,7 @@ export function MemberDashboardScreen(props: MemberDashboardScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20, paddingBottom: 30 },
   backLink: { alignSelf: 'flex-start', marginBottom: 12 },

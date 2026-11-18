@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import {
   dismissToast,
   getActiveToast,
@@ -8,13 +10,9 @@ import {
   ToastMessage,
 } from '../utils/feedback';
 
-const toastColors = {
-  success: colors.success500,
-  error: colors.error500,
-  info: colors.primary,
-};
-
 export function ToastHost() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [toast, setToast] = useState<ToastMessage | null>(getActiveToast);
 
   useEffect(() => subscribeToToasts(setToast), []);
@@ -31,7 +29,16 @@ export function ToastHost() {
     <View pointerEvents="box-none" style={styles.host}>
       <View
         accessibilityLiveRegion="polite"
-        style={[styles.toast, { borderLeftColor: toastColors[toast.type] }]}
+        style={[
+          styles.toast,
+          {
+            borderLeftColor: toast.type === 'success'
+              ? colors.success500
+              : toast.type === 'error'
+                ? colors.error500
+                : colors.primary,
+          },
+        ]}
       >
         <Text style={styles.title}>{toast.title}</Text>
         <Text style={styles.message}>{toast.message}</Text>
@@ -40,7 +47,7 @@ export function ToastHost() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   host: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',

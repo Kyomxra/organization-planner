@@ -11,7 +11,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { OrganizationBottomTabBar } from '../../../navigation/OrganizationBottomTabBar';
 import { Division, DivisionMember } from '../types/division';
 
@@ -34,6 +35,8 @@ export function DivisionManagementScreen({
   onSwitchTab,
   onAssignMember,
 }: DivisionManagementScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedMember, setSelectedMember] = useState<DivisionMember | null>(null);
@@ -297,7 +300,7 @@ export function DivisionManagementScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
@@ -640,7 +643,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4.5,
     borderRadius: 3,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 14,
   },

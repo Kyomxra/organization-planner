@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -8,7 +9,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { confirmAction, showMessage, showToast } from '../../auth/utils/feedback';
 import { NoteAudience, NoteItem } from '../types';
 import { supabase } from '../../../lib/supabase';
@@ -34,12 +36,6 @@ const filterTabs: NoteAudience[] = [
 const coordinatorFilterTabs: NoteAudience[] = ['Organization', 'My Division', 'Personal'];
 const memberFilterTabs: NoteAudience[] = ['Personal'];
 
-const roleBadges = {
-  executive: { label: 'Executive', type: 'executive' as const, bgColor: colors.primarySoft, textColor: colors.primary },
-  coordinator: { label: 'Coordinators', type: 'coordinators' as const, bgColor: colors.secondarySoft, textColor: colors.secondary },
-  member: { label: 'Members', type: 'members' as const, bgColor: colors.successSoft, textColor: colors.success },
-};
-
 export function NotesListScreen({
   organizationId,
   organizationName,
@@ -49,6 +45,13 @@ export function NotesListScreen({
   onOpenNewNote,
   onOpenEditNote,
 }: NotesListScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const roleBadges = useMemo(() => ({
+    executive: { label: 'Executive', type: 'executive' as const, bgColor: colors.primarySoft, textColor: colors.primary },
+    coordinator: { label: 'Coordinators', type: 'coordinators' as const, bgColor: colors.secondarySoft, textColor: colors.secondary },
+    member: { label: 'Members', type: 'members' as const, bgColor: colors.successSoft, textColor: colors.success },
+  }), [colors]);
   const [activeFilter, setActiveFilter] = useState<NoteAudience>(
     role === 'executive' ? 'All' : role === 'member' ? 'Personal' : 'Organization',
   );
@@ -164,7 +167,7 @@ export function NotesListScreen({
       };
     }));
     setIsLoading(false);
-  }, [organizationId]);
+  }, [organizationId, roleBadges]);
 
   useEffect(() => {
     void loadNotes();
@@ -436,7 +439,7 @@ export function NotesListScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,

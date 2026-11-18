@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useMemo } from 'react';
 import {
   Modal,
   Platform,
@@ -9,7 +10,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { showMessage } from '../../auth/utils/feedback';
 
 interface OrganizationCreatedModalProps {
@@ -23,6 +25,8 @@ export function OrganizationCreatedModal({
   orgName,
   onEnterOrganization,
 }: OrganizationCreatedModalProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const inviteCodes = [
@@ -136,7 +140,7 @@ export function OrganizationCreatedModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: colors.overlay,

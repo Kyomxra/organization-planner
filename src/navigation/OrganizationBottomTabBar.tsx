@@ -1,7 +1,9 @@
 import React from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { colors } from '../theme/colors';
+import { useAppTheme } from '../theme/ThemeContext';
+import type { ThemeColors } from '../theme/ThemeContext';
 
 export type OrganizationTab = 'home' | 'calendar' | 'divisions';
 
@@ -20,6 +22,8 @@ export function OrganizationBottomTabBar({
   activeTab,
   onSelect,
 }: OrganizationBottomTabBarProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.tabBar}>
       {tabs.map((tab) => {
@@ -64,7 +68,7 @@ export function OrganizationBottomTabBar({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   tabBar: {
     height: 64,
     backgroundColor: colors.surface,

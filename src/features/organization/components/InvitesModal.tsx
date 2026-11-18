@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useMemo } from 'react';
 import {
   Modal,
   Platform,
@@ -9,7 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { showMessage } from '../../auth/utils/feedback';
 import { supabase } from '../../../lib/supabase';
 import * as Clipboard from 'expo-clipboard';
@@ -21,6 +23,8 @@ interface InvitesModalProps {
 }
 
 export function InvitesModal({ visible, organizationId, onClose }: InvitesModalProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [executiveCode, setExecutiveCode] = useState('');
   const [coordinatorCode, setCoordinatorCode] = useState('');
   const [memberCode, setMemberCode] = useState('');
@@ -159,7 +163,7 @@ export function InvitesModal({ visible, organizationId, onClose }: InvitesModalP
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -185,7 +189,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4.5,
     borderRadius: 3,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 12,
   },

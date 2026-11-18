@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { OrgStatus, OrganizationItem } from '../types';
 
 interface OrganizationStatusModalProps {
@@ -17,6 +19,8 @@ export function OrganizationStatusModal({
   onClose,
   onSaveStatus,
 }: OrganizationStatusModalProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [selectedStatus, setSelectedStatus] = useState<OrgStatus>('Active');
 
   useEffect(() => {
@@ -133,7 +137,7 @@ export function OrganizationStatusModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -160,7 +164,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4.5,
     borderRadius: 3,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 12,
   },

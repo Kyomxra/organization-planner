@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
   Alert,
   ScrollView,
@@ -8,7 +9,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { showMessage } from '../../auth/utils/feedback';
 import { Rundown, RundownItem } from '../types';
 import { supabase } from '../../../lib/supabase';
@@ -42,6 +44,8 @@ export function RundownDetailsScreen({
   onBack,
   onEdit,
 }: RundownDetailsScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [items, setItems] = useState<RundownItemWithAssignee[]>([]);
   const [isLoading, setIsLoading] = useState(Boolean(rundown));
   const rundownId = rundown?.id;
@@ -241,7 +245,7 @@ export function RundownDetailsScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, backgroundColor: colors.background },
   headerLeft: { flexDirection: 'row', alignItems: 'flex-start', flex: 1, marginRight: 8 },

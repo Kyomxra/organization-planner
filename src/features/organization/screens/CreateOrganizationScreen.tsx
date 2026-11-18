@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -10,7 +11,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { showMessage } from '../../auth/utils/feedback';
 import { CreateOrgFormData } from '../types';
 
@@ -23,6 +25,8 @@ export function CreateOrganizationScreen({
   onBack,
   onCreateSuccess,
 }: CreateOrganizationScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [orgName, setOrgName] = useState('');
   const [description, setDescription] = useState('');
   const [divisions, setDivisions] = useState<string[]>(['Equipment', 'Event']);
@@ -208,7 +212,7 @@ export function CreateOrganizationScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,

@@ -1,6 +1,8 @@
 import React from 'react';
+import { useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 
 type PrimaryButtonProps = {
   title: string;
@@ -11,6 +13,8 @@ type PrimaryButtonProps = {
 };
 
 export function PrimaryButton({ title, onPress, disabled = false, loading = false, style }: PrimaryButtonProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <TouchableOpacity
       style={[styles.button, disabled ? styles.disabled : null, style]}
@@ -24,7 +28,7 @@ export function PrimaryButton({ title, onPress, disabled = false, loading = fals
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   button: {
     minHeight: 48,
     borderRadius: 14,

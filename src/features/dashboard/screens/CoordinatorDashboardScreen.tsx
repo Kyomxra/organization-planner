@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { supabase } from '../../../lib/supabase';
 import { showMessage } from '../../auth/utils/feedback';
 import { DivisionTask, TaskStatus } from '../../tasks/types';
@@ -33,6 +35,8 @@ type DashboardTask = Pick<
 > & { assignee_name: string };
 
 export function CoordinatorDashboardScreen(props: CoordinatorDashboardScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [tasks, setTasks] = useState<DashboardTask[]>([]);
   const [upcomingActivities, setUpcomingActivities] = useState<UpcomingActivity[]>([]);
   const [memberCount, setMemberCount] = useState(0);
@@ -190,7 +194,7 @@ export function CoordinatorDashboardScreen(props: CoordinatorDashboardScreenProp
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20, paddingBottom: 30 },
   organizationBack: { alignSelf: 'flex-start', marginBottom: 12 },

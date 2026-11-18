@@ -1,6 +1,8 @@
 import React from 'react';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { BrandHeader } from '../components/Brand';
 import { AuthTextField } from '../components/AuthTextField';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -30,6 +32,8 @@ export function SignUpScreen({
   onCreateAccount,
   onSignIn,
 }: SignUpScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   // Inline validation — only show errors once user has typed something
   const passwordTooShort = password.length > 0 && password.length < 8;
   const passwordMismatch =
@@ -97,7 +101,7 @@ export function SignUpScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.background },
   content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 18, paddingVertical: 26 },
   container: { width: '100%', maxWidth: 420, alignSelf: 'center' },

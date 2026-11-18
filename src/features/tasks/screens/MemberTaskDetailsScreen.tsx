@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { supabase } from '../../../lib/supabase';
 import { showToast } from '../../auth/utils/feedback';
 import { DivisionTask, TaskStatus } from '../types';
@@ -22,6 +24,8 @@ export function MemberTaskDetailsScreen({
   onBack,
   onSaved,
 }: MemberTaskDetailsScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [status, setStatus] = useState(task.status);
   const [progressUpdate, setProgressUpdate] = useState(task.progress_update);
   const [isSaving, setIsSaving] = useState(false);
@@ -101,7 +105,7 @@ export function MemberTaskDetailsScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 18 },
   back: { color: colors.primary, fontSize: 13, fontWeight: '700' },

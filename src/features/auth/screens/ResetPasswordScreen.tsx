@@ -1,6 +1,8 @@
 import React from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Text } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { AuthBottomSheet } from '../components/AuthBottomSheet';
 import { AuthTextField } from '../components/AuthTextField';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -27,6 +29,8 @@ export function ResetPasswordScreen({
   onClose,
   onFinish,
 }: ResetPasswordScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <AuthBottomSheet visible={visible} title="Reset Password" onClose={onClose}>
       <Text style={styles.heading}>Change Password</Text>
@@ -52,7 +56,7 @@ export function ResetPasswordScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   heading: { color: colors.text, fontSize: 18, fontWeight: '800', marginBottom: 4 },
   email: { color: colors.muted, fontSize: 11, marginBottom: 16 },
   action: { marginTop: 3 },

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -12,7 +13,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { showMessage } from '../../auth/utils/feedback';
 import { ExpenseItem } from '../types';
 import { formatLocalDate, isValidLocalDate } from '../../../lib/date';
@@ -24,6 +26,8 @@ interface AddExpenseModalProps {
 }
 
 export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [expenseType, setExpenseType] = useState('Meeting Refreshments');
   const [date, setDate] = useState(() => formatLocalDate(new Date()));
   const [total, setTotal] = useState('');
@@ -187,7 +191,7 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: colors.overlay,
@@ -217,7 +221,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4.5,
     borderRadius: 3,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 10,
   },

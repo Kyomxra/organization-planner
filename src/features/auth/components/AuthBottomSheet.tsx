@@ -1,4 +1,5 @@
 import React, { type ReactNode } from 'react';
+import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -10,7 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 
 type AuthBottomSheetProps = {
   visible: boolean;
@@ -21,6 +23,8 @@ type AuthBottomSheetProps = {
 
 /** Shared modal sheet used by the password recovery screens. */
 export function AuthBottomSheet({ visible, title, onClose, children }: AuthBottomSheetProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Modal
       visible={visible}
@@ -57,7 +61,7 @@ export function AuthBottomSheet({ visible, title, onClose, children }: AuthBotto
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   modalRoot: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.overlay },
   keyboardAvoider: { width: '100%', justifyContent: 'flex-end' },
   sheet: {
@@ -81,7 +85,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4.5,
     borderRadius: 3,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 12,
   },

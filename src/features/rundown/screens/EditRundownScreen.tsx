@@ -9,7 +9,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { confirmAction, showMessage, showToast } from '../../auth/utils/feedback';
 import { Rundown, RundownItem } from '../types';
 import { supabase } from '../../../lib/supabase';
@@ -64,6 +65,8 @@ const getCalendarDays = (year: number, month: number): Array<number | null> => {
 };
 
 export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: EditRundownScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [title, setTitle] = useState(rundown?.title ?? '');
   const [items, setItems] = useState<RundownItemWithAssignee[]>([]);
   const [isLoading, setIsLoading] = useState(Boolean(rundown));
@@ -411,7 +414,7 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
   backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1.2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginRight: 12 },

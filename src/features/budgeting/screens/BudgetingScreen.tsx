@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
   Modal,
   ScrollView,
@@ -8,7 +9,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { showMessage, showToast } from '../../auth/utils/feedback';
 import { ExpenseItem, IncomeItem } from '../types';
 import { TransactionDetailsModal } from '../components/TransactionDetailsModal';
@@ -58,6 +60,8 @@ export function BudgetingScreen({
   canAddExpense = true,
   canReviewTransactions = true,
 }: BudgetingScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [incomes, setIncomes] = useState<IncomeItem[]>([]);
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [fromDate, setFromDate] = useState('');
@@ -619,7 +623,7 @@ export function BudgetingScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
@@ -784,7 +788,7 @@ const styles = StyleSheet.create({
   },
   calendarOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(20, 16, 18, 0.48)',
+    backgroundColor: colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 18,

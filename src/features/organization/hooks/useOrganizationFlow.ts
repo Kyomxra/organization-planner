@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
 import { showMessage, showToast } from '../../auth/utils/feedback';
 import { CreateOrgFormData, OrganizationItem, OrgStatus } from '../types';
 
@@ -12,17 +12,17 @@ const roleDisplay: Record<string, { role: OrganizationRole; title: string }> = {
   member: { role: 'Participant', title: 'Member' },
 };
 
-const colorsByRole: Record<OrganizationRole, { avatar: string; text: string; badge: string }> = {
-  Executive: { avatar: colors.primarySoft, text: colors.primary, badge: colors.primarySoft },
-  Coordinator: { avatar: colors.secondarySoft, text: colors.primaryDark, badge: colors.secondarySoft },
-  Participant: { avatar: colors.primarySoft, text: colors.primary, badge: colors.primarySoft },
-};
-
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'An unexpected database error occurred.';
 }
 
 export function useOrganizationFlow() {
+  const { colors } = useAppTheme();
+  const colorsByRole = useMemo<Record<OrganizationRole, { avatar: string; text: string; badge: string }>>(() => ({
+    Executive: { avatar: colors.primarySoft, text: colors.primary, badge: colors.primarySoft },
+    Coordinator: { avatar: colors.secondarySoft, text: colors.primaryDark, badge: colors.secondarySoft },
+    Participant: { avatar: colors.primarySoft, text: colors.primary, badge: colors.primarySoft },
+  }), [colors]);
   const [organizations, setOrganizations] = useState<OrganizationItem[]>([]);
   const [selectedOrg, setSelectedOrg] = useState<OrganizationItem | null>(null);
   const [isLoadingOrganizations, setIsLoadingOrganizations] = useState(true);
@@ -125,7 +125,7 @@ export function useOrganizationFlow() {
     } finally {
       setIsLoadingOrganizations(false);
     }
-  }, []);
+  }, [colorsByRole]);
 
   const reloadOrganizations = useCallback(async () => {
     const { data: { user }, error } = await supabase.auth.getUser();

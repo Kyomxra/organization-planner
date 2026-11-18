@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { showMessage, showToast } from '../../auth/utils/feedback';
 import { supabase } from '../../../lib/supabase';
 
@@ -19,6 +21,8 @@ interface NotificationItem {
 }
 
 export function NotificationScreen({ organizationId, onBack }: NotificationScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -155,7 +159,7 @@ export function NotificationScreen({ organizationId, onBack }: NotificationScree
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,

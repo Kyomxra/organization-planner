@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { isValidLocalDate } from '../../../lib/date';
 import { supabase } from '../../../lib/supabase';
 import { showMessage, showToast } from '../../auth/utils/feedback';
@@ -35,6 +37,8 @@ function toLocalDateString(year: number, month: number, day: number): string {
 }
 
 function BackButton({ onPress }: { onPress: () => void }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <TouchableOpacity
       style={styles.backButton}
@@ -66,6 +70,8 @@ export function TaskDetailsScreen({
   onBack,
   onSaved,
 }: TaskDetailsScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [title, setTitle] = useState(task?.title ?? '');
   const [description, setDescription] = useState(task?.description ?? '');
   const [instructions, setInstructions] = useState(task?.instructions ?? '');
@@ -411,7 +417,7 @@ export function TaskDetailsScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 18 },
   backButton: {
@@ -460,7 +466,7 @@ const styles = StyleSheet.create({
   saveText: { color: colors.surface, fontWeight: '800', fontSize: 13 },
   calendarOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(20, 16, 18, 0.48)',
+    backgroundColor: colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 18,

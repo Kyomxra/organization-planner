@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -8,7 +9,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { colors } from '../../../theme/colors';
+import { useAppTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/ThemeContext';
 import { Rundown } from '../types';
 import { showMessage } from '../../auth/utils/feedback';
 import { supabase } from '../../../lib/supabase';
@@ -34,9 +36,12 @@ type RundownRow = {
 type RundownItemCountRow = { rundown_id: string };
 type EventDateRow = { id: string; start_at: string | null };
 
-function RundownIcon({ accentColor = colors.primary }: { accentColor?: string }) {
+function RundownIcon({ accentColor }: { accentColor?: string }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const resolvedAccentColor = accentColor ?? colors.primary;
   return (
-    <View style={[styles.rdIcon, { backgroundColor: `${accentColor}1A` }]}>
+    <View style={[styles.rdIcon, { backgroundColor: `${resolvedAccentColor}1A` }]}>
       <Svg width={22} height={22} viewBox="0 0 24 24">
         <Rect
           x="3"
@@ -44,26 +49,26 @@ function RundownIcon({ accentColor = colors.primary }: { accentColor?: string })
           width="18"
           height="18"
           rx="4"
-          stroke={accentColor}
+          stroke={resolvedAccentColor}
           strokeWidth={2}
           fill="none"
         />
         <Path
           d="M7 8h3M7 12h3M7 16h3M13 8h4M13 12h4M13 16h4"
-          stroke={accentColor}
+          stroke={resolvedAccentColor}
           strokeWidth={1.8}
           strokeLinecap="round"
         />
         <Path
           d="M9 7.5L7.5 9L7 8.5"
-          stroke={accentColor}
+          stroke={resolvedAccentColor}
           strokeWidth={1.8}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         <Path
           d="M9 11.5L7.5 13L7 12.5"
-          stroke={accentColor}
+          stroke={resolvedAccentColor}
           strokeWidth={1.8}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -82,6 +87,8 @@ export function RundownListScreen({
   onOpenRundown,
   onCreateRundown,
 }: RundownListScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [rundowns, setRundowns] = useState<Rundown[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -395,7 +402,7 @@ export function RundownListScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,

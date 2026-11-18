@@ -1,6 +1,8 @@
 import React from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '../theme/colors';
+import { useAppTheme } from '../theme/ThemeContext';
+import type { ThemeColors } from '../theme/ThemeContext';
 
 export type MemberTab = 'member-home' | 'member-tasks' | 'calendar' | 'notes-list' | 'profile';
 
@@ -18,6 +20,8 @@ const tabs: Array<{ id: MemberTab; label: string }> = [
 ];
 
 export function MemberTabBar({ active, onSelect }: MemberTabBarProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.bar}>
       {tabs.map((tab) => (
@@ -32,7 +36,7 @@ export function MemberTabBar({ active, onSelect }: MemberTabBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   bar: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: 8 },
   item: { flex: 1, alignItems: 'center', gap: 5, minWidth: 0 },
   indicator: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.border },
