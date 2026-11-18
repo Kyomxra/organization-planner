@@ -51,6 +51,9 @@ export function JoinOrganizationModal({ visible, onClose, onJoin }: JoinOrganiza
         <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardContainer}>
           <View style={styles.sheet}>
+            {/* Drag Handle */}
+            <View style={styles.handle} />
+
             {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity onPress={handleClose} style={styles.closeBtn} hitSlop={10}>
@@ -97,14 +100,31 @@ const styles = StyleSheet.create({
   },
   keyboardContainer: {
     width: '100%',
+    justifyContent: 'flex-end',
   },
   sheet: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingHorizontal: 22,
-    paddingTop: 18,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 28,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  handle: {
+    width: 38,
+    height: 4.5,
+    borderRadius: 3,
+    backgroundColor: '#CBD5E1',
+    alignSelf: 'center',
+    marginBottom: 12,
   },
   header: {
     flexDirection: 'row',

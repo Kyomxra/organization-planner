@@ -69,6 +69,9 @@ export function InvitesModal({ visible, organizationId, onClose }: InvitesModalP
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.sheet}>
+          {/* Drag Handle */}
+          <View style={styles.handle} />
+
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={10}>
@@ -166,9 +169,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingHorizontal: 22,
-    paddingTop: 18,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 28,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  handle: {
+    width: 38,
+    height: 4.5,
+    borderRadius: 3,
+    backgroundColor: '#CBD5E1',
+    alignSelf: 'center',
+    marginBottom: 12,
   },
   header: {
     flexDirection: 'row',

@@ -34,6 +34,8 @@ export function AuthBottomSheet({ visible, title, onClose, children }: AuthBotto
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close dialog" />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoider}>
           <View style={styles.sheet}>
+            {/* Drag Handle */}
+            <View style={styles.handle} />
             <View style={styles.header}>
               <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
                 <Text style={styles.closeText}>×</Text>
@@ -57,16 +59,31 @@ export function AuthBottomSheet({ visible, title, onClose, children }: AuthBotto
 
 const styles = StyleSheet.create({
   modalRoot: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.overlay },
-  keyboardAvoider: { width: '100%' },
+  keyboardAvoider: { width: '100%', justifyContent: 'flex-end' },
   sheet: {
     width: '100%',
-    maxHeight: '88%',
+    maxHeight: '90%',
     backgroundColor: colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingTop: 10,
-    paddingBottom: 26,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
     paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  handle: {
+    width: 38,
+    height: 4.5,
+    borderRadius: 3,
+    backgroundColor: '#CBD5E1',
+    alignSelf: 'center',
+    marginBottom: 12,
   },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 34, marginBottom: 20 },
   closeButton: { width: 30, height: 30, alignItems: 'flex-start', justifyContent: 'center' },

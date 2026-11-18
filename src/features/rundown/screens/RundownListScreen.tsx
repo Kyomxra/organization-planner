@@ -398,7 +398,7 @@ export function RundownListScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 10,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.background,
   },
   backBtn: {
     width: 34,

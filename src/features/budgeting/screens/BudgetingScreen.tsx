@@ -426,30 +426,50 @@ export function BudgetingScreen({
               <Text style={styles.emptyTableText}>No expenses in this date range.</Text>
             )}
             {expenses.map((item, idx) => (
-              <View key={item.id} style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}>
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}
+                onPress={() => openExpenseDetails(item)}
+                activeOpacity={0.7}
+              >
                 <Text style={[styles.tdText, { width: 28 }]}>{item.no}</Text>
                 <Text style={[styles.tdText, { width: 60 }]}>{item.date}</Text>
-                <Text style={[styles.tdText, { flex: 1, fontWeight: '700' }]}>{item.typeOfCost}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.tdText, { fontWeight: '700' }]}>{item.typeOfCost}</Text>
+                  {item.status && (
+                    <View style={[
+                      styles.statusPill,
+                      item.status === 'PENDING' && styles.statusPillPending,
+                      item.status === 'APPROVED' && styles.statusPillApproved,
+                      item.status === 'REJECTED' && styles.statusPillRejected,
+                    ]}>
+                      <Text style={[
+                        styles.statusPillText,
+                        item.status === 'PENDING' && styles.statusPillTextPending,
+                        item.status === 'APPROVED' && styles.statusPillTextApproved,
+                        item.status === 'REJECTED' && styles.statusPillTextRejected,
+                      ]}>
+                        {item.status}
+                      </Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={[styles.tdText, { width: 85, textAlign: 'right', fontWeight: '700' }]}>
                   {item.total}
                 </Text>
-                <TouchableOpacity
-                  style={styles.proveCell}
-                  onPress={() => openExpenseDetails(item)}
-                  hitSlop={6}
-                >
+                <View style={styles.proveCell}>
                   <Svg width={18} height={18} viewBox="0 0 24 24">
                     <Path
                       d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z"
                       fill="none"
-                      stroke={colors.primary}
+                      stroke={item.status === 'PENDING' ? colors.warning : colors.primary}
                       strokeWidth={1.8}
                       strokeLinecap="round"
                     />
-                    <Path d="M14 2V8H20M16 13H8M16 17H8M10 9H8" stroke={colors.primary} strokeWidth={1.8} strokeLinecap="round" />
+                    <Path d="M14 2V8H20M16 13H8M16 17H8M10 9H8" stroke={item.status === 'PENDING' ? colors.warning : colors.primary} strokeWidth={1.8} strokeLinecap="round" />
                   </Svg>
-                </TouchableOpacity>
-              </View>
+                </View>
+              </TouchableOpacity>
             ))}
 
             {/* Subtotal Footer */}
@@ -925,6 +945,36 @@ const styles = StyleSheet.create({
   tdText: {
     fontSize: 11,
     color: colors.text,
+  },
+  statusPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginTop: 3,
+  },
+  statusPillPending: {
+    backgroundColor: colors.warningSoft,
+  },
+  statusPillApproved: {
+    backgroundColor: colors.successSoft,
+  },
+  statusPillRejected: {
+    backgroundColor: colors.dangerSoft,
+  },
+  statusPillText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  statusPillTextPending: {
+    color: colors.warningText,
+  },
+  statusPillTextApproved: {
+    color: colors.successText,
+  },
+  statusPillTextRejected: {
+    color: colors.dangerText,
   },
   proveCell: {
     width: 44,

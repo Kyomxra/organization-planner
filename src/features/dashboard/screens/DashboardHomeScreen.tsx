@@ -304,13 +304,18 @@ export function DashboardHomeScreen({
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickAccessItem}
-            disabled
-            accessibilityRole="button"
-            accessibilityLabel="Menu 4 unavailable"
-            accessibilityState={{ disabled: true }}
+            onPress={onOpenDivisions}
+            activeOpacity={0.75}
           >
-            <View style={[styles.iconCircle, styles.disabledQuickAccessIcon]} />
-            <Text style={[styles.quickAccessLabel, styles.disabledQuickAccessLabel]}>Menu 4</Text>
+            <View style={[styles.iconCircle, { backgroundColor: colors.primarySoft }]}>
+              <Svg width={22} height={22} viewBox="0 0 24 24">
+                <Circle cx="9" cy="7" r="4" stroke={colors.primary} strokeWidth={1.8} fill="none" />
+                <Path d="M2 19C2 15.5 5 13.5 9 13.5C13 13.5 16 15.5 16 19" stroke={colors.primary} strokeWidth={1.8} fill="none" strokeLinecap="round" />
+                <Circle cx="18" cy="8" r="3" stroke={colors.primary} strokeWidth={1.6} fill="none" />
+                <Path d="M17 14C19 14.5 21 15.5 21 18" stroke={colors.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" />
+              </Svg>
+            </View>
+            <Text style={styles.quickAccessLabel}>Divisions</Text>
           </TouchableOpacity>
         </View>
 

@@ -26,18 +26,18 @@ export function PrimaryButton({ title, onPress, disabled = false, loading = fals
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 43,
-    borderRadius: 12,
+    minHeight: 48,
+    borderRadius: 14,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
-    shadowColor: colors.primaryDark,
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   disabled: { opacity: 0.48 },
-  text: { color: colors.surface, fontSize: 12, fontWeight: '800', letterSpacing: 0.15 },
+  text: { color: colors.surface, fontSize: 13, fontWeight: '800', letterSpacing: 0.1 },
 });

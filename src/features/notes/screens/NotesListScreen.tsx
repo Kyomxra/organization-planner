@@ -35,9 +35,9 @@ const coordinatorFilterTabs: NoteAudience[] = ['Organization', 'My Division', 'P
 const memberFilterTabs: NoteAudience[] = ['Personal'];
 
 const roleBadges = {
-  executive: { label: 'Executive', type: 'executive' as const, bgColor: colors.secondarySoft, textColor: colors.primary },
-  coordinator: { label: 'Coordinators', type: 'coordinators' as const, bgColor: colors.secondarySoft, textColor: colors.primary },
-  member: { label: 'Members', type: 'members' as const, bgColor: colors.secondarySoft, textColor: colors.primary },
+  executive: { label: 'Executive', type: 'executive' as const, bgColor: colors.primarySoft, textColor: colors.primary },
+  coordinator: { label: 'Coordinators', type: 'coordinators' as const, bgColor: colors.secondarySoft, textColor: colors.secondary },
+  member: { label: 'Members', type: 'members' as const, bgColor: colors.successSoft, textColor: colors.success },
 };
 
 export function NotesListScreen({

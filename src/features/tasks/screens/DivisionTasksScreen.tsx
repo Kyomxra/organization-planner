@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { supabase } from '../../../lib/supabase';
@@ -279,6 +279,8 @@ export function DivisionTasksScreen({
             accessibilityLabel="Close priority filter"
           />
           <View style={styles.priorityFilterSheet}>
+            {/* Drag Handle */}
+            <View style={styles.handle} />
             <Text style={styles.priorityFilterTitle}>Filter by priority</Text>
             {priorities.map((priority) => (
               <TouchableOpacity
@@ -404,11 +406,27 @@ const styles = StyleSheet.create({
   },
   priorityFilterSheet: {
     backgroundColor: colors.surface,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingHorizontal: 20,
-    paddingTop: 22,
-    paddingBottom: 28,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  handle: {
+    width: 38,
+    height: 4.5,
+    borderRadius: 3,
+    backgroundColor: '#CBD5E1',
+    alignSelf: 'center',
+    marginBottom: 14,
   },
   priorityFilterTitle: { color: colors.text, fontSize: 17, fontWeight: '800', marginBottom: 10 },
   priorityOption: {

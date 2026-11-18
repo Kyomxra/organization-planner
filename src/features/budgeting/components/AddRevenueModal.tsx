@@ -70,6 +70,9 @@ export function AddRevenueModal({ visible, onClose, onAdd }: AddRevenueModalProp
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardWrap}>
           <View style={styles.sheet}>
+            {/* Drag Handle */}
+            <View style={styles.handle} />
+
             {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={10}>
@@ -174,15 +177,32 @@ const styles = StyleSheet.create({
   },
   keyboardWrap: {
     width: '100%',
+    justifyContent: 'flex-end',
   },
   sheet: {
-    maxHeight: '88%',
+    maxHeight: '90%',
     backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 26,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  handle: {
+    width: 38,
+    height: 4.5,
+    borderRadius: 3,
+    backgroundColor: '#CBD5E1',
+    alignSelf: 'center',
+    marginBottom: 12,
   },
   header: {
     flexDirection: 'row',
