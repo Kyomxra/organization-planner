@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import {
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -121,32 +122,23 @@ export function ProfileScreen({
 
           <View style={styles.appearanceSection}>
             <Text style={styles.sectionHeading}>Appearance</Text>
-            <View style={styles.themeOptions}>
-              {([
-                { value: 'system', label: 'System' },
-                { value: 'light', label: 'Light' },
-                { value: 'dark', label: 'Dark' },
-              ] as const).map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: mode === option.value }}
-                  onPress={() => { void setMode(option.value); }}
-                  style={[
-                    styles.themeOption,
-                    mode === option.value && styles.themeOptionActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.themeOptionText,
-                      mode === option.value && styles.themeOptionTextActive,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.appearanceRow}>
+              <View style={styles.appearanceCopy}>
+                <Text style={styles.appearanceTitle}>Dark mode</Text>
+                <Text style={styles.appearanceDescription}>
+                  {mode === 'dark' ? 'On' : 'Off'}
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel="Dark mode"
+                value={mode === 'dark'}
+                onValueChange={(enabled) => {
+                  void setMode(enabled ? 'dark' : 'light');
+                }}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={colors.surface}
+                ios_backgroundColor={colors.border}
+              />
             </View>
           </View>
 
@@ -286,31 +278,29 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   appearanceSection: {
     marginTop: 8,
   },
-  themeOptions: {
+  appearanceRow: {
     flexDirection: 'row',
-    padding: 4,
-    gap: 4,
-    borderRadius: 14,
-    backgroundColor: colors.surfaceSubtle,
-  },
-  themeOption: {
-    flex: 1,
-    minHeight: 40,
     alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-    paddingHorizontal: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  themeOptionActive: {
-    backgroundColor: colors.primary,
+  appearanceCopy: {
+    flex: 1,
+    gap: 4,
   },
-  themeOptionText: {
-    color: colors.muted,
-    fontSize: 12,
+  appearanceTitle: {
+    color: colors.text,
+    fontSize: 14,
     fontWeight: '700',
   },
-  themeOptionTextActive: {
-    color: colors.surface,
+  appearanceDescription: {
+    color: colors.muted,
+    fontSize: 12,
   },
   logoutBtn: {
     flexDirection: 'row',

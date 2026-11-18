@@ -16,11 +16,11 @@ export default function App() {
 }
 
 function AppContent() {
-  const { colors, resolvedMode } = useAppTheme();
+  const { colors, mode } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={resolvedMode === 'dark' ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} />
       <SafeAreaView style={styles.root}>
         <RootFlow />
       </SafeAreaView>
