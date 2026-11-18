@@ -123,7 +123,7 @@ export function NewEventModal({
               <Text style={styles.headerTitle}>{initialEvent ? 'Edit Event' : 'New Event'}</Text>
               <TouchableOpacity onPress={handleSave} style={styles.saveCheckBtn} hitSlop={10}>
                 <Svg width={14} height={14} viewBox="0 0 20 20">
-                  <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  <Path d="M4 10.5L8 14.5L16 6.5" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 </Svg>
               </TouchableOpacity>
             </View>
@@ -254,14 +254,14 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(23, 24, 43, 0.45)',
+    backgroundColor: colors.overlay,
   },
   keyboardWrap: {
     width: '100%',
   },
   sheet: {
     maxHeight: '88%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   },
   closeIcon: {
     fontSize: 16,
-    color: '#85879A',
+    color: colors.muted,
     fontWeight: '700',
   },
   headerTitle: {
@@ -303,18 +303,18 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   scopeCard: {
-    backgroundColor: '#F7F6FF',
+    backgroundColor: colors.primarySoft,
     borderWidth: 1,
-    borderColor: '#E4E1FF',
+    borderColor: colors.primarySoft,
     borderRadius: 14,
     padding: 12,
   },
   scopeTitle: { color: colors.primary, fontSize: 10, fontWeight: '800', marginBottom: 5 },
   scopeText: { color: colors.text, fontSize: 11 },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#EDEEF7',
+    borderColor: colors.border,
     borderRadius: 16,
     padding: 14,
   },
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F3F4FB',
+    backgroundColor: colors.background,
     marginVertical: 12,
   },
   timeRow: {
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   datePill: {
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
     borderColor: colors.primary,
     borderRadius: 16,
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#FFF1E6',
+    backgroundColor: colors.secondarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -468,14 +468,14 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#FFF1E6',
+    backgroundColor: colors.secondarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   orangeAddText: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#E87A35',
+    color: colors.primary,
     lineHeight: 16,
   },
   notesInput: {

@@ -42,8 +42,6 @@ import { supabase } from '../lib/supabase';
 type DivisionRow = {
   id: string;
   name: string;
-  color: string | null;
-  background_color: string | null;
 };
 
 type OrganizationMemberRow = {
@@ -178,7 +176,7 @@ export function RootFlow() {
       const [divisionResult, memberResult] = await Promise.all([
         supabase
           .from('divisions')
-          .select('id, name, color, background_color')
+          .select('id, name')
           .eq('organization_id', selectedOrg.id)
           .order('name'),
         supabase
@@ -212,11 +210,12 @@ export function RootFlow() {
       const profilesById = new Map<string, ProfileRow>(
         profileRows.map((profile: ProfileRow): [string, ProfileRow] => [profile.id, profile]),
       );
-      setDivisions(divisionRows.map((division: DivisionRow) => ({
+      const divisionPalette = [colors.primary, colors.primaryDark];
+      setDivisions(divisionRows.map((division: DivisionRow, index: number) => ({
         id: division.id,
         name: division.name,
-        color: division.color ?? '#5145E8',
-        backgroundColor: division.background_color ?? '#EEECFF',
+        color: divisionPalette[index % divisionPalette.length],
+        backgroundColor: index % 2 === 0 ? colors.primarySoft : colors.secondarySoft,
       })));
       setDivisionMembers(memberRows.map((member: OrganizationMemberRow) => {
         const profile = profilesById.get(member.user_id);

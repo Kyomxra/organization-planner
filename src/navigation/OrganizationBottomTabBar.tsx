@@ -24,7 +24,7 @@ export function OrganizationBottomTabBar({
     <View style={styles.tabBar}>
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
-        const stroke = isActive ? colors.primary : '#8A8C9F';
+        const stroke = isActive ? colors.primary : colors.muted;
         return (
           <TouchableOpacity
             key={tab.id}
@@ -67,9 +67,9 @@ export function OrganizationBottomTabBar({
 const styles = StyleSheet.create({
   tabBar: {
     height: 64,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#ECEEF7',
+    borderTopColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -83,12 +83,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tabItemActive: {
-    backgroundColor: '#F3F2FF',
+    backgroundColor: colors.primarySoft,
   },
   tabLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#8A8C9F',
+    color: colors.muted,
     marginTop: 3,
   },
   tabLabelActive: {

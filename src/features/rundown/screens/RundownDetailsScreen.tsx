@@ -168,9 +168,9 @@ export function RundownDetailsScreen({
           </TouchableOpacity>}
           {canEdit && <TouchableOpacity style={styles.menuCircleBtn} onPress={handleMenuOptions} hitSlop={8} accessibilityLabel="Rundown options">
             <Svg width={16} height={16} viewBox="0 0 24 24">
-              <Circle cx="5" cy="12" r="2" fill="#2D3142" />
-              <Circle cx="12" cy="12" r="2" fill="#2D3142" />
-              <Circle cx="19" cy="12" r="2" fill="#2D3142" />
+              <Circle cx="5" cy="12" r="2" fill={colors.text} />
+              <Circle cx="12" cy="12" r="2" fill={colors.text} />
+              <Circle cx="19" cy="12" r="2" fill={colors.text} />
             </Svg>
           </TouchableOpacity>}
         </View>
@@ -216,7 +216,7 @@ export function RundownDetailsScreen({
                     <View style={styles.cardHeaderRow}>
                       <Text style={styles.cardTitle}>{item.title}</Text>
                       <Svg width={14} height={14} viewBox="0 0 20 20">
-                        <Path d="M7 4L13 10L7 16" fill="none" stroke="#8A8C9F" strokeWidth={2} strokeLinecap="round" />
+                        <Path d="M7 4L13 10L7 16" fill="none" stroke={colors.muted} strokeWidth={2} strokeLinecap="round" />
                       </Svg>
                     </View>
                     <View style={styles.timePillRow}>
@@ -242,22 +242,22 @@ export function RundownDetailsScreen({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FAFBFD' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, backgroundColor: '#FAFBFD' },
+  root: { flex: 1, backgroundColor: colors.background },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, backgroundColor: colors.background },
   headerLeft: { flexDirection: 'row', alignItems: 'flex-start', flex: 1, marginRight: 8 },
   titleContainer: { flex: 1 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1.2, borderColor: '#ECEEF7', alignItems: 'center', justifyContent: 'center', marginRight: 12, marginTop: 2 },
+  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1.2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginRight: 12, marginTop: 2 },
   headerTitle: { fontSize: 18, fontWeight: '800', color: colors.text, lineHeight: 22 },
   headerSub: { fontSize: 11, color: colors.muted, marginTop: 3 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
-  editBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEECFF', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 8 },
+  editBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 8 },
   editIcon: { marginRight: 6 },
   editBtnText: { fontSize: 12, fontWeight: '800', color: colors.primary },
-  menuCircleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1.2, borderColor: '#ECEEF7', alignItems: 'center', justifyContent: 'center' },
+  menuCircleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1.2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28, gap: 18 },
-  bannerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: '#ECEEF7' },
-  bannerDateBadge: { width: 60, height: 62, borderRadius: 14, backgroundColor: '#EEECFF', alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  bannerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 20, padding: 16, borderWidth: 1, borderColor: colors.border },
+  bannerDateBadge: { width: 60, height: 62, borderRadius: 14, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
   bannerMonthText: { color: colors.primary, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
   bannerDayText: { color: colors.primary, fontSize: 22, fontWeight: '800', marginTop: 2 },
   bannerInfo: { flex: 1 },
@@ -272,23 +272,23 @@ const styles = StyleSheet.create({
   nodeColumn: { width: 42, alignItems: 'center' },
   nodeCircle: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
   nodeCircleActive: { backgroundColor: colors.primary },
-  nodeCircleInactive: { backgroundColor: '#EEECFF' },
+  nodeCircleInactive: { backgroundColor: colors.primarySoft },
   nodeNumber: { fontSize: 12, fontWeight: '800' },
-  nodeNumberActive: { color: '#FFFFFF' },
+  nodeNumberActive: { color: colors.surface },
   nodeNumberInactive: { color: colors.primary },
   verticalLine: { width: 2, flex: 1, minHeight: 18 },
   lineOrange: { backgroundColor: colors.primary },
-  lineLight: { backgroundColor: '#DAD7F5' },
-  timelineCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#ECEEF7' },
-  timelineCardActive: { borderColor: '#D8D3FF' },
+  lineLight: { backgroundColor: colors.primarySoft },
+  timelineCard: { flex: 1, backgroundColor: colors.surface, borderRadius: 16, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
+  timelineCardActive: { borderColor: colors.primary },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   cardTitle: { flex: 1, color: colors.text, fontSize: 13, fontWeight: '800' },
   timePillRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 9 },
-  timeText: { color: colors.primary, fontSize: 11, fontWeight: '800', backgroundColor: '#EEECFF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  durationText: { color: '#5A5D75', fontSize: 11, fontWeight: '700', backgroundColor: '#F3F4F8', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  timeText: { color: colors.primary, fontSize: 11, fontWeight: '800', backgroundColor: colors.primarySoft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  durationText: { color: colors.text, fontSize: 11, fontWeight: '700', backgroundColor: colors.primarySoft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   cardDescription: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 9 },
   responsibleRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
-  responsibleAvatar: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#EEECFF', alignItems: 'center', justifyContent: 'center', marginRight: 7 },
+  responsibleAvatar: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginRight: 7 },
   responsibleInitials: { color: colors.primary, fontSize: 8, fontWeight: '800' },
-  responsibleName: { color: '#54566B', fontSize: 11 },
+  responsibleName: { color: colors.text, fontSize: 11 },
 });

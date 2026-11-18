@@ -329,7 +329,7 @@ export function NewNoteScreen({
             >
               <Path
                 d="M5 8V6A5 5 0 0 1 15 6V8"
-                stroke="#5A5D75"
+                stroke={colors.text}
                 strokeWidth={1.8}
                 fill="none"
               />
@@ -339,7 +339,7 @@ export function NewNoteScreen({
                 width="12"
                 height="9"
                 rx="2"
-                stroke="#5A5D75"
+                stroke={colors.text}
                 strokeWidth={1.8}
                 fill="none"
               />
@@ -356,7 +356,7 @@ export function NewNoteScreen({
             <Path
               d="M7 4L13 10L7 16"
               fill="none"
-              stroke="#8A8C9F"
+              stroke={colors.muted}
               strokeWidth={2}
               strokeLinecap="round"
             />
@@ -382,7 +382,7 @@ export function NewNoteScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -391,15 +391,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   backBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   savePill: {
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     paddingHorizontal: 18,
     paddingVertical: 7,
     borderRadius: 16,
@@ -429,11 +429,11 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   noteCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     minHeight: 380,
   },
   titleRow: {
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F3F4FB',
+    backgroundColor: colors.background,
     marginVertical: 14,
   },
   contentInput: {
@@ -468,17 +468,17 @@ const styles = StyleSheet.create({
   visibleCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 18,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
   },
   eyeIconBox: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
   visiblePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0F1F7',
+    backgroundColor: colors.primarySoft,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
   visiblePillText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#5A5D75',
+    color: colors.text,
   },
   chevronIcon: {
     marginLeft: 2,

@@ -160,10 +160,10 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(23, 24, 43, 0.45)',
+    backgroundColor: colors.overlay,
   },
   sheet: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 22,
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   closeIcon: {
     fontSize: 16,
-    color: '#85879A',
+    color: colors.muted,
     fontWeight: '700',
   },
   title: {
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   generateBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 13,
     fontWeight: '800',
   },
@@ -225,9 +225,9 @@ const styles = StyleSheet.create({
   codeField: {
     flex: 1,
     height: 48,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#DFE2F0',
+    borderColor: colors.border,
     borderRadius: 14,
     paddingHorizontal: 14,
     fontSize: 13,
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   copyBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 12,
     fontWeight: '800',
   },

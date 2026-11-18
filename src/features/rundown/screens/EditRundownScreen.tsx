@@ -352,7 +352,7 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
           {items.map((item) => (
             <View key={item.id} style={styles.itemCard}>
               <View style={styles.itemTopRow}>
-                <View style={styles.dragHandle}><Svg width={14} height={14} viewBox="0 0 20 20"><Circle cx="6" cy="5" r="1.5" fill="#A5A7B7" /><Circle cx="14" cy="5" r="1.5" fill="#A5A7B7" /><Circle cx="6" cy="10" r="1.5" fill="#A5A7B7" /><Circle cx="14" cy="10" r="1.5" fill="#A5A7B7" /><Circle cx="6" cy="15" r="1.5" fill="#A5A7B7" /><Circle cx="14" cy="15" r="1.5" fill="#A5A7B7" /></Svg></View>
+                <View style={styles.dragHandle}><Svg width={14} height={14} viewBox="0 0 20 20"><Circle cx="6" cy="5" r="1.5" fill={colors.placeholder} /><Circle cx="14" cy="5" r="1.5" fill={colors.placeholder} /><Circle cx="6" cy="10" r="1.5" fill={colors.placeholder} /><Circle cx="14" cy="10" r="1.5" fill={colors.placeholder} /><Circle cx="6" cy="15" r="1.5" fill={colors.placeholder} /><Circle cx="14" cy="15" r="1.5" fill={colors.placeholder} /></Svg></View>
                 <View style={styles.stepCircle}><Text style={styles.stepNumber}>{item.stepNumber}</Text></View>
                 <View style={styles.itemBody}>
                   <TextInput style={styles.itemTitle} value={item.title} onChangeText={(value) => updateItem(item.id, { title: value })} placeholder="Agenda item title" />
@@ -368,7 +368,7 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
                 </View>
                 <View style={styles.actionCol}>
                   <TouchableOpacity style={styles.iconCircleBtn} onPress={() => handleDeleteItem(item.id)} accessibilityLabel={`Delete ${item.title}`}>
-                    <Svg width={18} height={18} viewBox="0 0 24 24"><Path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6h14ZM10 11v5M14 11v5" fill="none" stroke="#2D3142" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" /></Svg>
+                    <Svg width={18} height={18} viewBox="0 0 24 24"><Path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6h14ZM10 11v5M14 11v5" fill="none" stroke={colors.text} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" /></Svg>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -381,7 +381,7 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
       <View style={styles.bottomBar}>
         <TouchableOpacity onPress={onBack} style={styles.cancelBtn}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
         <TouchableOpacity style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]} onPress={() => { void handleSaveRundown(); }} disabled={isSaving || isLoading} activeOpacity={0.85}>
-          <Svg width={14} height={14} viewBox="0 0 20 20" style={styles.saveCheckIcon}><Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" /></Svg>
+          <Svg width={14} height={14} viewBox="0 0 20 20" style={styles.saveCheckIcon}><Path d="M4 10.5L8 14.5L16 6.5" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" /></Svg>
           <Text style={styles.saveBtnText}>{isSaving ? 'Saving…' : 'Save Rundown'}</Text>
         </TouchableOpacity>
       </View>
@@ -414,15 +414,15 @@ export function EditRundownScreen({ organizationId, rundown, onBack, onSave }: E
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FAFBFD' },
+  root: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1.2, borderColor: '#ECEEF7', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1.2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   headerTitleWrap: { flex: 1 },
   headerTitle: { fontSize: 18, fontWeight: '800', color: colors.text },
   headerSub: { fontSize: 11, color: colors.muted, marginTop: 1 },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 24, gap: 16 },
-  eventContextCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: '#ECEEF7' },
+  eventContextCard: { backgroundColor: colors.surface, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: colors.border },
   contextRow: { flexDirection: 'row', alignItems: 'flex-start' },
   contextLabel: { width: 65, fontSize: 13, fontWeight: '700', color: colors.text, paddingTop: 1 },
   contextTitleValue: { flex: 1, fontSize: 14, fontWeight: '800', color: colors.text, paddingVertical: 0 },
@@ -431,47 +431,47 @@ const styles = StyleSheet.create({
   eventDateButton: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 3 },
   eventDateCopy: { flex: 1 },
   dateChangeText: { color: colors.primary, fontSize: 11, fontWeight: '800' },
-  divider: { height: 1, backgroundColor: '#F3F4FB', marginVertical: 12 },
+  divider: { height: 1, backgroundColor: colors.background, marginVertical: 12 },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionTitle: { fontSize: 15, fontWeight: '800', color: colors.text },
-  itemCountBadge: { backgroundColor: '#FFF2E8', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  itemCountBadgeText: { fontSize: 10, fontWeight: '800', color: '#E87A35', letterSpacing: 0.5 },
+  itemCountBadge: { backgroundColor: colors.warning100, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  itemCountBadgeText: { fontSize: 10, fontWeight: '800', color: colors.primary, letterSpacing: 0.5 },
   itemsList: { gap: 12 },
-  itemCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: '#ECEEF7' },
+  itemCard: { backgroundColor: colors.surface, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: colors.border },
   itemTopRow: { flexDirection: 'row', alignItems: 'flex-start' },
   dragHandle: { paddingTop: 6, marginRight: 6 },
-  stepCircle: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#EEECFF', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  stepCircle: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
   stepNumber: { fontSize: 12, fontWeight: '800', color: colors.primary },
   itemBody: { flex: 1 },
   itemTitle: { fontSize: 13, fontWeight: '800', color: colors.text, marginBottom: 6, paddingVertical: 2 },
   timeBadgesRow: { flexDirection: 'row', gap: 6, marginBottom: 8, width: '100%',},
-  timeBadgePurple: { flex: 1, minWidth: 0, backgroundColor: '#EEECFF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  timeBadgePurple: { flex: 1, minWidth: 0, backgroundColor: colors.primarySoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   timeBadgePurpleText: { width: '100%', fontSize: 11, fontWeight: '800', color: colors.primary, paddingVertical: 0 },
-  timeBadgeGrey: { width: 64, flexShrink: 0, backgroundColor: '#F3F4F8', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  timeBadgeGreyText: { width: '100%', fontSize: 11, fontWeight: '700', color: '#5A5D75', paddingVertical: 0 },
+  timeBadgeGrey: { width: 64, flexShrink: 0, backgroundColor: colors.primarySoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  timeBadgeGreyText: { width: '100%', fontSize: 11, fontWeight: '700', color: colors.text, paddingVertical: 0 },
   itemDescription: { fontSize: 12, color: colors.muted, lineHeight: 17, marginBottom: 8, paddingVertical: 2 },
   assigneeRow: { flexDirection: 'row', alignItems: 'center' },
-  assigneeAvatar: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#EEECFF', alignItems: 'center', justifyContent: 'center', marginRight: 6 },
+  assigneeAvatar: { width: 20, height: 20, borderRadius: 10, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginRight: 6 },
   assigneeInitials: { fontSize: 8, fontWeight: '800', color: colors.primary },
-  assigneeName: { fontSize: 11, color: '#54566B' },
+  assigneeName: { fontSize: 11, color: colors.text },
   actionCol: { gap: 8, marginLeft: 8 },
-  iconCircleBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: '#ECEEF7', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' },
-  addItemBtn: { backgroundColor: '#EEECFF', borderRadius: 14, paddingVertical: 13, alignItems: 'center', marginBottom: 2 },
+  iconCircleBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
+  addItemBtn: { backgroundColor: colors.primarySoft, borderRadius: 14, paddingVertical: 13, alignItems: 'center', marginBottom: 2 },
   addItemBtnText: { fontSize: 13, fontWeight: '800', color: colors.primary },
-  bottomBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#ECEEF7', backgroundColor: '#FAFBFD' },
+  bottomBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.background },
   cancelBtn: { paddingVertical: 12, paddingHorizontal: 22 },
   cancelBtnText: { color: colors.muted, fontSize: 14, fontWeight: '800' },
   saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary, borderRadius: 14, paddingHorizontal: 19, paddingVertical: 14, minWidth: 165 },
   saveBtnDisabled: { opacity: 0.6 },
   saveCheckIcon: { marginRight: 7 },
-  saveBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
-  calendarBackdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(19,20,42,0.48)' },
-  calendarCard: { width: '100%', maxWidth: 360, backgroundColor: '#FFFFFF', borderRadius: 22, padding: 20 },
+  saveBtnText: { color: colors.surface, fontSize: 13, fontWeight: '800' },
+  calendarBackdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: colors.overlay },
+  calendarCard: { width: '100%', maxWidth: 360, backgroundColor: colors.surface, borderRadius: 22, padding: 20 },
   calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 },
   calendarTitle: { fontSize: 18, fontWeight: '800', color: colors.text },
   calendarSubtitle: { marginTop: 4, fontSize: 11, color: colors.muted },
   monthNavigation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  monthArrow: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F8' },
+  monthArrow: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primarySoft },
   monthArrowText: { fontSize: 25, lineHeight: 28, color: colors.text },
   monthLabel: { fontSize: 14, fontWeight: '800', color: colors.text },
   calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
@@ -480,10 +480,10 @@ const styles = StyleSheet.create({
   calendarDay: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   calendarDaySelected: { backgroundColor: colors.primary },
   calendarDayText: { fontSize: 12, color: colors.text },
-  calendarDayTextSelected: { color: '#FFFFFF', fontWeight: '800' },
+  calendarDayTextSelected: { color: colors.surface, fontWeight: '800' },
   calendarEmptyDay: { width: 34, height: 34 },
-  calendarCancelButton: { marginTop: 12, paddingVertical: 12, alignItems: 'center', borderRadius: 12, backgroundColor: '#F3F4F8' },
+  calendarCancelButton: { marginTop: 12, paddingVertical: 12, alignItems: 'center', borderRadius: 12, backgroundColor: colors.primarySoft },
   calendarCancelText: { fontSize: 13, fontWeight: '800', color: colors.muted },
-  closeButton: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#F3F4F8', alignItems: 'center', justifyContent: 'center' },
+  closeButton: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   closeText: { fontSize: 22, lineHeight: 24, color: colors.muted },
 });

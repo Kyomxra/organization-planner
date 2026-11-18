@@ -21,7 +21,7 @@ interface SelectRundownScreenProps {
   onAttach: (selected: Rundown[]) => void;
 }
 
-function RundownIcon({ accentColor = '#6C63FF' }: { accentColor?: string }) {
+function RundownIcon({ accentColor = colors.primary }: { accentColor?: string }) {
   return (
     <View style={[styles.rdIcon, { backgroundColor: accentColor + '1A' }]}>
       <Svg width={22} height={22} viewBox="0 0 24 24">
@@ -201,7 +201,7 @@ export function SelectRundownScreen({
                   <Svg width={14} height={14} viewBox="0 0 20 20">
                     <Path
                       d="M4 10.5L8 14.5L16 6.5"
-                      stroke="#FFFFFF"
+                      stroke={colors.surface}
                       strokeWidth={2.4}
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -236,14 +236,14 @@ export function SelectRundownScreen({
           <Svg width={16} height={16} viewBox="0 0 24 24" style={{ marginRight: 8 }}>
             <Path
               d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
-              stroke="#FFFFFF"
+              stroke={colors.surface}
               strokeWidth={2}
               strokeLinecap="round"
               fill="none"
             />
             <Path
               d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-              stroke="#FFFFFF"
+              stroke={colors.surface}
               strokeWidth={2}
               strokeLinecap="round"
               fill="none"
@@ -259,7 +259,7 @@ export function SelectRundownScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#F4F5FB',
+    backgroundColor: colors.primarySoft,
   },
   header: {
     flexDirection: 'row',
@@ -267,15 +267,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 10,
-    backgroundColor: '#F4F5FB',
+    backgroundColor: colors.primarySoft,
   },
   backBtn: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -303,10 +303,10 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     paddingHorizontal: 12,
     height: 44,
   },
@@ -322,9 +322,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   createNewBtn: {
-    backgroundColor: '#EEEAFF',
+    backgroundColor: colors.primarySoft,
     height: 44,
     borderRadius: 14,
     alignItems: 'center',
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   countBadge: {
-    backgroundColor: '#FFF0E5',
+    backgroundColor: colors.secondarySoft,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
@@ -370,16 +370,16 @@ const styles = StyleSheet.create({
   countBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#E97C2B',
+    color: colors.primary,
     letterSpacing: 0.5,
   },
   rundownCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     paddingHorizontal: 14,
     paddingVertical: 14,
     gap: 12,
@@ -433,15 +433,15 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#D2D6E2',
+    borderColor: colors.border,
     backgroundColor: 'transparent',
   },
 
   /* ── FOOTER ── */
   footer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#ECEFF5',
+    borderTopColor: colors.border,
     paddingHorizontal: 20,
     paddingTop: 14,
     paddingBottom: 28,
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   attachBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '800',
   },

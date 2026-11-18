@@ -185,8 +185,8 @@ export function CreateOrganizationScreen({
         {/* Admin Callout */}
         <View style={styles.adminCallout}>
           <Svg width={18} height={18} viewBox="0 0 24 24" style={styles.calloutIcon}>
-            <Circle cx="12" cy="12" r="10" stroke="#5145E8" strokeWidth={2} fill="none" />
-            <Path d="M12 16V12M12 8H12.01" stroke="#5145E8" strokeWidth={2.4} strokeLinecap="round" />
+            <Circle cx="12" cy="12" r="10" stroke={colors.primary} strokeWidth={2} fill="none" />
+            <Path d="M12 16V12M12 8H12.01" stroke={colors.primary} strokeWidth={2.4} strokeLinecap="round" />
           </Svg>
           <Text style={styles.adminCalloutText}>
             You will become the admin of this organization.
@@ -211,7 +211,7 @@ export function CreateOrganizationScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -221,8 +221,8 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDEEF7',
-    backgroundColor: '#FAFBFD',
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
   },
   backBtn: {
     width: 36,
@@ -254,9 +254,9 @@ const styles = StyleSheet.create({
     width: 74,
     height: 74,
     borderRadius: 37,
-    backgroundColor: '#F2F1FE',
+    backgroundColor: colors.primarySoft,
     borderWidth: 1.5,
-    borderColor: '#DFDCFA',
+    borderColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
@@ -267,12 +267,12 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   formCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 18,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
-    shadowColor: '#24244A',
+    borderColor: colors.border,
+    shadowColor: colors.text,
     shadowOpacity: 0.04,
     shadowRadius: 10,
     elevation: 2,
@@ -287,9 +287,9 @@ const styles = StyleSheet.create({
   },
   textInput: {
     height: 46,
-    backgroundColor: '#F8F9FE',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#E4E6F2',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     fontSize: 14,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   divisionChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 7,
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   addDivisionBtnText: {
     fontSize: 12,
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   },
   inlineDivInput: {
     height: 34,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.primary,
     borderRadius: 8,
@@ -366,16 +366,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   inlineAddBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 11,
     fontWeight: '800',
   },
   adminCallout: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F1FE',
+    backgroundColor: colors.primarySoft,
     borderWidth: 1,
-    borderColor: '#DFDCFA',
+    borderColor: colors.primarySoft,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -395,12 +395,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 22,
     borderTopWidth: 1,
-    borderTopColor: '#ECEEF7',
+    borderTopColor: colors.border,
   },
   createSubmitBtn: {
     height: 50,
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   createSubmitBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '800',
   },

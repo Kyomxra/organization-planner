@@ -65,8 +65,8 @@ export function TransactionDetailsModal({
               <View style={styles.statusLeft}>
                 <View style={styles.clockIconBox}>
                   <Svg width={18} height={18} viewBox="0 0 24 24">
-                    <Circle cx="12" cy="12" r="9" stroke="#E87A35" strokeWidth={2} fill="none" />
-                    <Path d="M12 7V12L15 14" stroke="#E87A35" strokeWidth={2} strokeLinecap="round" />
+                    <Circle cx="12" cy="12" r="9" stroke={colors.primary} strokeWidth={2} fill="none" />
+                    <Path d="M12 7V12L15 14" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
                   </Svg>
                 </View>
                 <View>
@@ -197,11 +197,11 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(23, 24, 43, 0.45)',
+    backgroundColor: colors.overlay,
   },
   sheet: {
     maxHeight: '92%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   },
   closeIcon: {
     fontSize: 16,
-    color: '#85879A',
+    color: colors.muted,
     fontWeight: '700',
   },
   headerTitle: {
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFF6EE',
+    backgroundColor: colors.warning100,
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -272,9 +272,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   pendingBadge: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#F8D8C0',
+    borderColor: colors.secondarySoft,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -282,26 +282,26 @@ const styles = StyleSheet.create({
   pendingBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#E87A35',
+    color: colors.primary,
   },
   approvedBadge: {
-    backgroundColor: '#E8F8F2',
-    borderColor: '#B9E8D5',
+    backgroundColor: colors.success100,
+    borderColor: colors.success100,
   },
   approvedBadgeText: {
-    color: '#2C9B76',
+    color: colors.success500,
   },
   rejectedBadge: {
-    backgroundColor: '#FFF0F1',
-    borderColor: '#F5C6CA',
+    backgroundColor: colors.error100,
+    borderColor: colors.error100,
   },
   rejectedBadgeText: {
-    color: '#D94450',
+    color: colors.error500,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#EDEEF7',
+    borderColor: colors.border,
     borderRadius: 16,
     padding: 16,
   },
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   expenseChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F3F4FB',
+    backgroundColor: colors.background,
     marginVertical: 12,
   },
   receiptSection: {
@@ -394,16 +394,16 @@ const styles = StyleSheet.create({
   receiptCard: {
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#D9D9D9',
+    backgroundColor: colors.border,
     padding: 12,
     alignItems: 'center',
   },
   receiptPaper: {
     width: '100%',
-    backgroundColor: '#FDFCFA',
+    backgroundColor: colors.background,
     borderRadius: 10,
     padding: 14,
-    shadowColor: '#000',
+    shadowColor: colors.text,
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
@@ -412,18 +412,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     textAlign: 'center',
-    color: '#242424',
+    color: colors.text,
     letterSpacing: 0.5,
   },
   receiptShopAddress: {
     fontSize: 9,
     textAlign: 'center',
-    color: '#777777',
+    color: colors.muted,
     marginTop: 2,
   },
   receiptDashedLine: {
     fontSize: 10,
-    color: '#CCCCCC',
+    color: colors.muted,
     textAlign: 'center',
     marginVertical: 4,
   },
@@ -434,12 +434,12 @@ const styles = StyleSheet.create({
   },
   receiptItemText: {
     fontSize: 10,
-    color: '#444444',
+    color: colors.text,
   },
   receiptItemPrice: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#222222',
+    color: colors.text,
   },
   receiptTotalRow: {
     flexDirection: 'row',
@@ -450,18 +450,18 @@ const styles = StyleSheet.create({
   receiptTotalLabel: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#111111',
+    color: colors.text,
   },
   receiptTotalPrice: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#111111',
+    color: colors.text,
   },
   receiptFooter: {
     fontSize: 9,
     fontWeight: '700',
     textAlign: 'center',
-    color: '#888888',
+    color: colors.muted,
     marginTop: 4,
     letterSpacing: 0.5,
   },
@@ -475,12 +475,12 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E45B66',
+    borderColor: colors.error500,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rejectBtnText: {
-    color: '#D94450',
+    color: colors.error500,
     fontSize: 13,
     fontWeight: '800',
   },
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   approveBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 13,
     fontWeight: '800',
   },

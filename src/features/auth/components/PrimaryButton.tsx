@@ -19,7 +19,7 @@ export function PrimaryButton({ title, onPress, disabled = false, loading = fals
       disabled={disabled || loading}
       accessibilityRole="button"
     >
-      {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.text}>{title}</Text>}
+      {loading ? <ActivityIndicator color={colors.surface} /> : <Text style={styles.text}>{title}</Text>}
     </TouchableOpacity>
   );
 }
@@ -39,5 +39,5 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   disabled: { opacity: 0.48 },
-  text: { color: '#FFFFFF', fontSize: 12, fontWeight: '800', letterSpacing: 0.15 },
+  text: { color: colors.surface, fontSize: 12, fontWeight: '800', letterSpacing: 0.15 },
 });

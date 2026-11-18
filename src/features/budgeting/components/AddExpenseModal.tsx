@@ -85,7 +85,7 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
               <Text style={styles.headerTitle}>Add Expense</Text>
               <TouchableOpacity onPress={handleSave} style={styles.saveCheckBtn} hitSlop={10}>
                 <Svg width={14} height={14} viewBox="0 0 20 20">
-                  <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  <Path d="M4 10.5L8 14.5L16 6.5" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 </Svg>
               </TouchableOpacity>
             </View>
@@ -190,14 +190,14 @@ export function AddExpenseModal({ visible, onClose, onAdd }: AddExpenseModalProp
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   keyboardWrap: {
     width: '100%',
   },
   sheet: {
-    backgroundColor: '#FAFAFD',
+    backgroundColor: colors.background,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingTop: 8,
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 8,
   },
@@ -255,10 +255,10 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   formCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#ECEFF5',
+    borderColor: colors.border,
     paddingVertical: 6,
     paddingHorizontal: 16,
     marginBottom: 16,
@@ -319,13 +319,13 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F1F4F9',
+    backgroundColor: colors.background,
   },
   receiptCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#ECEFF5',
+    borderColor: colors.border,
     padding: 16,
     marginBottom: 14,
   },
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   },
   receiptSubtext: {
     fontSize: 11,
-    color: '#8A92A6',
+    color: colors.muted,
     fontWeight: '500',
   },
   dropzone: {
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     borderStyle: 'dashed',
     borderRadius: 16,
-    backgroundColor: '#F8F9FE',
+    backgroundColor: colors.background,
     paddingVertical: 26,
     alignItems: 'center',
     justifyContent: 'center',
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#EEF0FF',
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
@@ -372,6 +372,6 @@ const styles = StyleSheet.create({
   },
   dropzoneSubText: {
     fontSize: 11,
-    color: '#8A92A6',
+    color: colors.muted,
   },
 });

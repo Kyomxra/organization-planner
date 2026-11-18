@@ -33,9 +33,9 @@ export function MemberTabBar({ active, onSelect }: MemberTabBarProps) {
 }
 
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: 8 },
+  bar: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: 8 },
   item: { flex: 1, alignItems: 'center', gap: 5, minWidth: 0 },
-  indicator: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#D5D6E0' },
+  indicator: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.border },
   indicatorActive: { width: 18, backgroundColor: colors.primary },
   label: { color: colors.muted, fontSize: 9, fontWeight: '700' },
   labelActive: { color: colors.primary },

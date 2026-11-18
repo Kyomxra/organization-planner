@@ -58,7 +58,7 @@ export function OrganizationCreatedModal({
                 <Path
                   d="M5 13L9 17L19 7"
                   fill="none"
-                  stroke="#2C9B76"
+                  stroke={colors.success500}
                   strokeWidth={2.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -93,7 +93,7 @@ export function OrganizationCreatedModal({
                       <Path
                         d="M6 3H14C15.1 3 16 3.9 16 5V13M4 7H12C13.1 7 14 7.9 14 9V17C14 18.1 13.1 19 12 19H4C2.9 19 2 18.1 2 17V9C2 7.9 2.9 7 4 7Z"
                         fill="none"
-                        stroke="#5145E8"
+                        stroke={colors.primary}
                         strokeWidth={1.8}
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -110,10 +110,10 @@ export function OrganizationCreatedModal({
                     activeOpacity={0.7}
                   >
                     <Svg width={14} height={14} viewBox="0 0 20 20" style={styles.btnIcon}>
-                      <Circle cx="15" cy="5" r="2.5" fill="none" stroke="#5145E8" strokeWidth={1.8} />
-                      <Circle cx="5" cy="10" r="2.5" fill="none" stroke="#5145E8" strokeWidth={1.8} />
-                      <Circle cx="15" cy="15" r="2.5" fill="none" stroke="#5145E8" strokeWidth={1.8} />
-                      <Path d="M7.2 8.9L12.8 6.1M7.2 11.1L12.8 13.9" stroke="#5145E8" strokeWidth={1.8} />
+                      <Circle cx="15" cy="5" r="2.5" fill="none" stroke={colors.primary} strokeWidth={1.8} />
+                      <Circle cx="5" cy="10" r="2.5" fill="none" stroke={colors.primary} strokeWidth={1.8} />
+                      <Circle cx="15" cy="15" r="2.5" fill="none" stroke={colors.primary} strokeWidth={1.8} />
+                      <Path d="M7.2 8.9L12.8 6.1M7.2 11.1L12.8 13.9" stroke={colors.primary} strokeWidth={1.8} />
                     </Svg>
                     <Text style={styles.actionBtnText}>Share</Text>
                   </TouchableOpacity>
@@ -139,7 +139,7 @@ export function OrganizationCreatedModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(23, 24, 43, 0.6)',
+    backgroundColor: colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -148,12 +148,12 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     maxHeight: '90%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 24,
     paddingHorizontal: 22,
     paddingTop: 28,
     paddingBottom: 24,
-    shadowColor: '#17182B',
+    shadowColor: colors.text,
     shadowOpacity: 0.18,
     shadowRadius: 20,
     elevation: 8,
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#E8F8F2',
+    backgroundColor: colors.success100,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -193,9 +193,9 @@ const styles = StyleSheet.create({
   },
   codeSection: {
     width: '100%',
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#EDEEF7',
+    borderColor: colors.border,
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   codePill: {
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
@@ -233,9 +233,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: 36,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E4F0',
+    borderColor: colors.border,
     borderRadius: 10,
   },
   btnIcon: {
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   enterBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '800',
   },

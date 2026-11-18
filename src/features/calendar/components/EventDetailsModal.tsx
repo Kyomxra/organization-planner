@@ -72,7 +72,7 @@ export function EventDetailsModal({
             <View style={styles.card}>
               {/* Date Row */}
               <View style={styles.infoRow}>
-                <View style={[styles.iconBox, { backgroundColor: '#EEECFF' }]}>
+                <View style={[styles.iconBox, { backgroundColor: colors.primarySoft }]}>
                   <Svg width={18} height={18} viewBox="0 0 24 24">
                     <Rect x="3" y="4" width="18" height="18" rx="3" stroke={colors.primary} strokeWidth={2} fill="none" />
                     <Path d="M16 2V6M8 2V6M3 10H21" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
@@ -88,10 +88,10 @@ export function EventDetailsModal({
 
               {/* Time Row */}
               <View style={styles.infoRow}>
-                <View style={[styles.iconBox, { backgroundColor: '#FFF2E8' }]}>
+                <View style={[styles.iconBox, { backgroundColor: colors.warning100 }]}>
                   <Svg width={18} height={18} viewBox="0 0 24 24">
-                    <Circle cx="12" cy="12" r="9" stroke="#E87A35" strokeWidth={2} fill="none" />
-                    <Path d="M12 7V12L15 14" stroke="#E87A35" strokeWidth={2} strokeLinecap="round" />
+                    <Circle cx="12" cy="12" r="9" stroke={colors.primary} strokeWidth={2} fill="none" />
+                    <Path d="M12 7V12L15 14" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
                   </Svg>
                 </View>
                 <View>
@@ -145,11 +145,11 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(23, 24, 43, 0.45)',
+    backgroundColor: colors.overlay,
   },
   sheet: {
     maxHeight: '85%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   },
   closeIcon: {
     fontSize: 16,
-    color: '#85879A',
+    color: colors.muted,
     fontWeight: '700',
   },
   headerTitle: {
@@ -193,13 +193,13 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#E87A35',
+    backgroundColor: colors.secondary,
     marginRight: 6,
   },
   categoryText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#E87A35',
+    color: colors.primary,
     letterSpacing: 0.5,
   },
   eventTitle: {
@@ -215,9 +215,9 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#EDEEF7',
+    borderColor: colors.border,
     borderRadius: 16,
     padding: 16,
     marginBottom: 14,
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F3F4FB',
+    backgroundColor: colors.background,
     marginVertical: 12,
   },
   descHeading: {
@@ -258,11 +258,11 @@ const styles = StyleSheet.create({
   },
   descBody: {
     fontSize: 13,
-    color: '#2D3142',
+    color: colors.text,
     lineHeight: 20,
   },
   rundownCard: {
-    backgroundColor: '#F8F7FF',
+    backgroundColor: colors.primarySoft,
     borderRadius: 16,
     padding: 14,
     marginBottom: 14,
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   rundownButtonText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -297,13 +297,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 11,
   },
-  editButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+  editButtonText: { color: colors.surface, fontSize: 12, fontWeight: '800' },
   deleteButton: {
     borderWidth: 1,
-    borderColor: '#F2D2D4',
+    borderColor: colors.secondarySoft,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 13,
   },
-  deleteButtonText: { color: colors.danger, fontSize: 12, fontWeight: '800' },
+  deleteButtonText: { color: colors.error500, fontSize: 12, fontWeight: '800' },
 });

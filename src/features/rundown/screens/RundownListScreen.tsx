@@ -34,7 +34,7 @@ type RundownRow = {
 type RundownItemCountRow = { rundown_id: string };
 type EventDateRow = { id: string; start_at: string | null };
 
-function RundownIcon({ accentColor = '#6C63FF' }: { accentColor?: string }) {
+function RundownIcon({ accentColor = colors.primary }: { accentColor?: string }) {
   return (
     <View style={[styles.rdIcon, { backgroundColor: `${accentColor}1A` }]}>
       <Svg width={22} height={22} viewBox="0 0 24 24">
@@ -152,7 +152,7 @@ export function RundownListScreen({
           })(),
           updatedLabel: new Date(row.updated_at).toLocaleDateString(),
           itemCount: itemCounts.get(row.id) ?? 0,
-          accentColor: ['#6C63FF', '#E87A35', '#2C9B76'][index % 3],
+          accentColor: [colors.primary, colors.primaryDark][index % 2],
         };
       }));
       setIsLoading(false);
@@ -250,7 +250,7 @@ export function RundownListScreen({
                   width="36"
                   height="40"
                   rx="5"
-                  fill="#EEEAFF"
+                  fill={colors.primarySoft}
                   stroke={colors.primary}
                   strokeWidth={2}
                 />
@@ -382,7 +382,7 @@ export function RundownListScreen({
                 <Path
                   d="M7 4L13 10L7 16"
                   fill="none"
-                  stroke="#C0C3D4"
+                  stroke={colors.muted}
                   strokeWidth={2}
                   strokeLinecap="round"
                 />
@@ -398,7 +398,7 @@ export function RundownListScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#F4F5FB',
+    backgroundColor: colors.primarySoft,
   },
   header: {
     flexDirection: 'row',
@@ -406,15 +406,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 10,
-    backgroundColor: '#F4F5FB',
+    backgroundColor: colors.primarySoft,
   },
   backBtn: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -448,10 +448,10 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     paddingHorizontal: 12,
     height: 44,
   },
@@ -484,17 +484,17 @@ const styles = StyleSheet.create({
     width: 110,
     height: 110,
     borderRadius: 55,
-    backgroundColor: '#EEEAFF',
+    backgroundColor: colors.primarySoft,
     opacity: 0.4,
   },
   emptyDoc: {
     width: 72,
     height: 72,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6C63FF',
+    shadowColor: colors.primary,
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 4,
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   createFirstBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '800',
   },
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   createNewBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '800',
   },
@@ -579,10 +579,10 @@ const styles = StyleSheet.create({
   rundownCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     paddingHorizontal: 14,
     paddingVertical: 14,
     gap: 12,

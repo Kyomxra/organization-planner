@@ -14,8 +14,8 @@ export function BrandMark({ size = 42 }: BrandMarkProps) {
       <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityRole="image" accessibilityLabel="Orbit planet logo">
         <Defs>
           <LinearGradient id={backgroundId} x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-            <Stop offset="0" stopColor="#5447EA" />
-            <Stop offset="1" stopColor="#3C2FB3" />
+            <Stop offset="0" stopColor={colors.primary} />
+            <Stop offset="1" stopColor={colors.primaryDark} />
           </LinearGradient>
         </Defs>
         <Rect width="100" height="100" rx="32" fill={`url(#${backgroundId})`} />
@@ -24,20 +24,20 @@ export function BrandMark({ size = 42 }: BrandMarkProps) {
         <Path
           d="M 36.5 42.5 C 38.5 35 44 32.5 50.5 32.5 C 57.5 32.5 63 35.8 65 41"
           fill="none"
-          stroke="#FFFFFF"
+          stroke={colors.surface}
           strokeWidth="3.4"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
 
         {/* Small orbital highlight dot */}
-        <Circle cx="66" cy="45.5" r="1.3" fill="#FFFFFF" />
+        <Circle cx="66" cy="45.5" r="1.3" fill={colors.surface} />
 
         {/* Planet bottom hemisphere arc */}
         <Path
           d="M 64.5 53.5 C 62.5 61 57 64.5 50.5 64.5 C 43.5 64.5 38 60.5 36.5 55"
           fill="none"
-          stroke="#FFFFFF"
+          stroke={colors.surface}
           strokeWidth="3.4"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -47,7 +47,7 @@ export function BrandMark({ size = 42 }: BrandMarkProps) {
         <Path
           d="M 33 51 C 24 53 18 56.5 21 58.5 C 25 61 35 60 48.5 56.5 C 63 53 74 48 78 45.5 C 81 43.5 78.5 41 72 40.5 C 65 40 56 42 47 45"
           fill="none"
-          stroke="#FFFFFF"
+          stroke={colors.surface}
           strokeWidth="3.4"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -104,17 +104,17 @@ const styles = StyleSheet.create({
     height: 230,
     borderRadius: 115,
     borderWidth: 1,
-    borderColor: 'rgba(81, 69, 232, 0.08)',
+    borderColor: 'rgba(103, 7, 7, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(81, 69, 232, 0.02)',
+    backgroundColor: 'rgba(103, 7, 7, 0.02)',
   },
   concentricInner: {
     width: 180,
     height: 180,
     borderRadius: 90,
     borderWidth: 1,
-    borderColor: 'rgba(81, 69, 232, 0.12)',
+    borderColor: 'rgba(103, 7, 7, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  inputError: { borderColor: colors.danger },
+  inputError: { borderColor: colors.error500 },
   leadingIcon: { marginRight: 8 },
   input: {
     flex: 1,
@@ -133,5 +133,5 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     outlineWidth: 0,
   },
-  errorText: { color: colors.danger, fontSize: 10, marginTop: 4 },
+  errorText: { color: colors.error500, fontSize: 10, marginTop: 4 },
 });

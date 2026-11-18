@@ -52,7 +52,7 @@ export function OrganizationStatusModal({
             <Text style={styles.headerTitle}>Organization Status</Text>
             <TouchableOpacity onPress={handleSave} style={styles.saveCircleButton} hitSlop={10}>
               <Svg width={14} height={14} viewBox="0 0 20 20">
-                <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <Path d="M4 10.5L8 14.5L16 6.5" stroke={colors.surface} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
               </Svg>
             </TouchableOpacity>
           </View>
@@ -61,20 +61,20 @@ export function OrganizationStatusModal({
           <View style={styles.graphicContainer}>
             <Svg width={80} height={80} viewBox="0 0 100 100">
               {/* Head */}
-              <Circle cx="50" cy="30" r="16" fill="none" stroke="#2D3142" strokeWidth={3} />
+              <Circle cx="50" cy="30" r="16" fill="none" stroke={colors.text} strokeWidth={3} />
               {/* Shoulders */}
               <Path
                 d="M22 80 C22 62, 34 54, 50 54 C58 54, 65 57, 70 62"
                 fill="none"
-                stroke="#2D3142"
+                stroke={colors.text}
                 strokeWidth={3}
                 strokeLinecap="round"
               />
               {/* X Badge circle */}
-              <Circle cx="76" cy="74" r="14" fill="#FFFFFF" stroke="#2D3142" strokeWidth={3} />
+              <Circle cx="76" cy="74" r="14" fill={colors.surface} stroke={colors.text} strokeWidth={3} />
               <Path
                 d="M71 69 L81 79 M81 69 L71 79"
-                stroke="#2D3142"
+                stroke={colors.text}
                 strokeWidth={2.8}
                 strokeLinecap="round"
               />
@@ -134,10 +134,10 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(23, 24, 43, 0.45)',
+    backgroundColor: colors.overlay,
   },
   sheet: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 22,
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
   closeIcon: {
     fontSize: 16,
-    color: '#85879A',
+    color: colors.muted,
     fontWeight: '700',
   },
   headerTitle: {
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: '#F7F8FD',
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -206,37 +206,37 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   inactiveBtn: {
-    borderColor: '#F8B6BD',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.error100,
+    backgroundColor: colors.surface,
   },
   inactiveSelected: {
-    backgroundColor: '#FEECEE',
-    borderColor: '#E45B66',
+    backgroundColor: colors.error100,
+    borderColor: colors.error500,
   },
   inactiveText: {
-    color: '#E45B66',
+    color: colors.error500,
     fontWeight: '700',
     fontSize: 14,
   },
   inactiveTextSelected: {
-    color: '#D82F3E',
+    color: colors.error500,
     fontWeight: '800',
   },
   activeBtn: {
-    borderColor: '#BFE7D7',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.success100,
+    backgroundColor: colors.surface,
   },
   activeSelected: {
-    backgroundColor: '#EBF8F2',
-    borderColor: '#2C9B76',
+    backgroundColor: colors.success100,
+    borderColor: colors.success500,
   },
   activeText: {
-    color: '#2C9B76',
+    color: colors.success500,
     fontWeight: '700',
     fontSize: 14,
   },
   activeTextSelected: {
-    color: '#1E7C5C',
+    color: colors.success500,
     fontWeight: '800',
   },
 });

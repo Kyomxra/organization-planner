@@ -121,27 +121,27 @@ export function NotificationScreen({ organizationId, onBack }: NotificationScree
         <View style={styles.mailboxGraphic}>
           <Svg width={180} height={160} viewBox="0 0 200 180">
             {/* Stand Post */}
-            <Rect x="85" y="110" width="30" height="45" fill="#4B3DE8" rx="4" />
+            <Rect x="85" y="110" width="30" height="45" fill={colors.primary} rx="4" />
 
             {/* Back Grey Box */}
             <Path
               d="M70 40 H140 C155 40 165 52 165 68 V110 H70 V40 Z"
-              fill="#9FA2B4"
+              fill={colors.muted}
             />
 
             {/* Front Curved Blue Flap */}
             <Path
               d="M45 68 C45 52 55 40 70 40 V110 H45 C40 110 35 105 35 100 V78 C35 72 40 68 45 68 Z"
-              fill="#4B3DE8"
+              fill={colors.primary}
             />
 
             {/* Slot Handle on blue body */}
-            <Rect x="50" y="88" width="22" height="7" rx="3.5" fill="#D3D5E6" />
+            <Rect x="50" y="88" width="22" height="7" rx="3.5" fill={colors.border} />
 
             {/* Mailbox Flag Arm & Flag */}
-            <Rect x="100" y="58" width="55" height="12" rx="6" fill="#D3D5E6" />
-            <Circle cx="106" cy="64" r="8" fill="#D3D5E6" />
-            <Rect x="150" y="66" width="16" height="20" rx="3" fill="#4B3DE8" />
+            <Rect x="100" y="58" width="55" height="12" rx="6" fill={colors.border} />
+            <Circle cx="106" cy="64" r="8" fill={colors.border} />
+            <Rect x="150" y="66" width="16" height="20" rx="3" fill={colors.primary} />
           </Svg>
         </View>
         <Text style={styles.emptyTitle}>No notification yet</Text>
@@ -155,7 +155,7 @@ export function NotificationScreen({ organizationId, onBack }: NotificationScree
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -164,15 +164,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   backBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -198,15 +198,15 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   notificationCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     borderRadius: 16,
     padding: 14,
   },
   unreadCard: {
-    borderColor: colors.primary,
-    backgroundColor: '#FBFAFF',
+    borderColor: colors.informative200,
+    backgroundColor: colors.informative100,
   },
   notificationHeader: {
     flexDirection: 'row',
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginLeft: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.informative500,
   },
   mailboxGraphic: {
     marginBottom: 24,

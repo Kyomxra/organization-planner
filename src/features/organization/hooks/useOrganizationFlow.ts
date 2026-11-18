@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { colors } from '../../../theme/colors';
 import { showMessage } from '../../auth/utils/feedback';
 import { CreateOrgFormData, OrganizationItem, OrgStatus } from '../types';
 
@@ -12,9 +13,9 @@ const roleDisplay: Record<string, { role: OrganizationRole; title: string }> = {
 };
 
 const colorsByRole: Record<OrganizationRole, { avatar: string; text: string; badge: string }> = {
-  Executive: { avatar: '#EEECFF', text: '#5145E8', badge: '#F3F2FF' },
-  Coordinator: { avatar: '#FFF2E8', text: '#E87A35', badge: '#FFF6EE' },
-  Participant: { avatar: '#E8F5E9', text: '#2E7D32', badge: '#F1F8E9' },
+  Executive: { avatar: colors.primarySoft, text: colors.primary, badge: colors.primarySoft },
+  Coordinator: { avatar: colors.secondarySoft, text: colors.primaryDark, badge: colors.secondarySoft },
+  Participant: { avatar: colors.primarySoft, text: colors.primary, badge: colors.primarySoft },
 };
 
 function getErrorMessage(error: unknown): string {

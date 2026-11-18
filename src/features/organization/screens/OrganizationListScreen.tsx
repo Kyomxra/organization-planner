@@ -64,11 +64,11 @@ export function OrganizationListScreen({
             accessibilityLabel="User profile"
           >
             <Svg width={22} height={22} viewBox="0 0 24 24">
-              <Circle cx="12" cy="8" r="4" fill="none" stroke="#2D3142" strokeWidth={1.8} />
+              <Circle cx="12" cy="8" r="4" fill="none" stroke={colors.text} strokeWidth={1.8} />
               <Path
                 d="M5 19 C5 15.5, 8 13.5, 12 13.5 C16 13.5, 19 15.5, 19 19"
                 fill="none"
-                stroke="#2D3142"
+                stroke={colors.text}
                 strokeWidth={1.8}
                 strokeLinecap="round"
               />
@@ -84,7 +84,7 @@ export function OrganizationListScreen({
                 <Svg width={14} height={14} viewBox="0 0 20 20">
                   <Path
                     d="M4 10.5L8 14.5L16 6.5"
-                    stroke="#FFFFFF"
+                    stroke={colors.surface}
                     strokeWidth={2.4}
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -106,13 +106,13 @@ export function OrganizationListScreen({
         {/* Search Input */}
         <View style={styles.searchBar}>
           <Svg width={16} height={16} viewBox="0 0 20 20" style={styles.searchIcon}>
-            <Circle cx="8.5" cy="8.5" r="5.5" stroke="#9A9DB2" strokeWidth={1.8} fill="none" />
-            <Path d="M12.8 12.8L17 17" stroke="#9A9DB2" strokeWidth={1.8} strokeLinecap="round" />
+            <Circle cx="8.5" cy="8.5" r="5.5" stroke={colors.muted} strokeWidth={1.8} fill="none" />
+            <Path d="M12.8 12.8L17 17" stroke={colors.muted} strokeWidth={1.8} strokeLinecap="round" />
           </Svg>
           <TextInput
             style={styles.searchInput}
             placeholder="Search"
-            placeholderTextColor="#A1A4B8"
+            placeholderTextColor={colors.muted}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -233,14 +233,14 @@ export function OrganizationListScreen({
           <Svg width={16} height={16} viewBox="0 0 24 24" style={styles.joinIcon}>
             <Path
               d="M14 4H19C20.1 4 21 4.9 21 6V18C21 19.1 20.1 20 19 20H14"
-              stroke="#5145E8"
+              stroke={colors.primary}
               strokeWidth={2}
               strokeLinecap="round"
               fill="none"
             />
             <Path
               d="M10 16L14 12L10 8"
-              stroke="#5145E8"
+              stroke={colors.primary}
               strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -248,7 +248,7 @@ export function OrganizationListScreen({
             />
             <Path
               d="M3 12H14"
-              stroke="#5145E8"
+              stroke={colors.primary}
               strokeWidth={2}
               strokeLinecap="round"
               fill="none"
@@ -264,7 +264,7 @@ export function OrganizationListScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   scroll: {
     flex: 1,
@@ -290,9 +290,9 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#E8E9F2',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -300,9 +300,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F3F4FE',
+    backgroundColor: colors.primarySoft,
     borderWidth: 1.2,
-    borderColor: '#D7DAFB',
+    borderColor: colors.primarySoft,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -336,16 +336,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#8A8C9F',
+    color: colors.muted,
     marginBottom: 10,
     marginTop: 4,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#EDEEF7',
+    borderColor: colors.border,
     borderRadius: 14,
     paddingHorizontal: 14,
     height: 46,
@@ -369,10 +369,10 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     paddingHorizontal: 20,
     paddingVertical: 28,
   },
@@ -397,17 +397,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 12,
     fontWeight: '700',
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
-    shadowColor: '#24244A',
+    borderColor: colors.border,
+    shadowColor: colors.text,
     shadowOpacity: 0.05,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -479,12 +479,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 22,
     borderTopWidth: 1,
-    borderTopColor: '#ECEEF7',
+    borderTopColor: colors.border,
     gap: 10,
   },
   createBtn: {
@@ -499,15 +499,15 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   createBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '800',
   },
   joinBtn: {
     height: 48,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.3,
-    borderColor: '#DFE2F2',
+    borderColor: colors.border,
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',

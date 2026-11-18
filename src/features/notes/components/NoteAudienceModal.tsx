@@ -172,7 +172,7 @@ export function NoteAudienceModal({
               onPress={toggleOnlyMe}
               activeOpacity={0.8}
             >
-              <View style={[styles.iconBox, { backgroundColor: '#F1EFFF' }]}>
+              <View style={[styles.iconBox, { backgroundColor: colors.primarySoft }]}>
                 <Svg width={18} height={18} viewBox="0 0 24 24">
                   <Rect x="5" y="11" width="14" height="10" rx="2" stroke={colors.primary} strokeWidth={2} fill="none" />
                   <Path d="M8 11V7a4 4 0 0 1 8 0v4" stroke={colors.primary} strokeWidth={2} fill="none" />
@@ -185,7 +185,7 @@ export function NoteAudienceModal({
               <View style={[styles.checkbox, selection.isOnlyMe && styles.checkboxActive]}>
                 {selection.isOnlyMe && (
                   <Svg width={12} height={12} viewBox="0 0 20 20">
-                    <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <Path d="M4 10.5L8 14.5L16 6.5" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </Svg>
                 )}
               </View>
@@ -197,7 +197,7 @@ export function NoteAudienceModal({
               onPress={toggleDivision}
               activeOpacity={0.8}
             >
-              <View style={[styles.iconBox, { backgroundColor: '#ECEBFF' }]}>
+              <View style={[styles.iconBox, { backgroundColor: colors.primarySoft }]}>
                 <Svg width={18} height={18} viewBox="0 0 24 24">
                   <Rect x="4" y="3" width="16" height="18" rx="2" stroke={colors.primary} strokeWidth={2} fill="none" />
                   <Path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1M11 21v-3h2v3" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
@@ -212,7 +212,7 @@ export function NoteAudienceModal({
               <View style={[styles.checkbox, selection.isDivision && styles.checkboxActive]}>
                 {selection.isDivision && (
                   <Svg width={12} height={12} viewBox="0 0 20 20">
-                    <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <Path d="M4 10.5L8 14.5L16 6.5" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </Svg>
                 )}
               </View>
@@ -243,7 +243,7 @@ export function NoteAudienceModal({
                         >
                           {isSelected && (
                             <Svg width={12} height={12} viewBox="0 0 20 20" style={{ marginRight: 5 }}>
-                              <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                              <Path d="M4 10.5L8 14.5L16 6.5" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                             </Svg>
                           )}
                           <Text style={[styles.divChipText, isSelected && styles.divChipTextSelected]}>
@@ -266,10 +266,10 @@ export function NoteAudienceModal({
               onPress={toggleExecutive}
               activeOpacity={0.8}
             >
-              <View style={[styles.iconBox, { backgroundColor: '#E3F2FD' }]}>
+              <View style={[styles.iconBox, { backgroundColor: colors.secondarySoft }]}>
                 <Svg width={18} height={18} viewBox="0 0 24 24">
-                  <Path d="M12 2L4 5v6.5C4 16.5 7.5 21 12 22c4.5-1 8-5.5 8-10.5V5l-8-3z" stroke="#1E88E5" strokeWidth={2} fill="none" />
-                  <Path d="M9 12l2 2 4-4" stroke="#1E88E5" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  <Path d="M12 2L4 5v6.5C4 16.5 7.5 21 12 22c4.5-1 8-5.5 8-10.5V5l-8-3z" stroke={colors.primary} strokeWidth={2} fill="none" />
+                  <Path d="M9 12l2 2 4-4" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 </Svg>
               </View>
               <View style={styles.textCol}>
@@ -279,7 +279,7 @@ export function NoteAudienceModal({
               <View style={[styles.checkbox, selection.isExecutive && styles.checkboxActive]}>
                 {selection.isExecutive && (
                   <Svg width={12} height={12} viewBox="0 0 20 20">
-                    <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <Path d="M4 10.5L8 14.5L16 6.5" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </Svg>
                 )}
               </View>
@@ -291,11 +291,11 @@ export function NoteAudienceModal({
               onPress={toggleCoordinators}
               activeOpacity={0.8}
             >
-              <View style={[styles.iconBox, { backgroundColor: '#FFF0E5' }]}>
+              <View style={[styles.iconBox, { backgroundColor: colors.secondarySoft }]}>
                 <Svg width={18} height={18} viewBox="0 0 24 24">
-                  <Path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="#E66723" strokeWidth={2} fill="none" />
-                  <Circle cx="9" cy="7" r="4" stroke="#E66723" strokeWidth={2} fill="none" />
-                  <Path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#E66723" strokeWidth={2} strokeLinecap="round" fill="none" />
+                  <Path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke={colors.primary} strokeWidth={2} fill="none" />
+                  <Circle cx="9" cy="7" r="4" stroke={colors.primary} strokeWidth={2} fill="none" />
+                  <Path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" fill="none" />
                 </Svg>
               </View>
               <View style={styles.textCol}>
@@ -305,7 +305,7 @@ export function NoteAudienceModal({
               <View style={[styles.checkbox, selection.isCoordinators && styles.checkboxActive]}>
                 {selection.isCoordinators && (
                   <Svg width={12} height={12} viewBox="0 0 20 20">
-                    <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <Path d="M4 10.5L8 14.5L16 6.5" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </Svg>
                 )}
               </View>
@@ -317,11 +317,11 @@ export function NoteAudienceModal({
               onPress={toggleAllMembers}
               activeOpacity={0.8}
             >
-              <View style={[styles.iconBox, { backgroundColor: '#E6F9F2' }]}>
+              <View style={[styles.iconBox, { backgroundColor: colors.success100 }]}>
                 <Svg width={18} height={18} viewBox="0 0 24 24">
-                  <Rect x="3" y="4" width="18" height="16" rx="3" stroke="#25A27A" strokeWidth={2} fill="none" />
-                  <Circle cx="12" cy="10" r="3" stroke="#25A27A" strokeWidth={2} fill="none" />
-                  <Path d="M7 17a5 5 0 0 1 10 0" stroke="#25A27A" strokeWidth={2} strokeLinecap="round" fill="none" />
+                  <Rect x="3" y="4" width="18" height="16" rx="3" stroke={colors.success500} strokeWidth={2} fill="none" />
+                  <Circle cx="12" cy="10" r="3" stroke={colors.success500} strokeWidth={2} fill="none" />
+                  <Path d="M7 17a5 5 0 0 1 10 0" stroke={colors.success500} strokeWidth={2} strokeLinecap="round" fill="none" />
                 </Svg>
               </View>
               <View style={styles.textCol}>
@@ -331,7 +331,7 @@ export function NoteAudienceModal({
               <View style={[styles.checkbox, selection.isAllMembers && styles.checkboxActive]}>
                 {selection.isAllMembers && (
                   <Svg width={12} height={12} viewBox="0 0 20 20">
-                    <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <Path d="M4 10.5L8 14.5L16 6.5" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </Svg>
                 )}
               </View>
@@ -365,11 +365,11 @@ export function NoteAudienceModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#FAFAFD',
+    backgroundColor: colors.background,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingTop: 8,
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 8,
   },
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   infoBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EEF2FF',
+    backgroundColor: colors.primarySoft,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -429,17 +429,17 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 11,
-    color: '#4B5563',
+    color: colors.muted,
     lineHeight: 16,
     fontWeight: '500',
   },
   audienceCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#ECEFF5',
+    borderColor: colors.border,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: '#D2D6E2',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   divisionSelectorCard: {
-    backgroundColor: '#F3F4FE',
+    backgroundColor: colors.primarySoft,
     borderRadius: 14,
     padding: 12,
     marginTop: -4,
@@ -516,10 +516,10 @@ const styles = StyleSheet.create({
   divChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#DCE0EB',
+    borderColor: colors.border,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
@@ -533,12 +533,12 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   divChipTextSelected: {
-    color: '#FFFFFF',
+    color: colors.surface,
   },
   warningBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF4EB',
+    backgroundColor: colors.warning100,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -548,20 +548,20 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: '#FB923C',
+    backgroundColor: colors.warning500,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
   },
   warningExclamation: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 10,
     fontWeight: '900',
   },
   warningText: {
     flex: 1,
     fontSize: 11,
-    color: '#C25E1A',
+    color: colors.warning500,
     fontWeight: '600',
   },
   doneBtn: {
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   doneBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '800',
   },

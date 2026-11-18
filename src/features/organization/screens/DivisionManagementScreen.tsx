@@ -168,7 +168,7 @@ export function DivisionManagementScreen({
 
         <View style={styles.searchBar}>
           <Svg width={18} height={18} viewBox="0 0 24 24" style={styles.searchIcon}>
-            <Path d="M20 20L16.3 16.3M18 10.5A7.5 7.5 0 1 1 3 10.5A7.5 7.5 0 0 1 18 10.5Z" fill="none" stroke="#9698AA" strokeWidth={1.8} strokeLinecap="round" />
+            <Path d="M20 20L16.3 16.3M18 10.5A7.5 7.5 0 1 1 3 10.5A7.5 7.5 0 0 1 18 10.5Z" fill="none" stroke={colors.muted} strokeWidth={1.8} strokeLinecap="round" />
           </Svg>
           <TextInput
             value={searchQuery}
@@ -191,8 +191,8 @@ export function DivisionManagementScreen({
             const initials = member.name.split(' ').map((part) => part[0]).slice(0, 2).join('');
             return (
               <View key={member.id} style={styles.memberCard}>
-                <View style={[styles.avatar, { backgroundColor: division?.backgroundColor ?? '#F0F1F7' }]}>
-                  <Text style={[styles.avatarText, { color: division?.color ?? '#77798D' }]}>{initials}</Text>
+                <View style={[styles.avatar, { backgroundColor: division?.backgroundColor ?? colors.primarySoft }]}>
+                  <Text style={[styles.avatarText, { color: division?.color ?? colors.text }]}>{initials}</Text>
                 </View>
                 <View style={styles.memberInfo}>
                   <View style={styles.memberNameRow}>
@@ -205,7 +205,7 @@ export function DivisionManagementScreen({
                   </View>
                   <Text style={styles.memberEmail} numberOfLines={1}>{member.email}</Text>
                   <View style={styles.assignmentRow}>
-                    <View style={[styles.assignmentDot, { backgroundColor: division?.color ?? '#B5B7C5' }]} />
+                    <View style={[styles.assignmentDot, { backgroundColor: division?.color ?? colors.muted }]} />
                     <Text style={[styles.assignmentText, !division && styles.unassignedText]}>
                       {division?.name ?? 'Not assigned'}
                     </Text>
@@ -276,7 +276,7 @@ export function DivisionManagementScreen({
                       <Text style={[styles.currentLabel, { color: division.color }]}>CURRENT</Text>
                     ) : (
                       <Svg width={18} height={18} viewBox="0 0 24 24">
-                        <Path d="M5 12H19M12 5L19 12L12 19" fill="none" stroke="#9698AA" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                        <Path d="M5 12H19M12 5L19 12L12 19" fill="none" stroke={colors.muted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
                       </Svg>
                     )}
                   </TouchableOpacity>
@@ -299,7 +299,7 @@ export function DivisionManagementScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -307,15 +307,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 14,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   },
   executiveBadge: {
     borderRadius: 8,
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     paddingHorizontal: 8,
     paddingVertical: 5,
     marginLeft: 8,
@@ -357,10 +357,10 @@ const styles = StyleSheet.create({
   summaryCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     padding: 14,
     marginBottom: 24,
   },
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 13,
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 11,
@@ -423,10 +423,10 @@ const styles = StyleSheet.create({
   },
   divisionCard: {
     width: 154,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     padding: 13,
   },
   divisionDot: {
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
   divisionProgressTrack: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#F0F1F6',
+    backgroundColor: colors.primarySoft,
     overflow: 'hidden',
   },
   divisionProgress: {
@@ -463,29 +463,29 @@ const styles = StyleSheet.create({
   },
   unassignedFilter: {
     borderRadius: 10,
-    backgroundColor: '#FFF6EE',
+    backgroundColor: colors.warning100,
     paddingHorizontal: 10,
     paddingVertical: 7,
   },
   unassignedFilterActive: {
-    backgroundColor: '#E87A35',
+    backgroundColor: colors.primary,
   },
   unassignedFilterText: {
-    color: '#D87028',
+    color: colors.warning500,
     fontSize: 10,
     fontWeight: '800',
   },
   unassignedFilterTextActive: {
-    color: '#FFFFFF',
+    color: colors.surface,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 44,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     paddingHorizontal: 12,
     marginBottom: 12,
   },
@@ -509,10 +509,10 @@ const styles = StyleSheet.create({
   memberCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     paddingHorizontal: 11,
     paddingVertical: 12,
   },
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
   },
   coordinatorBadge: {
     borderRadius: 5,
-    backgroundColor: '#FFF1E6',
+    backgroundColor: colors.secondarySoft,
     paddingHorizontal: 5,
     paddingVertical: 3,
     marginLeft: 5,
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   coordinatorBadgeText: {
     fontSize: 7,
     fontWeight: '800',
-    color: '#D87028',
+    color: colors.warning500,
   },
   memberEmail: {
     fontSize: 9,
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
   assignButton: {
     borderRadius: 9,
     borderWidth: 1,
-    borderColor: '#E3E4ED',
+    borderColor: colors.border,
     paddingHorizontal: 10,
     paddingVertical: 7,
     marginLeft: 7,
@@ -596,11 +596,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   assignButtonTextPrimary: {
-    color: '#FFFFFF',
+    color: colors.surface,
   },
   emptyState: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 24,
   },
@@ -617,10 +617,10 @@ const styles = StyleSheet.create({
   modalBackdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(23, 24, 43, 0.45)',
+    backgroundColor: colors.overlay,
   },
   assignmentSheet: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
     paddingHorizontal: 20,
@@ -631,7 +631,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#E2E4ED',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 17,
   },
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 16,
-    backgroundColor: '#F4F5F9',
+    backgroundColor: colors.background,
   },
   modalCloseText: {
     color: colors.muted,
@@ -678,12 +678,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     paddingHorizontal: 11,
   },
   divisionOptionSelected: {
     borderColor: colors.primary,
-    backgroundColor: '#FBFAFF',
+    backgroundColor: colors.primarySoft,
   },
   optionIcon: {
     width: 32,
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   unassignButtonText: {
-    color: colors.danger,
+    color: colors.error500,
     fontSize: 11,
     fontWeight: '800',
   },

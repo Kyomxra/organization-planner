@@ -86,8 +86,8 @@ export function ProfileScreen({
           {/* Account name */}
           <View style={styles.fieldBoxWhite}>
             <Svg width={18} height={18} viewBox="0 0 24 24" style={styles.fieldIcon}>
-              <Circle cx="12" cy="8" r="4" fill="none" stroke="#2D3142" strokeWidth={1.8} />
-              <Path d="M4 20C4 16 7.5 14 12 14C16.5 14 20 16 20 20" stroke="#2D3142" strokeWidth={1.8} fill="none" strokeLinecap="round" />
+              <Circle cx="12" cy="8" r="4" fill="none" stroke={colors.text} strokeWidth={1.8} />
+              <Path d="M4 20C4 16 7.5 14 12 14C16.5 14 20 16 20 20" stroke={colors.text} strokeWidth={1.8} fill="none" strokeLinecap="round" />
             </Svg>
             <TextInput
               style={styles.fieldValueText}
@@ -109,8 +109,8 @@ export function ProfileScreen({
           {/* Email Address */}
           <View style={styles.fieldBoxWhite}>
             <Svg width={18} height={18} viewBox="0 0 24 24" style={styles.fieldIcon}>
-              <Path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="#2D3142" strokeWidth={1.8} fill="none" />
-              <Path d="M22 6L12 13L2 6" stroke="#2D3142" strokeWidth={1.8} strokeLinecap="round" fill="none" />
+              <Path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke={colors.text} strokeWidth={1.8} fill="none" />
+              <Path d="M22 6L12 13L2 6" stroke={colors.text} strokeWidth={1.8} strokeLinecap="round" fill="none" />
             </Svg>
             <Text style={styles.fieldValueText}>{userEmail}</Text>
           </View>
@@ -123,14 +123,14 @@ export function ProfileScreen({
           >
             <View style={styles.logoutLeft}>
               <Svg width={20} height={20} viewBox="0 0 24 24" style={styles.logoutIcon}>
-                <Path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" fill="none" />
-                <Path d="M16 17L21 12L16 7" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <Path d="M21 12H9" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" fill="none" />
+                <Path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke={colors.surface} strokeWidth={2} strokeLinecap="round" fill="none" />
+                <Path d="M16 17L21 12L16 7" stroke={colors.surface} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <Path d="M21 12H9" stroke={colors.surface} strokeWidth={2} strokeLinecap="round" fill="none" />
               </Svg>
               <Text style={styles.logoutText}>Log out</Text>
             </View>
             <Svg width={16} height={16} viewBox="0 0 20 20">
-              <Path d="M7 4L13 10L7 16" fill="none" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" />
+              <Path d="M7 4L13 10L7 16" fill="none" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" />
             </Svg>
           </TouchableOpacity>
         </View>
@@ -142,7 +142,7 @@ export function ProfileScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -151,15 +151,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   backBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: '#4B3CEB',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.primaryDark,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   avatarInitials: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 24,
     fontWeight: '800',
   },
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   fieldBoxGrey: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EEF0F5',
+    backgroundColor: colors.surfaceSubtle,
     borderRadius: 18,
     paddingHorizontal: 16,
     height: 52,
@@ -220,9 +220,9 @@ const styles = StyleSheet.create({
   fieldBoxWhite: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     borderRadius: 18,
     paddingHorizontal: 16,
     height: 52,
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
   },
   saveProfileText: {
     color: colors.primary,
@@ -252,12 +252,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#BC3838',
+    backgroundColor: colors.error500,
     borderRadius: 18,
     paddingHorizontal: 18,
     height: 54,
     marginTop: 6,
-    shadowColor: '#BC3838',
+    shadowColor: colors.error500,
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3,
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   logoutText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '800',
   },

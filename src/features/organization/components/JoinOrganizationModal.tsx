@@ -93,13 +93,13 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(23, 24, 43, 0.45)',
+    backgroundColor: colors.overlay,
   },
   keyboardContainer: {
     width: '100%',
   },
   sheet: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 22,
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   },
   closeIcon: {
     fontSize: 16,
-    color: '#85879A',
+    color: colors.muted,
     fontWeight: '700',
   },
   headerTitle: {
@@ -136,9 +136,9 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#E2E4EF',
+    borderColor: colors.border,
     borderRadius: 14,
     paddingHorizontal: 16,
     fontSize: 15,
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   joinBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '800',
     letterSpacing: 0.8,

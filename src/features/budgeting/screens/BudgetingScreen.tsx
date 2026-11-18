@@ -437,7 +437,7 @@ export function BudgetingScreen({
           <View style={styles.pendingLeft}>
             <View style={styles.checkIconBox}>
               <Svg width={12} height={12} viewBox="0 0 20 20">
-                <Path d="M4 10.5L8 14.5L16 6.5" stroke="#E87A35" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <Path d="M4 10.5L8 14.5L16 6.5" stroke={colors.primary} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
               </Svg>
             </View>
             <Text style={styles.pendingBannerText}>
@@ -480,7 +480,7 @@ export function BudgetingScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -499,9 +499,9 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   octBadge: {
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
@@ -533,12 +533,12 @@ const styles = StyleSheet.create({
     gap: 18,
   },
   summaryCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
-    shadowColor: '#24244A',
+    borderColor: colors.border,
+    shadowColor: colors.text,
     shadowOpacity: 0.04,
     shadowRadius: 10,
     elevation: 2,
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4FB',
+    borderBottomColor: colors.background,
   },
   statLabel: {
     fontSize: 11,
@@ -571,12 +571,12 @@ const styles = StyleSheet.create({
   revenueText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#2C9B76',
+    color: colors.success500,
   },
   expenditureText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#E45B66',
+    color: colors.error500,
   },
   progressRow: {
     flexDirection: 'row',
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     overflow: 'hidden',
   },
   progressBarFill: {
@@ -606,11 +606,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   filterCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 18,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
   },
   filterRow: {
     flexDirection: 'row',
@@ -619,9 +619,9 @@ const styles = StyleSheet.create({
   },
   filterBox: {
     flex: 1,
-    backgroundColor: '#F8F9FE',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#EDEEF7',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   searchBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 13,
     fontWeight: '800',
   },
@@ -677,23 +677,23 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   tableCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
   },
   tableHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4A3CEB',
+    backgroundColor: colors.primary,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
   thText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.surface,
   },
   tableRow: {
     flexDirection: 'row',
@@ -701,10 +701,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4FB',
+    borderBottomColor: colors.background,
   },
   tableRowAlt: {
-    backgroundColor: '#FAFBFE',
+    backgroundColor: colors.background,
   },
   tdText: {
     fontSize: 11,
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: '#F3F2FE',
+    backgroundColor: colors.primarySoft,
   },
   footerLabel: {
     fontSize: 12,
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
   addIncomeBtn: {
     height: 42,
     borderRadius: 12,
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -757,7 +757,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   addExpenseBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 12,
     fontWeight: '800',
   },
@@ -765,7 +765,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFF6EE',
+    backgroundColor: colors.warning100,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -781,7 +781,7 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     borderWidth: 1.5,
-    borderColor: '#E87A35',
+    borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
@@ -789,11 +789,11 @@ const styles = StyleSheet.create({
   pendingBannerText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#D87028',
+    color: colors.warning500,
   },
   pendingChevron: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#D87028',
+    color: colors.warning500,
   },
 });

@@ -239,7 +239,7 @@ export function CalendarScreen({
             }}
           >
             <Svg width={14} height={14} viewBox="0 0 20 20">
-              <Path d="M12 4L6 10L12 16" fill="none" stroke="#2D3142" strokeWidth={2} strokeLinecap="round" />
+              <Path d="M12 4L6 10L12 16" fill="none" stroke={colors.text} strokeWidth={2} strokeLinecap="round" />
             </Svg>
           </TouchableOpacity>
           <TouchableOpacity
@@ -252,7 +252,7 @@ export function CalendarScreen({
             }}
           >
             <Svg width={14} height={14} viewBox="0 0 20 20">
-              <Path d="M8 4L14 10L8 16" fill="none" stroke="#2D3142" strokeWidth={2} strokeLinecap="round" />
+              <Path d="M8 4L14 10L8 16" fill="none" stroke={colors.text} strokeWidth={2} strokeLinecap="round" />
             </Svg>
           </TouchableOpacity>
         </View>
@@ -365,7 +365,7 @@ export function CalendarScreen({
 
               {/* Right Chevron */}
               <Svg width={14} height={14} viewBox="0 0 20 20">
-                <Path d="M7 4L13 10L7 16" fill="none" stroke="#8A8C9F" strokeWidth={2} strokeLinecap="round" />
+                <Path d="M7 4L13 10L7 16" fill="none" stroke={colors.muted} strokeWidth={2} strokeLinecap="round" />
               </Svg>
             </TouchableOpacity>
           ))
@@ -398,8 +398,8 @@ export function CalendarScreen({
       <View style={styles.tabBar}>
         <TouchableOpacity style={styles.tabItem} onPress={() => onSwitchTab('home')}>
           <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Path d="M3 10.5L12 3L21 10.5V20C21 20.6 20.6 21 20 21H4C3.4 21 3 20.6 3 20V10.5Z" fill="none" stroke="#8A8C9F" strokeWidth={1.8} strokeLinejoin="round" />
-            <Path d="M9 21V12H15V21" fill="none" stroke="#8A8C9F" strokeWidth={1.8} />
+            <Path d="M3 10.5L12 3L21 10.5V20C21 20.6 20.6 21 20 21H4C3.4 21 3 20.6 3 20V10.5Z" fill="none" stroke={colors.muted} strokeWidth={1.8} strokeLinejoin="round" />
+            <Path d="M9 21V12H15V21" fill="none" stroke={colors.muted} strokeWidth={1.8} />
           </Svg>
           <Text style={styles.tabLabel}>Home</Text>
         </TouchableOpacity>
@@ -414,10 +414,10 @@ export function CalendarScreen({
 
         <TouchableOpacity style={styles.tabItem} onPress={() => onSwitchTab('divisions')}>
           <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Circle cx="9" cy="7" r="4" stroke="#8A8C9F" strokeWidth={1.8} fill="none" />
-            <Path d="M2 19C2 15.5 5 13.5 9 13.5C13 13.5 16 15.5 16 19" stroke="#8A8C9F" strokeWidth={1.8} fill="none" strokeLinecap="round" />
-            <Circle cx="18" cy="8" r="3" stroke="#8A8C9F" strokeWidth={1.6} fill="none" />
-            <Path d="M17 14C19 14.5 21 15.5 21 18" stroke="#8A8C9F" strokeWidth={1.6} fill="none" strokeLinecap="round" />
+            <Circle cx="9" cy="7" r="4" stroke={colors.muted} strokeWidth={1.8} fill="none" />
+            <Path d="M2 19C2 15.5 5 13.5 9 13.5C13 13.5 16 15.5 16 19" stroke={colors.muted} strokeWidth={1.8} fill="none" strokeLinecap="round" />
+            <Circle cx="18" cy="8" r="3" stroke={colors.muted} strokeWidth={1.6} fill="none" />
+            <Path d="M17 14C19 14.5 21 15.5 21 18" stroke={colors.muted} strokeWidth={1.6} fill="none" strokeLinecap="round" />
           </Svg>
           <Text style={styles.tabLabel}>Divisions</Text>
         </TouchableOpacity>
@@ -465,7 +465,7 @@ export function CalendarScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 10,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   headerTitle: {
     fontSize: 22,
@@ -495,9 +495,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -510,13 +510,13 @@ const styles = StyleSheet.create({
     paddingBottom: 110,
   },
   calendarCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     marginBottom: 20,
-    shadowColor: '#24244A',
+    shadowColor: colors.text,
     shadowOpacity: 0.04,
     shadowRadius: 10,
     elevation: 2,
@@ -531,10 +531,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 12,
     fontWeight: '700',
-    color: '#5A5D75',
+    color: colors.text,
   },
   sundayText: {
-    color: '#E45B66',
+    color: colors.error500,
   },
   datesGrid: {
     flexDirection: 'row',
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dayCircleSelected: {
-    backgroundColor: '#4436DF',
+    backgroundColor: colors.primary,
   },
   dayText: {
     fontSize: 13,
@@ -563,14 +563,14 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   dayTextSelected: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontWeight: '800',
   },
   eventDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#E87A35',
+    backgroundColor: colors.secondary,
     marginTop: 2,
   },
   legendRow: {
@@ -580,13 +580,13 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4FB',
+    borderTopColor: colors.background,
   },
   legendDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#E87A35',
+    backgroundColor: colors.secondary,
     marginRight: 6,
   },
   legendText: {
@@ -606,7 +606,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   eventCountBadge: {
-    backgroundColor: '#FFF2E8',
+    backgroundColor: colors.warning100,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -614,17 +614,17 @@ const styles = StyleSheet.create({
   eventCountBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#E87A35',
+    color: colors.primary,
     letterSpacing: 0.4,
   },
   eventCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     marginBottom: 16,
   },
   timeCol: {
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
     width: 3,
     height: 36,
     borderRadius: 1.5,
-    backgroundColor: '#E87A35',
+    backgroundColor: colors.secondary,
     marginRight: 12,
   },
   eventInfoCol: {
@@ -668,13 +668,13 @@ const styles = StyleSheet.create({
     color: colors.muted,
   },
   emptyCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     marginBottom: 16,
   },
   emptyText: {
@@ -694,7 +694,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   addEventBtnText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '800',
   },
@@ -704,9 +704,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 64,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#ECEEF7',
+    borderTopColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -720,12 +720,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tabItemActive: {
-    backgroundColor: '#F3F2FF',
+    backgroundColor: colors.primarySoft,
   },
   tabLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#8A8C9F',
+    color: colors.muted,
     marginTop: 3,
   },
   tabLabelActive: {

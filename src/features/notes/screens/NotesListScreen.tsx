@@ -37,9 +37,9 @@ const coordinatorFilterTabs: NoteAudience[] = ['Organization', 'My Division', 'P
 const memberFilterTabs: NoteAudience[] = ['Personal'];
 
 const roleBadges = {
-  executive: { label: 'Executive', type: 'executive' as const, bgColor: '#E6F4FF', textColor: '#2B88E8' },
-  coordinator: { label: 'Coordinators', type: 'coordinators' as const, bgColor: '#FFF1E6', textColor: '#E87A35' },
-  member: { label: 'Members', type: 'members' as const, bgColor: '#E8F8F2', textColor: '#2C9B76' },
+  executive: { label: 'Executive', type: 'executive' as const, bgColor: colors.secondarySoft, textColor: colors.primary },
+  coordinator: { label: 'Coordinators', type: 'coordinators' as const, bgColor: colors.secondarySoft, textColor: colors.primary },
+  member: { label: 'Members', type: 'members' as const, bgColor: colors.secondarySoft, textColor: colors.primary },
 };
 
 export function NotesListScreen({
@@ -123,15 +123,15 @@ export function NotesListScreen({
           return name ? [{
             label: name,
             type: 'division' as const,
-            bgColor: '#EEECFF',
-            textColor: '#5145E8',
+            bgColor: colors.primarySoft,
+            textColor: colors.primary,
           }] : [];
         }),
         ...(note.share_with_all_members ? [{
           label: 'All Members',
           type: 'members' as const,
-          bgColor: '#E8F8F2',
-          textColor: '#2C9B76',
+          bgColor: colors.secondarySoft,
+          textColor: colors.primary,
         }] : []),
       ];
       const audienceCategory: NoteAudience[] = ['All'];
@@ -145,7 +145,7 @@ export function NotesListScreen({
       }
       if (!badges.length) {
         audienceCategory.push('Private', 'Personal');
-        badges.push({ label: 'Private', type: 'private', bgColor: '#F0F1F7', textColor: '#5A5D75' });
+        badges.push({ label: 'Private', type: 'private', bgColor: colors.primarySoft, textColor: colors.text });
       }
 
       return {
@@ -250,8 +250,8 @@ export function NotesListScreen({
           hitSlop={8}
         >
           <Svg width={18} height={18} viewBox="0 0 20 20">
-            <Circle cx="8.5" cy="8.5" r="5.5" stroke="#2D3142" strokeWidth={1.8} fill="none" />
-            <Path d="M12.8 12.8L17 17" stroke="#2D3142" strokeWidth={1.8} strokeLinecap="round" />
+            <Circle cx="8.5" cy="8.5" r="5.5" stroke={colors.text} strokeWidth={1.8} fill="none" />
+            <Path d="M12.8 12.8L17 17" stroke={colors.text} strokeWidth={1.8} strokeLinecap="round" />
           </Svg>
         </TouchableOpacity>
       </View>
@@ -347,7 +347,7 @@ export function NotesListScreen({
                           <Path
                             d="M3 6H5H21M8 6V4C8 3.4 8.4 3 9 3H15C15.6 3 16 3.4 16 4V6M19 6V20C19 20.6 18.6 21 18 21H6C5.4 21 5 20.6 5 20V6H19Z"
                             fill="none"
-                            stroke="#85879A"
+                            stroke={colors.muted}
                             strokeWidth={1.8}
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -425,7 +425,7 @@ export function NotesListScreen({
           accessibilityLabel="Create note"
         >
           <Svg width={22} height={22} viewBox="0 0 24 24">
-            <Path d="M12 5V19M5 12H19" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" />
+            <Path d="M12 5V19M5 12H19" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" />
           </Svg>
         </TouchableOpacity>
       )}
@@ -436,7 +436,7 @@ export function NotesListScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 10,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -455,9 +455,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -476,18 +476,18 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     borderRadius: 14,
     marginHorizontal: 20,
     marginBottom: 8,
@@ -515,9 +515,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#E6E8F3',
+    borderColor: colors.border,
   },
   tabChipActive: {
     backgroundColor: colors.primary,
@@ -526,10 +526,10 @@ const styles = StyleSheet.create({
   tabChipText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#5A5D75',
+    color: colors.text,
   },
   tabChipTextActive: {
-    color: '#FFFFFF',
+    color: colors.surface,
   },
   scroll: {
     flex: 1,
@@ -543,12 +543,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   noteCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
-    shadowColor: '#24244A',
+    borderColor: colors.border,
+    shadowColor: colors.text,
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
   },
   noteBody: {
     fontSize: 12,
-    color: '#5A5D75',
+    color: colors.text,
     lineHeight: 18,
     marginBottom: 12,
   },

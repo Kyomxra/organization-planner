@@ -179,10 +179,10 @@ export function DashboardHomeScreen({
             hitSlop={8}
           >
             <Svg width={18} height={18} viewBox="0 0 24 24">
-              <Circle cx="18" cy="5" r="3" fill="none" stroke="#2D3142" strokeWidth={1.8} />
-              <Circle cx="6" cy="12" r="3" fill="none" stroke="#2D3142" strokeWidth={1.8} />
-              <Circle cx="18" cy="19" r="3" fill="none" stroke="#2D3142" strokeWidth={1.8} />
-              <Path d="M8.59 13.51L15.42 17.49M15.41 6.51L8.59 10.49" stroke="#2D3142" strokeWidth={1.8} />
+              <Circle cx="18" cy="5" r="3" fill="none" stroke={colors.text} strokeWidth={1.8} />
+              <Circle cx="6" cy="12" r="3" fill="none" stroke={colors.text} strokeWidth={1.8} />
+              <Circle cx="18" cy="19" r="3" fill="none" stroke={colors.text} strokeWidth={1.8} />
+              <Path d="M8.59 13.51L15.42 17.49M15.41 6.51L8.59 10.49" stroke={colors.text} strokeWidth={1.8} />
             </Svg>
           </TouchableOpacity>}
           <TouchableOpacity
@@ -193,7 +193,7 @@ export function DashboardHomeScreen({
             <Svg width={18} height={18} viewBox="0 0 24 24">
               <Path
                 d="M18 8A6 6 0 0 0 6 8C6 15 3 17 3 17H21S18 15 18 8"
-                stroke="#2D3142"
+                stroke={colors.text}
                 strokeWidth={1.8}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -201,7 +201,7 @@ export function DashboardHomeScreen({
               />
               <Path
                 d="M13.73 21A2 2 0 0 1 10.27 21"
-                stroke="#2D3142"
+                stroke={colors.text}
                 strokeWidth={1.8}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -221,17 +221,17 @@ export function DashboardHomeScreen({
         <View style={styles.reminderCard}>
           <Defs>
             <LinearGradient id="reminderGradient" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor="#3C30D4" />
-              <Stop offset="1" stopColor="#5547ED" />
+              <Stop offset="0" stopColor={colors.primary} />
+            <Stop offset="1" stopColor={colors.primaryDark} />
             </LinearGradient>
           </Defs>
           <View style={styles.reminderContent}>
             {/* Tag */}
             <View style={styles.reminderTagRow}>
               <Svg width={14} height={14} viewBox="0 0 24 24" style={styles.alarmIcon}>
-                <Circle cx="12" cy="13" r="8" stroke="#FFFFFF" strokeWidth={2} fill="none" />
-                <Path d="M12 9V13L15 15" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" />
-                <Path d="M5 3L2 6M19 3L22 6" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" />
+                <Circle cx="12" cy="13" r="8" stroke={colors.surface} strokeWidth={2} fill="none" />
+                <Path d="M12 9V13L15 15" stroke={colors.surface} strokeWidth={2} strokeLinecap="round" />
+                <Path d="M5 3L2 6M19 3L22 6" stroke={colors.surface} strokeWidth={2} strokeLinecap="round" />
               </Svg>
               <Text style={styles.reminderTagText}>Reminder Next Activity</Text>
             </View>
@@ -259,11 +259,11 @@ export function DashboardHomeScreen({
             onPress={() => handleQuickAccess('Rundown')}
             activeOpacity={0.75}
           >
-            <View style={[styles.iconCircle, { backgroundColor: '#EEECFF' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: colors.primarySoft }]}>
               <Svg width={22} height={22} viewBox="0 0 24 24">
                 <Path
                   d="M9 6H20M9 12H20M9 18H20M4 6V6.01M4 12V12.01M4 18V18.01"
-                  stroke="#5145E8"
+                  stroke={colors.primary}
                   strokeWidth={2.4}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -279,16 +279,16 @@ export function DashboardHomeScreen({
             onPress={() => handleQuickAccess('Notes')}
             activeOpacity={0.75}
           >
-            <View style={[styles.iconCircle, { backgroundColor: '#FFF1E6' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: colors.secondarySoft }]}>
               <Svg width={22} height={22} viewBox="0 0 24 24">
                 <Path
                   d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z"
                   fill="none"
-                  stroke="#E87A35"
+                  stroke={colors.primary}
                   strokeWidth={1.8}
                   strokeLinecap="round"
                 />
-                <Path d="M14 2V8H20M16 13H8M16 17H8M10 9H8" stroke="#E87A35" strokeWidth={1.8} strokeLinecap="round" />
+                <Path d="M14 2V8H20M16 13H8M16 17H8M10 9H8" stroke={colors.primary} strokeWidth={1.8} strokeLinecap="round" />
               </Svg>
             </View>
             <Text style={styles.quickAccessLabel}>Notes</Text>
@@ -299,10 +299,10 @@ export function DashboardHomeScreen({
             onPress={onOpenTasks}
             activeOpacity={0.75}
           >
-            <View style={[styles.iconCircle, { backgroundColor: '#E8F8F2' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: colors.secondarySoft }]}>
               <Svg width={22} height={22} viewBox="0 0 24 24">
-                <Rect x="4" y="3" width="16" height="18" rx="2" fill="none" stroke="#2C9B76" strokeWidth={1.8} />
-                <Path d="M8 8H16M8 12H16M8 16H13" stroke="#2C9B76" strokeWidth={1.8} strokeLinecap="round" />
+                <Rect x="4" y="3" width="16" height="18" rx="2" fill="none" stroke={colors.primary} strokeWidth={1.8} />
+                <Path d="M8 8H16M8 12H16M8 16H13" stroke={colors.primary} strokeWidth={1.8} strokeLinecap="round" />
               </Svg>
             </View>
             <Text style={styles.quickAccessLabel}>Tasks</Text>
@@ -329,11 +329,11 @@ export function DashboardHomeScreen({
                   <Path
                     d="M20 7H4C2.9 7 2 7.9 2 9V19C2 20.1 2.9 21 4 21H20C21.1 21 22 20.1 22 19V9C22 7.9 21.1 7 20 7Z"
                     fill="none"
-                    stroke="#E87A35"
+                    stroke={colors.primary}
                     strokeWidth={1.8}
                   />
-                  <Path d="M16 3H8C6.9 3 6 3.9 6 5V7H18V5C18 3.9 17.1 3 16 3Z" stroke="#E87A35" strokeWidth={1.8} fill="none" />
-                  <Circle cx="17" cy="14" r="1.5" fill="#E87A35" />
+                  <Path d="M16 3H8C6.9 3 6 3.9 6 5V7H18V5C18 3.9 17.1 3 16 3Z" stroke={colors.primary} strokeWidth={1.8} fill="none" />
+                  <Circle cx="17" cy="14" r="1.5" fill={colors.primary} />
                 </Svg>
               </View>
               <Text style={styles.budgetTitle}>Budgeting</Text>
@@ -389,7 +389,7 @@ export function DashboardHomeScreen({
               activeOpacity={0.85}
             >
               <Svg width={14} height={14} viewBox="0 0 20 20" style={styles.receiptIcon}>
-                <Path d="M10 4V16M4 10H16" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" />
+                <Path d="M10 4V16M4 10H16" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" />
               </Svg>
               <Text style={styles.addReceiptBtnText}>Add Expense</Text>
             </TouchableOpacity>}
@@ -402,8 +402,8 @@ export function DashboardHomeScreen({
             activeOpacity={0.75}
           >
             <Svg width={14} height={14} viewBox="0 0 24 24" style={styles.warningIcon}>
-              <Circle cx="12" cy="12" r="10" stroke="#E87A35" strokeWidth={2} fill="none" />
-              <Path d="M12 8V12M12 16H12.01" stroke="#E87A35" strokeWidth={2.4} strokeLinecap="round" />
+              <Circle cx="12" cy="12" r="10" stroke={colors.primary} strokeWidth={2} fill="none" />
+              <Path d="M12 8V12M12 16H12.01" stroke={colors.primary} strokeWidth={2.4} strokeLinecap="round" />
             </Svg>
             <Text style={styles.pendingText}>
               {budgetSummary.pending
@@ -431,7 +431,7 @@ export function DashboardHomeScreen({
               strokeWidth={1.8}
               strokeLinejoin="round"
             />
-            <Path d="M9 21V12H15V21" fill="#FFFFFF" stroke={colors.primary} strokeWidth={1.8} />
+            <Path d="M9 21V12H15V21" fill={colors.surface} stroke={colors.primary} strokeWidth={1.8} />
           </Svg>
           <Text style={[styles.tabLabel, styles.tabLabelActive]}>Home</Text>
         </TouchableOpacity>
@@ -446,8 +446,8 @@ export function DashboardHomeScreen({
           activeOpacity={0.7}
         >
           <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Rect x="3" y="4" width="18" height="18" rx="3" stroke="#8A8C9F" strokeWidth={1.8} fill="none" />
-            <Path d="M16 2V6M8 2V6M3 10H21" stroke="#8A8C9F" strokeWidth={1.8} strokeLinecap="round" />
+            <Rect x="3" y="4" width="18" height="18" rx="3" stroke={colors.muted} strokeWidth={1.8} fill="none" />
+            <Path d="M16 2V6M8 2V6M3 10H21" stroke={colors.muted} strokeWidth={1.8} strokeLinecap="round" />
           </Svg>
           <Text style={styles.tabLabel}>Calendar</Text>
         </TouchableOpacity>
@@ -462,10 +462,10 @@ export function DashboardHomeScreen({
           activeOpacity={0.7}
         >
           <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Circle cx="9" cy="7" r="4" stroke="#8A8C9F" strokeWidth={1.8} fill="none" />
-            <Path d="M2 19C2 15.5 5 13.5 9 13.5C13 13.5 16 15.5 16 19" stroke="#8A8C9F" strokeWidth={1.8} fill="none" strokeLinecap="round" />
-            <Circle cx="18" cy="8" r="3" stroke="#8A8C9F" strokeWidth={1.6} fill="none" />
-            <Path d="M17 14C19 14.5 21 15.5 21 18" stroke="#8A8C9F" strokeWidth={1.6} fill="none" strokeLinecap="round" />
+            <Circle cx="9" cy="7" r="4" stroke={colors.muted} strokeWidth={1.8} fill="none" />
+            <Path d="M2 19C2 15.5 5 13.5 9 13.5C13 13.5 16 15.5 16 19" stroke={colors.muted} strokeWidth={1.8} fill="none" strokeLinecap="round" />
+            <Circle cx="18" cy="8" r="3" stroke={colors.muted} strokeWidth={1.6} fill="none" />
+            <Path d="M17 14C19 14.5 21 15.5 21 18" stroke={colors.muted} strokeWidth={1.6} fill="none" strokeLinecap="round" />
           </Svg>
           <Text style={styles.tabLabel}>Divisions</Text>
         </TouchableOpacity>
@@ -478,7 +478,7 @@ export function DashboardHomeScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
-    backgroundColor: '#FAFBFD',
+    backgroundColor: colors.background,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -497,9 +497,9 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -524,9 +524,9 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#ECEEF7',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#E85845',
+    backgroundColor: colors.error500,
   },
   scroll: {
     flex: 1,
@@ -548,13 +548,13 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   reminderCard: {
-    backgroundColor: '#4436DF',
+    backgroundColor: colors.primary,
     borderRadius: 20,
     padding: 20,
     overflow: 'hidden',
     position: 'relative',
     marginBottom: 22,
-    shadowColor: '#3C30D4',
+    shadowColor: colors.primary,
     shadowOpacity: 0.35,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   reminderTitle: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 19,
     fontWeight: '800',
     marginBottom: 6,
@@ -633,21 +633,21 @@ const styles = StyleSheet.create({
   quickAccessLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#5C5F74',
+    color: colors.text,
   },
   disabledQuickAccessIcon: {
-    backgroundColor: '#F0F1F5',
+    backgroundColor: colors.surfaceSubtle,
   },
   disabledQuickAccessLabel: {
-    color: '#A1A3B1',
+    color: colors.muted,
   },
   budgetCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#ECEEF7',
-    shadowColor: '#24244A',
+    borderColor: colors.border,
+    shadowColor: colors.text,
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 2,
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: '#FFF2E8',
+    backgroundColor: colors.warning100,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   octBadge: {
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -706,7 +706,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4FB',
+    borderBottomColor: colors.background,
   },
   statLabel: {
     fontSize: 11,
@@ -716,12 +716,12 @@ const styles = StyleSheet.create({
   revenueText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#2C9B76',
+    color: colors.success500,
   },
   expenditureText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#E45B66',
+    color: colors.error500,
   },
   progressRow: {
     flexDirection: 'row',
@@ -742,7 +742,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     overflow: 'hidden',
     marginBottom: 16,
   },
@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 42,
     borderRadius: 12,
-    backgroundColor: '#EEECFF',
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -788,12 +788,12 @@ const styles = StyleSheet.create({
   addReceiptBtnText: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.surface,
   },
   pendingNotice: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF6EE',
+    backgroundColor: colors.warning100,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -805,12 +805,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 11,
     fontWeight: '600',
-    color: '#D87028',
+    color: colors.warning500,
   },
   pendingChevron: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#D87028',
+    color: colors.warning500,
     marginLeft: 4,
   },
   tabBar: {
@@ -819,9 +819,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 64,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#ECEEF7',
+    borderTopColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -835,12 +835,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tabItemActive: {
-    backgroundColor: '#F3F2FF',
+    backgroundColor: colors.primarySoft,
   },
   tabLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#8A8C9F',
+    color: colors.muted,
     marginTop: 3,
   },
   tabLabelActive: {

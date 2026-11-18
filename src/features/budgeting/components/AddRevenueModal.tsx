@@ -78,7 +78,7 @@ export function AddRevenueModal({ visible, onClose, onAdd }: AddRevenueModalProp
               <Text style={styles.headerTitle}>Add Revenue</Text>
               <TouchableOpacity onPress={handleSave} style={styles.saveCheckBtn} hitSlop={10}>
                 <Svg width={14} height={14} viewBox="0 0 20 20">
-                  <Path d="M4 10.5L8 14.5L16 6.5" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  <Path d="M4 10.5L8 14.5L16 6.5" stroke={colors.surface} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 </Svg>
               </TouchableOpacity>
             </View>
@@ -151,8 +151,8 @@ export function AddRevenueModal({ visible, onClose, onAdd }: AddRevenueModalProp
               {/* Disclaimer callout */}
               <View style={styles.disclaimerBox}>
                 <Svg width={18} height={18} viewBox="0 0 24 24" style={styles.infoIcon}>
-                  <Circle cx="12" cy="12" r="10" stroke="#5145E8" strokeWidth={2} fill="none" />
-                  <Path d="M9.09 9A3 3 0 0 1 15 10C15 12 12 13 12 13M12 17H12.01" stroke="#5145E8" strokeWidth={2} strokeLinecap="round" />
+                  <Circle cx="12" cy="12" r="10" stroke={colors.primary} strokeWidth={2} fill="none" />
+                  <Path d="M9.09 9A3 3 0 0 1 15 10C15 12 12 13 12 13M12 17H12.01" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" />
                 </Svg>
                 <Text style={styles.disclaimerText}>
                   Ensure that the amounts and sources of income match the organization's records.
@@ -170,14 +170,14 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(23, 24, 43, 0.45)',
+    backgroundColor: colors.overlay,
   },
   keyboardWrap: {
     width: '100%',
   },
   sheet: {
     maxHeight: '88%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
   closeIcon: {
     fontSize: 16,
-    color: '#85879A',
+    color: colors.muted,
     fontWeight: '700',
   },
   headerTitle: {
@@ -219,9 +219,9 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   formCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.2,
-    borderColor: '#EDEEF7',
+    borderColor: colors.border,
     borderRadius: 18,
     padding: 16,
   },
@@ -265,13 +265,13 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F3F4FB',
+    backgroundColor: colors.background,
     marginVertical: 14,
   },
   disclaimerBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F1FE',
+    backgroundColor: colors.primarySoft,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   disclaimerText: {
     flex: 1,
     fontSize: 11,
-    color: '#494C66',
+    color: colors.text,
     lineHeight: 16,
   },
 });
