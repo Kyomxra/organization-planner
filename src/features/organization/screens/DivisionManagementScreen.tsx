@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import {
   Modal,
@@ -24,6 +25,8 @@ interface DivisionManagementScreenProps {
   onBack: () => void;
   onSwitchTab: (tab: 'home' | 'calendar' | 'divisions') => void;
   onAssignMember: (memberId: string, divisionId: string | null) => void;
+  onAddDivision: (name: string) => Promise<boolean>;
+  onDeleteDivision: (divisionId: string) => Promise<boolean>;
 }
 
 export function DivisionManagementScreen({
@@ -34,24 +37,40 @@ export function DivisionManagementScreen({
   onBack,
   onSwitchTab,
   onAssignMember,
+  onAddDivision,
+  onDeleteDivision,
 }: DivisionManagementScreenProps) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedMember, setSelectedMember] = useState<DivisionMember | null>(null);
 
+  const [isAddDivisionVisible, setIsAddDivisionVisible] = useState(false);
+  const [newDivisionName, setNewDivisionName] = useState('');
+  const [isAddingDivision, setIsAddingDivision] = useState(false);
+  const [addDivisionError, setAddDivisionError] = useState('');
+
+  const [selectedDivision, setSelectedDivision] = useState<Division | null>(null);
+  const [isDeletingDivision, setIsDeletingDivision] = useState(false);
+  const [deleteDivisionError, setDeleteDivisionError] = useState('');
+
   const unassignedCount = members.filter((member) => !member.divisionId).length;
+
   const filteredMembers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
+
     return members.filter((member) => {
       const matchesSearch = !query
         || member.name.toLowerCase().includes(query)
         || member.email.toLowerCase().includes(query);
+
       const matchesFilter = activeFilter === 'all'
         || (activeFilter === 'unassigned'
           ? !member.divisionId
           : member.divisionId === activeFilter);
+
       return matchesSearch && matchesFilter;
     });
   }, [activeFilter, members, searchQuery]);
@@ -60,8 +79,85 @@ export function DivisionManagementScreen({
 
   const assignToDivision = (divisionId: string | null) => {
     if (!selectedMember) return;
+
     onAssignMember(selectedMember.id, divisionId);
     closeAssignment();
+  };
+
+  const closeAddDivision = () => {
+    if (isAddingDivision) return;
+
+    setIsAddDivisionVisible(false);
+    setNewDivisionName('');
+    setAddDivisionError('');
+  };
+
+  const submitNewDivision = async () => {
+    const name = newDivisionName.trim();
+
+    if (!name) {
+      setAddDivisionError('Division name is required.');
+      return;
+    }
+
+    const alreadyExists = divisions.some(
+      (division) => division.name.trim().toLowerCase() === name.toLowerCase(),
+    );
+
+    if (alreadyExists) {
+      setAddDivisionError('This division already exists.');
+      return;
+    }
+
+    setIsAddingDivision(true);
+    setAddDivisionError('');
+
+    try {
+      const success = await onAddDivision(name);
+
+      if (success) {
+        setNewDivisionName('');
+        setIsAddDivisionVisible(false);
+        setActiveFilter('all');
+      }
+    } catch {
+      setAddDivisionError('Something went wrong. Please try again.');
+    } finally {
+      setIsAddingDivision(false);
+    }
+  };
+
+  const closeDeleteDivision = () => {
+    if (isDeletingDivision) return;
+
+    setSelectedDivision(null);
+    setDeleteDivisionError('');
+  };
+
+  const submitDeleteDivision = async () => {
+    if (!selectedDivision || isDeletingDivision) return;
+
+    setIsDeletingDivision(true);
+    setDeleteDivisionError('');
+
+    try {
+      const success = await onDeleteDivision(selectedDivision.id);
+
+      if (success) {
+        if (activeFilter === selectedDivision.id) {
+          setActiveFilter('all');
+        }
+
+        setSelectedDivision(null);
+        setDeleteDivisionError('');
+      } else {
+        setDeleteDivisionError('Could not delete this division. Please try again.');
+      }
+    } catch {
+      setDeleteDivisionError('Something went wrong. Please try again.');
+    } finally {
+      setIsDeletingDivision(false);
+    }
   };
 
   return (
@@ -75,15 +171,28 @@ export function DivisionManagementScreen({
           accessibilityLabel="Go back"
         >
           <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Path d="M15 18L9 12L15 6" fill="none" stroke={colors.text} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+            <Path
+              d="M15 18L9 12L15 6"
+              fill="none"
+              stroke={colors.text}
+              strokeWidth={2.4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </Svg>
         </TouchableOpacity>
+
         <View style={styles.headerCopy}>
-          <Text style={styles.headerTitle}>{readOnly ? 'Divisions & Members' : 'Division Management'}</Text>
+          <Text style={styles.headerTitle}>
+            {readOnly ? 'Divisions & Members' : 'Division Management'}
+          </Text>
           <Text style={styles.headerSubtitle}>{organizationName}</Text>
         </View>
+
         <View style={styles.executiveBadge}>
-          <Text style={styles.executiveBadgeText}>{readOnly ? 'VIEW ONLY' : 'EXECUTIVE'}</Text>
+          <Text style={styles.executiveBadgeText}>
+            {readOnly ? 'VIEW ONLY' : 'EXECUTIVE'}
+          </Text>
         </View>
       </View>
 
@@ -96,15 +205,28 @@ export function DivisionManagementScreen({
         <View style={styles.summaryCard}>
           <View style={styles.summaryIcon}>
             <Svg width={22} height={22} viewBox="0 0 24 24">
-              <Path d="M16 21V19C16 16.8 14.2 15 12 15H6C3.8 15 2 16.8 2 19V21M9 11C11.2 11 13 9.2 13 7S11.2 3 9 3 5 4.8 5 7 6.8 11 9 11ZM22 21V19C22 17.2 20.8 15.7 19 15.2M16 3.2C17.8 3.7 19 5.2 19 7S17.8 10.3 16 10.8" fill="none" stroke={colors.primary} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+              <Path
+                d="M16 21V19C16 16.8 14.2 15 12 15H6C3.8 15 2 16.8 2 19V21M9 11C11.2 11 13 9.2 13 7S11.2 3 9 3 5 4.8 5 7 6.8 11 9 11ZM22 21V19C22 17.2 20.8 15.7 19 15.2M16 3.2C17.8 3.7 19 5.2 19 7S17.8 10.3 16 10.8"
+                fill="none"
+                stroke={colors.primary}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </Svg>
           </View>
+
           <View style={styles.summaryCopy}>
-            <Text style={styles.summaryTitle}>{readOnly ? 'Organization divisions' : 'Organize your team'}</Text>
+            <Text style={styles.summaryTitle}>
+              {readOnly ? 'Organization divisions' : 'Organize your team'}
+            </Text>
             <Text style={styles.summarySubtitle}>
-              {readOnly ? 'View divisions and the members assigned to each team.' : 'Assign members to a division or move them anytime.'}
+              {readOnly
+                ? 'View divisions and the members assigned to each team.'
+                : 'Assign members to a division or move them anytime.'}
             </Text>
           </View>
+
           <View style={styles.summaryCount}>
             <Text style={styles.summaryCountValue}>{members.length}</Text>
             <Text style={styles.summaryCountLabel}>members</Text>
@@ -113,67 +235,160 @@ export function DivisionManagementScreen({
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Your Divisions</Text>
-          <Text style={styles.sectionMeta}>{divisions.length} divisions</Text>
+
+          <View style={styles.divisionHeaderActions}>
+            <Text style={styles.sectionMeta}>
+              {divisions.length} divisions
+            </Text>
+
+            {!readOnly && (
+              <TouchableOpacity
+                style={styles.addDivisionButton}
+                onPress={() => {
+                  setNewDivisionName('');
+                  setAddDivisionError('');
+                  setIsAddDivisionVisible(true);
+                }}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Add division"
+              >
+                <Text style={styles.addDivisionButtonText}>+ Add Division</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.divisionCards}
         >
           {divisions.map((division) => {
-            const count = members.filter((member) => member.divisionId === division.id).length;
+            const count = members.filter(
+              (member) => member.divisionId === division.id,
+            ).length;
+
             const isSelected = activeFilter === division.id;
+
             return (
-              <TouchableOpacity
+              <View
                 key={division.id}
                 style={[
                   styles.divisionCard,
                   isSelected && { borderColor: division.color },
                 ]}
-                onPress={() => setActiveFilter(isSelected ? 'all' : division.id)}
-                activeOpacity={0.8}
               >
-                <View style={[styles.divisionDot, { backgroundColor: division.color }]} />
-                <Text style={styles.divisionName} numberOfLines={1}>{division.name}</Text>
-                <Text style={styles.divisionMemberCount}>
-                  {count} {count === 1 ? 'member' : 'members'}
-                </Text>
-                <View style={styles.divisionProgressTrack}>
+                <TouchableOpacity
+                  style={styles.divisionCardContent}
+                  onPress={() => setActiveFilter(isSelected ? 'all' : division.id)}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Filter members in ${division.name}`}
+                >
                   <View
                     style={[
-                      styles.divisionProgress,
-                      {
-                        width: `${members.length ? Math.max((count / members.length) * 100, 8) : 0}%`,
-                        backgroundColor: division.color,
-                      },
+                      styles.divisionDot,
+                      { backgroundColor: division.color },
                     ]}
                   />
-                </View>
-              </TouchableOpacity>
+
+                  <Text style={styles.divisionName} numberOfLines={1}>
+                    {division.name}
+                  </Text>
+
+                  <Text style={styles.divisionMemberCount}>
+                    {count} {count === 1 ? 'member' : 'members'}
+                  </Text>
+
+                  <View style={styles.divisionProgressTrack}>
+                    <View
+                      style={[
+                        styles.divisionProgress,
+                        {
+                          width: `${members.length
+                            ? Math.max((count / members.length) * 100, 8)
+                            : 0}%`,
+                          backgroundColor: division.color,
+                        },
+                      ]}
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {!readOnly && (
+                  <TouchableOpacity
+                    style={styles.deleteDivisionButton}
+                    onPress={() => {
+                      setSelectedDivision(division);
+                      setDeleteDivisionError('');
+                    }}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Delete ${division.name}`}
+                  >
+                    <Text style={styles.deleteDivisionButtonText}>Delete</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             );
           })}
+
+          {divisions.length === 0 && (
+            <View style={styles.emptyDivisionCard}>
+              <Text style={styles.emptyDivisionText}>
+                No divisions have been created yet.
+              </Text>
+            </View>
+          )}
         </ScrollView>
 
         <View style={styles.sectionHeader}>
           <View>
             <Text style={styles.sectionTitle}>Members</Text>
-            <Text style={styles.memberSectionSubtitle}>Manage division assignments</Text>
+            <Text style={styles.memberSectionSubtitle}>
+              Manage division assignments
+            </Text>
           </View>
+
           <TouchableOpacity
-            style={[styles.unassignedFilter, activeFilter === 'unassigned' && styles.unassignedFilterActive]}
-            onPress={() => setActiveFilter(activeFilter === 'unassigned' ? 'all' : 'unassigned')}
+            style={[
+              styles.unassignedFilter,
+              activeFilter === 'unassigned' && styles.unassignedFilterActive,
+            ]}
+            onPress={() => setActiveFilter(
+              activeFilter === 'unassigned' ? 'all' : 'unassigned',
+            )}
             activeOpacity={0.8}
           >
-            <Text style={[styles.unassignedFilterText, activeFilter === 'unassigned' && styles.unassignedFilterTextActive]}>
+            <Text
+              style={[
+                styles.unassignedFilterText,
+                activeFilter === 'unassigned'
+                  && styles.unassignedFilterTextActive,
+              ]}
+            >
               {unassignedCount} unassigned
             </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.searchBar}>
-          <Svg width={18} height={18} viewBox="0 0 24 24" style={styles.searchIcon}>
-            <Path d="M20 20L16.3 16.3M18 10.5A7.5 7.5 0 1 1 3 10.5A7.5 7.5 0 0 1 18 10.5Z" fill="none" stroke={colors.muted} strokeWidth={1.8} strokeLinecap="round" />
+          <Svg
+            width={18}
+            height={18}
+            viewBox="0 0 24 24"
+            style={styles.searchIcon}
+          >
+            <Path
+              d="M20 20L16.3 16.3M18 10.5A7.5 7.5 0 1 1 3 10.5A7.5 7.5 0 0 1 18 10.5Z"
+              fill="none"
+              stroke={colors.muted}
+              strokeWidth={1.8}
+              strokeLinecap="round"
+            />
           </Svg>
+
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -182,8 +397,12 @@ export function DivisionManagementScreen({
             style={styles.searchInput}
             accessibilityLabel="Search members"
           />
+
           {!!searchQuery && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={8}>
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              hitSlop={8}
+            >
               <Text style={styles.clearSearch}>×</Text>
             </TouchableOpacity>
           )}
@@ -191,39 +410,93 @@ export function DivisionManagementScreen({
 
         <View style={styles.memberList}>
           {filteredMembers.map((member) => {
-            const division = divisions.find((item) => item.id === member.divisionId);
-            const initials = member.name.split(' ').map((part) => part[0]).slice(0, 2).join('');
+            const division = divisions.find(
+              (item) => item.id === member.divisionId,
+            );
+
+            const initials = member.name
+              .split(' ')
+              .map((part) => part[0])
+              .slice(0, 2)
+              .join('');
+
             return (
               <View key={member.id} style={styles.memberCard}>
-                <View style={[styles.avatar, { backgroundColor: division?.backgroundColor ?? colors.primarySoft }]}>
-                  <Text style={[styles.avatarText, { color: division?.color ?? colors.text }]}>{initials}</Text>
+                <View
+                  style={[
+                    styles.avatar,
+                    {
+                      backgroundColor:
+                        division?.backgroundColor ?? colors.primarySoft,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.avatarText,
+                      { color: division?.color ?? colors.text },
+                    ]}
+                  >
+                    {initials}
+                  </Text>
                 </View>
+
                 <View style={styles.memberInfo}>
                   <View style={styles.memberNameRow}>
-                    <Text style={styles.memberName} numberOfLines={1}>{member.name}</Text>
+                    <Text style={styles.memberName} numberOfLines={1}>
+                      {member.name}
+                    </Text>
+
                     {member.role === 'Coordinator' && (
                       <View style={styles.coordinatorBadge}>
-                        <Text style={styles.coordinatorBadgeText}>COORDINATOR</Text>
+                        <Text style={styles.coordinatorBadgeText}>
+                          COORDINATOR
+                        </Text>
                       </View>
                     )}
                   </View>
-                  <Text style={styles.memberEmail} numberOfLines={1}>{member.email}</Text>
+
+                  <Text style={styles.memberEmail} numberOfLines={1}>
+                    {member.email}
+                  </Text>
+
                   <View style={styles.assignmentRow}>
-                    <View style={[styles.assignmentDot, { backgroundColor: division?.color ?? colors.muted }]} />
-                    <Text style={[styles.assignmentText, !division && styles.unassignedText]}>
+                    <View
+                      style={[
+                        styles.assignmentDot,
+                        {
+                          backgroundColor: division?.color ?? colors.muted,
+                        },
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.assignmentText,
+                        !division && styles.unassignedText,
+                      ]}
+                    >
                       {division?.name ?? 'Not assigned'}
                     </Text>
                   </View>
                 </View>
+
                 {!readOnly && (
                   <TouchableOpacity
-                    style={[styles.assignButton, !division && styles.assignButtonPrimary]}
+                    style={[
+                      styles.assignButton,
+                      !division && styles.assignButtonPrimary,
+                    ]}
                     onPress={() => setSelectedMember(member)}
                     activeOpacity={0.8}
                     accessibilityRole="button"
                     accessibilityLabel={`${division ? 'Change division for' : 'Assign'} ${member.name}`}
                   >
-                    <Text style={[styles.assignButtonText, !division && styles.assignButtonTextPrimary]}>
+                    <Text
+                      style={[
+                        styles.assignButtonText,
+                        !division && styles.assignButtonTextPrimary,
+                      ]}
+                    >
                       {division ? 'Change' : 'Assign'}
                     </Text>
                   </TouchableOpacity>
@@ -231,71 +504,316 @@ export function DivisionManagementScreen({
               </View>
             );
           })}
+
           {filteredMembers.length === 0 && (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>No members found</Text>
-              <Text style={styles.emptySubtitle}>Try another name or division filter.</Text>
+              <Text style={styles.emptySubtitle}>
+                Try another name or division filter.
+              </Text>
             </View>
           )}
         </View>
       </ScrollView>
 
-      {!readOnly && <Modal
-        visible={!!selectedMember}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        navigationBarTranslucent
-        onRequestClose={closeAssignment}
-      >
-        <View style={styles.modalBackdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={closeAssignment} />
-          <View style={styles.assignmentSheet}>
-            <View style={styles.modalHandle} />
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalTitle}>Assign to a division</Text>
-                <Text style={styles.modalSubtitle}>{selectedMember?.name}</Text>
+      {!readOnly && (
+        <Modal
+          visible={!!selectedMember}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          navigationBarTranslucent
+          onRequestClose={closeAssignment}
+        >
+          <View style={styles.modalBackdrop}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={closeAssignment}
+            />
+
+            <View style={styles.assignmentSheet}>
+              <View style={styles.modalHandle} />
+
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalTitle}>Assign to a division</Text>
+                  <Text style={styles.modalSubtitle}>
+                    {selectedMember?.name}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={closeAssignment}
+                  hitSlop={10}
+                  style={styles.modalClose}
+                >
+                  <Text style={styles.modalCloseText}>×</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={closeAssignment} hitSlop={10} style={styles.modalClose}>
-                <Text style={styles.modalCloseText}>×</Text>
-              </TouchableOpacity>
+
+              <Text style={styles.modalHint}>
+                Choose where this member will contribute.
+              </Text>
+
+              <View style={styles.divisionOptions}>
+                {divisions.map((division) => {
+                  const isCurrentDivision =
+                    selectedMember?.divisionId === division.id;
+
+                  return (
+                    <TouchableOpacity
+                      key={division.id}
+                      style={[
+                        styles.divisionOption,
+                        isCurrentDivision && styles.divisionOptionSelected,
+                      ]}
+                      onPress={() => assignToDivision(division.id)}
+                      activeOpacity={0.8}
+                    >
+                      <View
+                        style={[
+                          styles.optionIcon,
+                          { backgroundColor: division.backgroundColor },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.optionDot,
+                            { backgroundColor: division.color },
+                          ]}
+                        />
+                      </View>
+
+                      <Text style={styles.divisionOptionName}>
+                        {division.name}
+                      </Text>
+
+                      {isCurrentDivision ? (
+                        <Text
+                          style={[
+                            styles.currentLabel,
+                            { color: division.color },
+                          ]}
+                        >
+                          CURRENT
+                        </Text>
+                      ) : (
+                        <Svg width={18} height={18} viewBox="0 0 24 24">
+                          <Path
+                            d="M5 12H19M12 5L19 12L12 19"
+                            fill="none"
+                            stroke={colors.muted}
+                            strokeWidth={1.8}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </Svg>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {!!selectedMember?.divisionId && (
+                <TouchableOpacity
+                  style={styles.unassignButton}
+                  onPress={() => assignToDivision(null)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.unassignButtonText}>
+                    Remove from current division
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
-            <Text style={styles.modalHint}>Choose where this member will contribute.</Text>
-            <View style={styles.divisionOptions}>
-              {divisions.map((division) => {
-                const isCurrentDivision = selectedMember?.divisionId === division.id;
-                return (
-                  <TouchableOpacity
-                    key={division.id}
-                    style={[styles.divisionOption, isCurrentDivision && styles.divisionOptionSelected]}
-                    onPress={() => assignToDivision(division.id)}
-                    activeOpacity={0.8}
-                  >
-                    <View style={[styles.optionIcon, { backgroundColor: division.backgroundColor }]}>
-                      <View style={[styles.optionDot, { backgroundColor: division.color }]} />
-                    </View>
-                    <Text style={styles.divisionOptionName}>{division.name}</Text>
-                    {isCurrentDivision ? (
-                      <Text style={[styles.currentLabel, { color: division.color }]}>CURRENT</Text>
-                    ) : (
-                      <Svg width={18} height={18} viewBox="0 0 24 24">
-                        <Path d="M5 12H19M12 5L19 12L12 19" fill="none" stroke={colors.muted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-                      </Svg>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            {!!selectedMember?.divisionId && (
-              <TouchableOpacity style={styles.unassignButton} onPress={() => assignToDivision(null)} activeOpacity={0.8}>
-                <Text style={styles.unassignButtonText}>Remove from current division</Text>
-              </TouchableOpacity>
-            )}
           </View>
-        </View>
-      </Modal>}
-      <OrganizationBottomTabBar activeTab="divisions" onSelect={onSwitchTab} />
+        </Modal>
+      )}
+
+      {!readOnly && (
+        <Modal
+          visible={isAddDivisionVisible}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          navigationBarTranslucent
+          onRequestClose={closeAddDivision}
+        >
+          <View style={styles.modalBackdrop}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={closeAddDivision}
+            />
+
+            <View style={styles.addDivisionSheet}>
+              <View style={styles.modalHandle} />
+
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalTitle}>Add a Division</Text>
+                  <Text style={styles.modalSubtitle}>
+                    Create a new division for your organization.
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={closeAddDivision}
+                  hitSlop={10}
+                  style={styles.modalClose}
+                  disabled={isAddingDivision}
+                >
+                  <Text style={styles.modalCloseText}>×</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.addDivisionLabel}>Division Name</Text>
+
+              <TextInput
+                value={newDivisionName}
+                onChangeText={(value) => {
+                  setNewDivisionName(value);
+                  setAddDivisionError('');
+                }}
+                placeholder="Enter division name"
+                placeholderTextColor={colors.placeholder}
+                style={styles.addDivisionInput}
+                autoCapitalize="words"
+                maxLength={50}
+                editable={!isAddingDivision}
+              />
+
+              {!!addDivisionError && (
+                <Text style={styles.addDivisionError}>
+                  {addDivisionError}
+                </Text>
+              )}
+
+              <View style={styles.addDivisionActions}>
+                <TouchableOpacity
+                  style={styles.addDivisionCancelButton}
+                  onPress={closeAddDivision}
+                  disabled={isAddingDivision}
+                >
+                  <Text style={styles.addDivisionCancelText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.addDivisionSaveButton,
+                    isAddingDivision && styles.addDivisionSaveButtonDisabled,
+                  ]}
+                  onPress={() => void submitNewDivision()}
+                  disabled={isAddingDivision}
+                >
+                  <Text style={styles.addDivisionSaveText}>
+                    {isAddingDivision ? 'Adding...' : 'Add Division'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {!readOnly && (
+        <Modal
+          visible={!!selectedDivision}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          navigationBarTranslucent
+          onRequestClose={closeDeleteDivision}
+        >
+          <View style={styles.modalBackdrop}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={closeDeleteDivision}
+            />
+
+            <View style={styles.deleteDivisionSheet}>
+              <View style={styles.modalHandle} />
+
+              <View style={styles.modalHeader}>
+                <View style={styles.deleteModalTitleContainer}>
+                  <Text style={styles.modalTitle}>Delete Division?</Text>
+                  <Text style={styles.modalSubtitle}>
+                    {selectedDivision?.name}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={closeDeleteDivision}
+                  hitSlop={10}
+                  style={styles.modalClose}
+                  disabled={isDeletingDivision}
+                >
+                  <Text style={styles.modalCloseText}>×</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.deleteDivisionDescription}>
+                Are you sure you want to delete this division? This action
+                cannot be undone.
+              </Text>
+
+              <View style={styles.deleteDivisionInfo}>
+                <Text style={styles.deleteDivisionInfoTitle}>
+                  What will happen:
+                </Text>
+
+                <View style={styles.deleteDivisionInfoItem}>
+                  <View style={styles.deleteDivisionBullet} />
+                  <Text style={styles.deleteDivisionInfoText}>
+                    Members in this division will become Not assigned.
+                  </Text>
+                </View>
+
+                <View style={styles.deleteDivisionInfoItem}>
+                  <View style={styles.deleteDivisionBullet} />
+                  <Text style={styles.deleteDivisionInfoText}>
+                    Existing events will remain saved but will no longer be
+                    linked to this division.
+                  </Text>
+                </View>
+              </View>
+
+              {!!deleteDivisionError && (
+                <Text style={styles.deleteDivisionError}>
+                  {deleteDivisionError}
+                </Text>
+              )}
+
+              <View style={styles.deleteDivisionActions}>
+                <TouchableOpacity
+                  style={styles.deleteCancelButton}
+                  onPress={closeDeleteDivision}
+                  disabled={isDeletingDivision}
+                >
+                  <Text style={styles.deleteCancelText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.deleteConfirmButton,
+                    isDeletingDivision && styles.deleteConfirmButtonDisabled,
+                  ]}
+                  onPress={() => void submitDeleteDivision()}
+                  disabled={isDeletingDivision}
+                >
+                  <Text style={styles.deleteConfirmText}>
+                    {isDeletingDivision ? 'Deleting...' : 'Delete Division'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      <OrganizationBottomTabBar
+        activeTab="divisions"
+        onSelect={onSwitchTab}
+      />
     </View>
   );
 }
@@ -420,6 +938,22 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '700',
     color: colors.muted,
   },
+  divisionHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  addDivisionButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 9,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+  },
+  addDivisionButtonText: {
+    color: colors.surface,
+    fontSize: 10,
+    fontWeight: '800',
+  },
   divisionCards: {
     gap: 10,
     paddingBottom: 3,
@@ -432,6 +966,34 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: 13,
+  },
+  divisionCardContent: {
+    width: '100%',
+  },
+  deleteDivisionButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    marginTop: 12,
+    paddingTop: 9,
+  },
+  deleteDivisionButtonText: {
+    color: colors.error500,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  emptyDivisionCard: {
+    width: 220,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  emptyDivisionText: {
+    color: colors.muted,
+    fontSize: 11,
   },
   divisionDot: {
     width: 9,
@@ -729,6 +1291,173 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   unassignButtonText: {
     color: colors.error500,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  addDivisionSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  addDivisionLabel: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: '800',
+    marginTop: 22,
+    marginBottom: 8,
+  },
+  addDivisionInput: {
+    height: 46,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 13,
+    color: colors.text,
+    backgroundColor: colors.background,
+    fontSize: 12,
+  },
+  addDivisionError: {
+    color: colors.error500,
+    fontSize: 10,
+    marginTop: 7,
+  },
+  addDivisionActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 20,
+  },
+  addDivisionCancelButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addDivisionSaveButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 11,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addDivisionSaveButtonDisabled: {
+    opacity: 0.6,
+  },
+  addDivisionCancelText: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  addDivisionSaveText: {
+    color: colors.surface,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  deleteDivisionSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  deleteModalTitleContainer: {
+    flex: 1,
+  },
+  deleteDivisionDescription: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 18,
+  },
+  deleteDivisionInfo: {
+    backgroundColor: colors.background,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 13,
+    marginTop: 15,
+  },
+  deleteDivisionInfoTitle: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: '800',
+    marginBottom: 10,
+  },
+  deleteDivisionInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 5,
+  },
+  deleteDivisionBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+    marginTop: 5,
+    marginRight: 8,
+  },
+  deleteDivisionInfoText: {
+    flex: 1,
+    color: colors.muted,
+    fontSize: 10,
+    lineHeight: 16,
+  },
+  deleteDivisionError: {
+    color: colors.error500,
+    fontSize: 10,
+    marginTop: 10,
+  },
+  deleteDivisionActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 20,
+  },
+  deleteCancelButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteConfirmButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 11,
+    backgroundColor: colors.error500,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteConfirmButtonDisabled: {
+    opacity: 0.6,
+  },
+  deleteCancelText: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  deleteConfirmText: {
+    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '800',
   },

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -55,7 +56,11 @@ type OrganizationMemberRow = {
   role: string;
 };
 
-type ProfileRow = { id: string; full_name: string | null; email: string | null };
+type ProfileRow = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+};
 
 type ActiveView =
   | 'org-list'
@@ -89,6 +94,7 @@ export function RootFlow() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const auth = useAuthFlow();
   const org = useOrganizationFlow();
+
   const [activeView, setActiveView] = useState<ActiveView>('org-list');
   const [isInvitesModalVisible, setIsInvitesModalVisible] = useState(false);
   const [selectedRundown, setSelectedRundown] = useState<Rundown | null>(null);
@@ -96,16 +102,20 @@ export function RootFlow() {
   const [selectedTask, setSelectedTask] = useState<DivisionTask | null>(null);
   const [editingNote, setEditingNote] = useState<NoteItem | null>(null);
   const [assignedDivisionName, setAssignedDivisionName] = useState('');
+
   const selectedOrg = org.selectedOrg;
+
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [divisionMembers, setDivisionMembers] = useState<DivisionMember[]>([]);
 
   const navigateTo = (view: ActiveView) => {
     setActiveView(view);
   };
+
   const isCoordinator = selectedOrg?.role === 'Coordinator';
   const isMember = selectedOrg?.role === 'Participant';
   const isExecutive = selectedOrg?.role === 'Executive';
+
   const noteRole = selectedOrg?.role === 'Coordinator'
     ? 'coordinator'
     : selectedOrg?.role === 'Participant'
@@ -119,21 +129,29 @@ export function RootFlow() {
     }
 
     let active = true;
+
     const loadAssignedDivision = async () => {
       const { data, error } = await supabase
         .from('divisions')
         .select('name')
         .eq('id', selectedOrg.divisionId)
         .maybeSingle();
+
       if (!active) return;
+
       if (error) {
         showMessage('Could not load assigned division', error.message);
         return;
       }
+
       setAssignedDivisionName(data?.name ?? '');
     };
+
     void loadAssignedDivision();
-    return () => { active = false; };
+
+    return () => {
+      active = false;
+    };
   }, [selectedOrg?.divisionId]);
 
   useEffect(() => {
@@ -141,34 +159,42 @@ export function RootFlow() {
       setActiveView('dashboard');
       return;
     }
+
     if (activeView === 'coordinator-members' || activeView === 'member-division') {
       setActiveView('divisions');
       return;
     }
+
     if (activeView === 'coordinator-tasks' || activeView === 'member-tasks') {
       setActiveView('organization-tasks');
       return;
     }
+
     if (activeView === 'coordinator-task-edit' && !isCoordinator && !isExecutive) {
       setActiveView('dashboard');
       return;
     }
+
     if (activeView === 'member-task-details' && !isMember && !isCoordinator) {
       setActiveView('dashboard');
       return;
     }
+
     if (activeView === 'budgeting-add-expense' && isMember) {
       setActiveView('budgeting');
       return;
     }
+
     if (activeView === 'rundown-select' && !isExecutive) {
       setActiveView('calendar');
       return;
     }
+
     if (activeView === 'rundown-edit' && (isMember || (isCoordinator && selectedRundown))) {
       setActiveView(isCoordinator && selectedRundown ? 'rundown-details' : 'rundown-list');
       return;
     }
+
     if (activeView === 'notes-new' && isMember) {
       setActiveView('notes-list');
     }
@@ -178,6 +204,7 @@ export function RootFlow() {
     if (activeView !== 'divisions' || !selectedOrg) return;
 
     let active = true;
+
     const loadDivisionData = async () => {
       const [divisionResult, memberResult] = await Promise.all([
         supabase
@@ -185,6 +212,7 @@ export function RootFlow() {
           .select('id, name')
           .eq('organization_id', selectedOrg.id)
           .order('name'),
+
         supabase
           .from('organization_members')
           .select('id, user_id, division_id, role')
@@ -193,57 +221,87 @@ export function RootFlow() {
       ]);
 
       if (!active) return;
+
       if (divisionResult.error || memberResult.error) {
         const error = divisionResult.error ?? memberResult.error;
-        showMessage('Could not load divisions', error?.message ?? 'Could not load organization data.');
+
+        showMessage(
+          'Could not load divisions',
+          error?.message ?? 'Could not load organization data.',
+        );
+
         return;
       }
 
       const memberRows = (memberResult.data ?? []) as unknown as OrganizationMemberRow[];
       const divisionRows = (divisionResult.data ?? []) as unknown as DivisionRow[];
-      const memberIds = memberRows.map((member: OrganizationMemberRow) => member.user_id);
+
+      const memberIds = memberRows.map(
+        (member: OrganizationMemberRow) => member.user_id,
+      );
+
       const { data: profiles, error: profilesError } = memberIds.length
-        ? await supabase.from('profiles').select('id, full_name, email').in('id', memberIds)
+        ? await supabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', memberIds)
         : { data: [], error: null };
 
       if (!active) return;
+
       if (profilesError) {
         showMessage('Could not load members', profilesError.message);
         return;
       }
 
       const profileRows = (profiles ?? []) as unknown as ProfileRow[];
+
       const profilesById = new Map<string, ProfileRow>(
-        profileRows.map((profile: ProfileRow): [string, ProfileRow] => [profile.id, profile]),
+        profileRows.map(
+          (profile: ProfileRow): [string, ProfileRow] => [profile.id, profile],
+        ),
       );
+
       const divisionPalette = [colors.primary, colors.primaryDark];
-      setDivisions(divisionRows.map((division: DivisionRow, index: number) => ({
-        id: division.id,
-        name: division.name,
-        color: divisionPalette[index % divisionPalette.length],
-        backgroundColor: index % 2 === 0 ? colors.primarySoft : colors.secondarySoft,
-      })));
-      setDivisionMembers(memberRows.map((member: OrganizationMemberRow) => {
-        const profile = profilesById.get(member.user_id);
-        return {
-          id: member.id,
-          name: profile?.full_name || profile?.email || 'Member',
-          email: profile?.email ?? '',
-          role: member.role === 'coordinator'
-            ? 'Coordinator'
-            : member.role === 'executive'
-              ? 'Executive'
-              : 'Member',
-          divisionId: member.division_id,
-        };
-      }));
+
+      setDivisions(
+        divisionRows.map((division: DivisionRow, index: number) => ({
+          id: division.id,
+          name: division.name,
+          color: divisionPalette[index % divisionPalette.length],
+          backgroundColor: index % 2 === 0
+            ? colors.primarySoft
+            : colors.secondarySoft,
+        })),
+      );
+
+      setDivisionMembers(
+        memberRows.map((member: OrganizationMemberRow) => {
+          const profile = profilesById.get(member.user_id);
+
+          return {
+            id: member.id,
+            name: profile?.full_name || profile?.email || 'Member',
+            email: profile?.email ?? '',
+            role: member.role === 'coordinator'
+              ? 'Coordinator'
+              : member.role === 'executive'
+                ? 'Executive'
+                : 'Member',
+            divisionId: member.division_id,
+          };
+        }),
+      );
     };
 
     void loadDivisionData().catch((error: unknown) => {
       if (!active) return;
+
       showMessage(
         'Could not load divisions',
-        error instanceof Error ? error.message : 'Could not connect to Supabase.',
+        error instanceof Error
+          ? error.message
+          : 'Could not connect to Supabase.',
       );
     });
 
@@ -308,6 +366,7 @@ export function RootFlow() {
           onClose={() => auth.setPasswordSheet('none')}
           onFinish={auth.handleFinishReset}
         />
+
         <ToastHost />
         <ConfirmationHost />
       </View>
@@ -322,7 +381,9 @@ export function RootFlow() {
           userName={auth.userName}
           isLoading={org.isLoadingOrganizations}
           loadError={org.organizationLoadError}
-          onRetry={() => { void org.reloadOrganizations(); }}
+          onRetry={() => {
+            void org.reloadOrganizations();
+          }}
           showJoinedToast={org.showJoinedToast}
           onDismissToast={() => org.setShowJoinedToast(false)}
           onSelectOrganization={(selected) => {
@@ -369,19 +430,26 @@ export function RootFlow() {
           organizationId={selectedOrg.id}
           divisionId={null}
           canCreateTask={isCoordinator || isExecutive}
-          canDeleteTask={(task) => isExecutive || (isCoordinator && task.division_id === selectedOrg.divisionId)}
+          canDeleteTask={(task) =>
+            isExecutive || (isCoordinator && task.division_id === selectedOrg.divisionId)
+          }
           screenTitle="Tasks"
           onBack={() => setActiveView('dashboard')}
           onCreateTask={isCoordinator || isExecutive ? () => {
             if (isCoordinator && !selectedOrg.divisionId) {
-              showMessage('No division assigned', 'Ask an executive to assign you to a division first.');
+              showMessage(
+                'No division assigned',
+                'Ask an executive to assign you to a division first.',
+              );
               return;
             }
+
             setSelectedTask(null);
             setActiveView('coordinator-task-edit');
           } : undefined}
           onOpenTask={(task) => {
             setSelectedTask(task);
+
             setActiveView(
               isExecutive || (isCoordinator && task.division_id === selectedOrg.divisionId)
                 ? 'coordinator-task-edit'
@@ -433,18 +501,130 @@ export function RootFlow() {
               .eq('organization_id', selectedOrg.id)
               .select('id')
               .maybeSingle();
+
             if (error) {
               showToast('error', 'Could not update division', error.message);
               return;
             }
+
             if (!data) {
-              showToast('error', 'Could not update division', 'You may not have permission to change this member.');
+              showToast(
+                'error',
+                'Could not update division',
+                'You may not have permission to change this member.',
+              );
               return;
             }
-            showToast('success', 'Division updated', 'The member was reassigned successfully.');
-            setDivisionMembers((current) => current.map((member) =>
-              member.id === memberId ? { ...member, divisionId } : member
-            ));
+
+            showToast(
+              'success',
+              'Division updated',
+              'The member was reassigned successfully.',
+            );
+
+            setDivisionMembers((current) =>
+              current.map((member) =>
+                member.id === memberId
+                  ? { ...member, divisionId }
+                  : member,
+              ),
+            );
+          }}
+          onAddDivision={async (name) => {
+            const divisionName = name.trim();
+
+            if (!divisionName) return false;
+
+            const { data, error } = await supabase
+              .from('divisions')
+              .insert({
+                organization_id: selectedOrg.id,
+                name: divisionName,
+              })
+              .select('id, name')
+              .single();
+
+            if (error || !data) {
+              showToast(
+                'error',
+                'Could not add division',
+                error?.code === '23505'
+                  ? 'A division with this name already exists.'
+                  : error?.message ?? 'Could not save the new division.',
+              );
+
+              return false;
+            }
+
+            const divisionPalette = [colors.primary, colors.primaryDark];
+
+            setDivisions((current) => {
+              const index = current.length;
+
+              return [
+                ...current,
+                {
+                  id: data.id,
+                  name: data.name,
+                  color: divisionPalette[index % divisionPalette.length],
+                  backgroundColor: index % 2 === 0
+                    ? colors.primarySoft
+                    : colors.secondarySoft,
+                },
+              ];
+            });
+
+            showToast(
+              'success',
+              'Division added',
+              `${data.name} has been added successfully.`,
+            );
+
+            return true;
+          }}
+          onDeleteDivision={async (divisionId) => {
+            if (!isExecutive) {
+              showToast(
+                'error',
+                'Permission denied',
+                'Only an Executive can delete a division.',
+              );
+              return false;
+            }
+
+            const { error } = await supabase.rpc('delete_division', {
+              p_organization_id: selectedOrg.id,
+              p_division_id: divisionId,
+            });
+
+            if (error) {
+              showToast(
+                'error',
+                'Could not delete division',
+                error.message,
+              );
+              return false;
+            }
+
+            setDivisions((current) =>
+              current.filter((division) => division.id !== divisionId),
+            );
+
+            setDivisionMembers((current) =>
+              current.map((member) =>
+                member.divisionId === divisionId
+                  ? { ...member, divisionId: null }
+                  : member,
+              ),
+            );
+
+            showToast(
+              'success',
+              'Division deleted',
+              'Members are now unassigned and existing events were kept.',
+            );
+
+            return true;
           }}
         />
       )}
@@ -532,7 +712,9 @@ export function RootFlow() {
             const rundown = selected[0];
             const organizationId = selectedOrg?.id;
             const eventId = selectedCalendarEvent?.id;
+
             if (!rundown || !organizationId || !eventId) return;
+
             const { data, error } = await supabase
               .from('rundowns')
               .update({ event_id: eventId })
@@ -540,6 +722,7 @@ export function RootFlow() {
               .eq('id', rundown.id)
               .select('id')
               .maybeSingle();
+
             if (error || !data) {
               showMessage(
                 'Could not attach rundown',
@@ -547,6 +730,7 @@ export function RootFlow() {
               );
               return;
             }
+
             setActiveView('calendar');
           }}
         />
@@ -604,28 +788,42 @@ export function RootFlow() {
           onBack={() => setActiveView('org-list')}
           onSaveName={async (name) => {
             const { data: { user }, error: userError } = await supabase.auth.getUser();
+
             if (userError || !user) {
-              showToast('error', 'Could not update profile', userError?.message ?? 'Sign in again and retry.');
+              showToast(
+                'error',
+                'Could not update profile',
+                userError?.message ?? 'Sign in again and retry.',
+              );
               return false;
             }
+
             const { data, error } = await supabase
               .from('profiles')
               .update({ full_name: name })
               .eq('id', user.id)
               .select('id')
               .maybeSingle();
+
             if (error || !data) {
-              showToast('error', 'Could not update profile', error?.message ?? 'Your profile could not be found.');
+              showToast(
+                'error',
+                'Could not update profile',
+                error?.message ?? 'Your profile could not be found.',
+              );
               return false;
             }
+
             const { error: metadataError } = await supabase.auth.updateUser({
               data: { full_name: name },
             });
+
             if (metadataError) {
               const { error: rollbackError } = await supabase
                 .from('profiles')
                 .update({ full_name: auth.userName })
                 .eq('id', user.id);
+
               showToast(
                 'error',
                 'Profile update incomplete',
@@ -633,8 +831,10 @@ export function RootFlow() {
                   ? `${metadataError.message} The profile row could not be restored: ${rollbackError.message}`
                   : metadataError.message,
               );
+
               return false;
             }
+
             return true;
           }}
           onSignOut={() => {
@@ -684,6 +884,7 @@ export function RootFlow() {
         organizationId={selectedOrg?.id ?? ''}
         onClose={() => setIsInvitesModalVisible(false)}
       />
+
       <ToastHost />
       <ConfirmationHost />
     </View>
