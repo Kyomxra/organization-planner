@@ -408,7 +408,7 @@ export function RootFlow() {
           organizationId={selectedOrg.id}
           divisionId={selectedTask.division_id}
           task={selectedTask}
-          readOnly
+          memberMode
           onBack={() => setActiveView('organization-tasks')}
           onSaved={() => setActiveView('organization-tasks')}
         />

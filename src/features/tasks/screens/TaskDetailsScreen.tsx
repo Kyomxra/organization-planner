@@ -14,6 +14,7 @@ interface TaskDetailsScreenProps {
   divisionId: string | null;
   task: DivisionTask | null;
   readOnly?: boolean;
+  memberMode?: boolean;
   canChooseDivision?: boolean;
   onBack: () => void;
   onSaved: () => void;
