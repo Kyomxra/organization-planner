@@ -867,6 +867,7 @@ export function RootFlow() {
       <JoinOrganizationModal
         visible={org.isJoinModalVisible}
         onClose={() => org.setIsJoinModalVisible(false)}
+        onPreview={org.handlePreviewOrganizationInvite}
         onJoin={org.handleJoinOrganization}
       />
 

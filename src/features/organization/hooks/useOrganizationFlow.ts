@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useAppTheme } from '../../../theme/ThemeContext';
@@ -5,6 +6,18 @@ import { showMessage, showToast } from '../../auth/utils/feedback';
 import { CreateOrgFormData, OrganizationItem, OrgStatus } from '../types';
 
 type OrganizationRole = OrganizationItem['role'];
+
+export interface InvitePreview {
+  organization_id: string;
+  organization_name: string;
+  role_to_grant: 'executive' | 'coordinator' | 'member';
+  divisions: {
+    id: string;
+    name: string;
+    color: string | null;
+    background_color: string | null;
+  }[];
+}
 
 const roleDisplay: Record<string, { role: OrganizationRole; title: string }> = {
   executive: { role: 'Executive', title: 'Executive Committee' },
@@ -18,11 +31,13 @@ function getErrorMessage(error: unknown): string {
 
 export function useOrganizationFlow() {
   const { colors } = useAppTheme();
+
   const colorsByRole = useMemo<Record<OrganizationRole, { avatar: string; text: string; badge: string }>>(() => ({
     Executive: { avatar: colors.primarySoft, text: colors.primary, badge: colors.primarySoft },
     Coordinator: { avatar: colors.secondarySoft, text: colors.primaryDark, badge: colors.secondarySoft },
     Participant: { avatar: colors.primarySoft, text: colors.primary, badge: colors.primarySoft },
   }), [colors]);
+
   const [organizations, setOrganizations] = useState<OrganizationItem[]>([]);
   const [selectedOrg, setSelectedOrg] = useState<OrganizationItem | null>(null);
   const [isLoadingOrganizations, setIsLoadingOrganizations] = useState(true);
@@ -55,6 +70,7 @@ export function useOrganizationFlow() {
       if (membershipsError) throw membershipsError;
 
       const organizationIds = [...new Set((memberships ?? []).map((item) => item.organization_id))];
+
       if (organizationIds.length === 0) {
         setOrganizations([]);
         setSelectedOrg(null);
@@ -80,7 +96,9 @@ export function useOrganizationFlow() {
       const organizationsById = new Map(
         (organizationResult.data ?? []).map((item) => [item.id, item]),
       );
+
       const memberCounts = new Map<string, number>();
+
       for (const member of memberResult.data ?? []) {
         memberCounts.set(
           member.organization_id,
@@ -91,9 +109,11 @@ export function useOrganizationFlow() {
       const loadedOrganizations = (memberships ?? []).flatMap((membership) => {
         const organization = organizationsById.get(membership.organization_id);
         const role = roleDisplay[membership.role];
+
         if (!organization || !role) return [];
 
         const palette = colorsByRole[role.role];
+
         return [{
           id: organization.id,
           name: organization.name,
@@ -116,6 +136,7 @@ export function useOrganizationFlow() {
         ?? loadedOrganizations[0]
         ?? null
       );
+
       return loadedOrganizations;
     } catch (error: unknown) {
       const message = getErrorMessage(error);
@@ -129,6 +150,7 @@ export function useOrganizationFlow() {
 
   const reloadOrganizations = useCallback(async () => {
     const { data: { user }, error } = await supabase.auth.getUser();
+
     if (error) {
       const message = error.message;
       setOrganizationLoadError(message);
@@ -136,6 +158,7 @@ export function useOrganizationFlow() {
       showMessage('Could not load organizations', message);
       return;
     }
+
     await refreshOrganizations(user?.id ?? null);
   }, [refreshOrganizations]);
 
@@ -152,6 +175,7 @@ export function useOrganizationFlow() {
 
     supabase.auth.getSession().then(({ data, error }) => {
       if (!active) return;
+
       if (error) {
         const message = error.message;
         setOrganizationLoadError(message);
@@ -159,9 +183,11 @@ export function useOrganizationFlow() {
         showMessage('Could not load organizations', message);
         return;
       }
+
       loadForSession(data.session?.user.id ?? null);
     }).catch((error: unknown) => {
       if (!active) return;
+
       const message = getErrorMessage(error);
       setOrganizationLoadError(message);
       setIsLoadingOrganizations(false);
@@ -176,6 +202,7 @@ export function useOrganizationFlow() {
 
   const handleSaveStatus = async (orgId: string, nextStatus: OrgStatus) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
+
     if (userError || !user) {
       showToast('error', 'Could not update organization', userError?.message ?? 'Sign in again and retry.');
       return;
@@ -198,8 +225,39 @@ export function useOrganizationFlow() {
     showToast('success', 'Organization updated', 'Your organization status has been updated.');
   };
 
-  const handleJoinOrganization = async (code: string): Promise<boolean> => {
+  const handlePreviewOrganizationInvite = async (
+    code: string,
+  ): Promise<InvitePreview | null> => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      showToast('error', 'Could not check invite', userError?.message ?? 'Sign in again and retry.');
+      return null;
+    }
+
+    const { data, error } = await supabase.rpc('preview_organization_invite', {
+      p_code: code,
+    });
+
+    if (error) {
+      showToast('error', 'Invalid invite code', error.message);
+      return null;
+    }
+
+    if (!data) {
+      showToast('error', 'Could not check invite', 'The invite information could not be loaded.');
+      return null;
+    }
+
+    return data as unknown as InvitePreview;
+  };
+
+  const handleJoinOrganization = async (
+    code: string,
+    divisionId: string | null,
+  ): Promise<boolean> => {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
     if (userError || !user) {
       showToast('error', 'Could not join organization', userError?.message ?? 'Sign in again and retry.');
       return false;
@@ -207,7 +265,9 @@ export function useOrganizationFlow() {
 
     const { data: organizationId, error } = await supabase.rpc('redeem_organization_invite', {
       p_code: code,
+      p_division_id: divisionId,
     });
+
     if (error) {
       showToast('error', 'Could not join organization', error.message);
       return false;
@@ -215,6 +275,7 @@ export function useOrganizationFlow() {
 
     const loadedOrganizations = await refreshOrganizations(user.id);
     const joinedOrganization = loadedOrganizations.find((item) => item.id === organizationId);
+
     if (!joinedOrganization) {
       showToast(
         'error',
@@ -231,6 +292,7 @@ export function useOrganizationFlow() {
 
   const handleCreateOrganization = async (data: CreateOrgFormData) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
+
     if (userError || !user) {
       showToast('error', 'Could not create organization', userError?.message ?? 'Sign in again and retry.');
       return;
@@ -250,6 +312,7 @@ export function useOrganizationFlow() {
       if (error) throw error;
 
       const divisionNames = [...new Set(data.divisions.map((name) => name.trim()).filter(Boolean))];
+
       if (divisionNames.length > 0) {
         const { error: divisionError } = await supabase
           .from('divisions')
@@ -271,7 +334,9 @@ export function useOrganizationFlow() {
 
       const loadedOrganizations = await refreshOrganizations(user.id);
       const created = loadedOrganizations.find((item) => item.id === createdOrganization.id);
+
       if (created) setSelectedOrg(created);
+
       setCreatedOrgName(data.name);
       setIsCreatedModalVisible(true);
       showToast('success', 'Organization created', `${data.name} is ready.`);
@@ -298,6 +363,7 @@ export function useOrganizationFlow() {
     setIsCreatedModalVisible,
     createdOrgName,
     handleSaveStatus,
+    handlePreviewOrganizationInvite,
     handleJoinOrganization,
     handleCreateOrganization,
   };
