@@ -6,6 +6,7 @@ import { showMessage, showToast } from '../../auth/utils/feedback';
 import { CreateOrgFormData, OrganizationItem, OrgStatus } from '../types';
 
 type OrganizationRole = OrganizationItem['role'];
+type OrganizationStatusAction = 'archive' | 'restore' | 'delete';
 
 export interface InvitePreview {
   organization_id: string;
@@ -26,16 +27,33 @@ const roleDisplay: Record<string, { role: OrganizationRole; title: string }> = {
 };
 
 function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'An unexpected database error occurred.';
+  return error instanceof Error
+    ? error.message
+    : 'An unexpected database error occurred.';
 }
 
 export function useOrganizationFlow() {
   const { colors } = useAppTheme();
 
-  const colorsByRole = useMemo<Record<OrganizationRole, { avatar: string; text: string; badge: string }>>(() => ({
-    Executive: { avatar: colors.primarySoft, text: colors.primary, badge: colors.primarySoft },
-    Coordinator: { avatar: colors.secondarySoft, text: colors.primaryDark, badge: colors.secondarySoft },
-    Participant: { avatar: colors.primarySoft, text: colors.primary, badge: colors.primarySoft },
+  const colorsByRole = useMemo<Record<
+    OrganizationRole,
+    { avatar: string; text: string; badge: string }
+  >>(() => ({
+    Executive: {
+      avatar: colors.primarySoft,
+      text: colors.primary,
+      badge: colors.primarySoft,
+    },
+    Coordinator: {
+      avatar: colors.secondarySoft,
+      text: colors.primaryDark,
+      badge: colors.secondarySoft,
+    },
+    Participant: {
+      avatar: colors.primarySoft,
+      text: colors.primary,
+      badge: colors.primarySoft,
+    },
   }), [colors]);
 
   const [organizations, setOrganizations] = useState<OrganizationItem[]>([]);
@@ -69,7 +87,9 @@ export function useOrganizationFlow() {
 
       if (membershipsError) throw membershipsError;
 
-      const organizationIds = [...new Set((memberships ?? []).map((item) => item.organization_id))];
+      const organizationIds = [
+        ...new Set((memberships ?? []).map((item) => item.organization_id)),
+      ];
 
       if (organizationIds.length === 0) {
         setOrganizations([]);
@@ -80,9 +100,9 @@ export function useOrganizationFlow() {
       const [organizationResult, memberResult] = await Promise.all([
         supabase
           .from('organizations')
-          .select('id, name')
-          .in('id', organizationIds)
-          .is('archived_at', null),
+          .select('id, name, archived_at')
+          .in('id', organizationIds),
+
         supabase
           .from('organization_members')
           .select('organization_id')
@@ -113,6 +133,9 @@ export function useOrganizationFlow() {
         if (!organization || !role) return [];
 
         const palette = colorsByRole[role.role];
+        const status: OrgStatus = organization.archived_at
+          ? 'Inactive'
+          : 'Active';
 
         return [{
           id: organization.id,
@@ -121,7 +144,7 @@ export function useOrganizationFlow() {
           roleTitle: role.title,
           role: role.role,
           memberCount: memberCounts.get(organization.id) ?? 0,
-          status: 'Active' as OrgStatus,
+          status,
           letter: organization.name.charAt(0).toUpperCase() || 'O',
           avatarBg: palette.avatar,
           avatarTextColor: palette.text,
@@ -131,11 +154,16 @@ export function useOrganizationFlow() {
       });
 
       setOrganizations(loadedOrganizations);
-      setSelectedOrg((current) =>
-        loadedOrganizations.find((item) => item.id === current?.id)
-        ?? loadedOrganizations[0]
-        ?? null
-      );
+
+      setSelectedOrg((current) => {
+        const currentOrganization = loadedOrganizations.find(
+          (item) => item.id === current?.id && item.status === 'Active',
+        );
+
+        return currentOrganization
+          ?? loadedOrganizations.find((item) => item.status === 'Active')
+          ?? null;
+      });
 
       return loadedOrganizations;
     } catch (error: unknown) {
@@ -152,10 +180,9 @@ export function useOrganizationFlow() {
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error) {
-      const message = error.message;
-      setOrganizationLoadError(message);
+      setOrganizationLoadError(error.message);
       setIsLoadingOrganizations(false);
-      showMessage('Could not load organizations', message);
+      showMessage('Could not load organizations', error.message);
       return;
     }
 
@@ -169,18 +196,19 @@ export function useOrganizationFlow() {
       if (active) void refreshOrganizations(userId);
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      loadForSession(session?.user.id ?? null);
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        loadForSession(session?.user.id ?? null);
+      },
+    );
 
     supabase.auth.getSession().then(({ data, error }) => {
       if (!active) return;
 
       if (error) {
-        const message = error.message;
-        setOrganizationLoadError(message);
+        setOrganizationLoadError(error.message);
         setIsLoadingOrganizations(false);
-        showMessage('Could not load organizations', message);
+        showMessage('Could not load organizations', error.message);
         return;
       }
 
@@ -200,29 +228,69 @@ export function useOrganizationFlow() {
     };
   }, [refreshOrganizations]);
 
-  const handleSaveStatus = async (orgId: string, nextStatus: OrgStatus) => {
+  const handleSaveStatus = async (
+    orgId: string,
+    nextStatus: OrgStatus,
+    action?: OrganizationStatusAction,
+  ): Promise<boolean> => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      showToast('error', 'Could not update organization', userError?.message ?? 'Sign in again and retry.');
-      return;
+      showToast(
+        'error',
+        'Could not update organization',
+        userError?.message ?? 'Sign in again and retry.',
+      );
+      return false;
     }
 
-    const { data, error } = await supabase
-      .from('organization_members')
-      .update({ status: nextStatus.toLowerCase() })
-      .eq('organization_id', orgId)
-      .eq('user_id', user.id)
-      .select('id')
-      .maybeSingle();
+    const selectedAction = action
+      ?? (nextStatus === 'Inactive' ? 'archive' : 'restore');
 
-    if (error || !data) {
-      showToast('error', 'Could not update organization', error?.message ?? 'You may not have permission to change this organization.');
-      return;
+    const rpcName = selectedAction === 'archive'
+      ? 'archive_organization'
+      : selectedAction === 'restore'
+        ? 'restore_organization'
+        : 'delete_archived_organization';
+
+    const { error } = await supabase.rpc(rpcName, {
+      p_organization_id: orgId,
+    });
+
+    if (error) {
+      showToast(
+        'error',
+        selectedAction === 'delete'
+          ? 'Could not delete organization'
+          : 'Could not update organization',
+        error.message,
+      );
+      return false;
     }
 
     await refreshOrganizations(user.id);
-    showToast('success', 'Organization updated', 'Your organization status has been updated.');
+
+    if (selectedAction === 'archive') {
+      showToast(
+        'success',
+        'Organization archived',
+        'The organization has been moved to Inactive.',
+      );
+    } else if (selectedAction === 'restore') {
+      showToast(
+        'success',
+        'Organization restored',
+        'The organization is active again.',
+      );
+    } else {
+      showToast(
+        'success',
+        'Organization deleted',
+        'The organization and its related data have been permanently deleted.',
+      );
+    }
+
+    return true;
   };
 
   const handlePreviewOrganizationInvite = async (
@@ -231,7 +299,11 @@ export function useOrganizationFlow() {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      showToast('error', 'Could not check invite', userError?.message ?? 'Sign in again and retry.');
+      showToast(
+        'error',
+        'Could not check invite',
+        userError?.message ?? 'Sign in again and retry.',
+      );
       return null;
     }
 
@@ -245,7 +317,11 @@ export function useOrganizationFlow() {
     }
 
     if (!data) {
-      showToast('error', 'Could not check invite', 'The invite information could not be loaded.');
+      showToast(
+        'error',
+        'Could not check invite',
+        'The invite information could not be loaded.',
+      );
       return null;
     }
 
@@ -259,14 +335,21 @@ export function useOrganizationFlow() {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      showToast('error', 'Could not join organization', userError?.message ?? 'Sign in again and retry.');
+      showToast(
+        'error',
+        'Could not join organization',
+        userError?.message ?? 'Sign in again and retry.',
+      );
       return false;
     }
 
-    const { data: organizationId, error } = await supabase.rpc('redeem_organization_invite', {
-      p_code: code,
-      p_division_id: divisionId,
-    });
+    const { data: organizationId, error } = await supabase.rpc(
+      'redeem_organization_invite',
+      {
+        p_code: code,
+        p_division_id: divisionId,
+      },
+    );
 
     if (error) {
       showToast('error', 'Could not join organization', error.message);
@@ -274,7 +357,9 @@ export function useOrganizationFlow() {
     }
 
     const loadedOrganizations = await refreshOrganizations(user.id);
-    const joinedOrganization = loadedOrganizations.find((item) => item.id === organizationId);
+    const joinedOrganization = loadedOrganizations.find(
+      (item) => item.id === organizationId,
+    );
 
     if (!joinedOrganization) {
       showToast(
@@ -294,7 +379,11 @@ export function useOrganizationFlow() {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      showToast('error', 'Could not create organization', userError?.message ?? 'Sign in again and retry.');
+      showToast(
+        'error',
+        'Could not create organization',
+        userError?.message ?? 'Sign in again and retry.',
+      );
       return;
     }
 
@@ -311,7 +400,9 @@ export function useOrganizationFlow() {
 
       if (error) throw error;
 
-      const divisionNames = [...new Set(data.divisions.map((name) => name.trim()).filter(Boolean))];
+      const divisionNames = [
+        ...new Set(data.divisions.map((name) => name.trim()).filter(Boolean)),
+      ];
 
       if (divisionNames.length > 0) {
         const { error: divisionError } = await supabase
@@ -333,15 +424,26 @@ export function useOrganizationFlow() {
       }
 
       const loadedOrganizations = await refreshOrganizations(user.id);
-      const created = loadedOrganizations.find((item) => item.id === createdOrganization.id);
+      const created = loadedOrganizations.find(
+        (item) => item.id === createdOrganization.id,
+      );
 
       if (created) setSelectedOrg(created);
 
       setCreatedOrgName(data.name);
       setIsCreatedModalVisible(true);
-      showToast('success', 'Organization created', `${data.name} is ready.`);
+
+      showToast(
+        'success',
+        'Organization created',
+        `${data.name} is ready.`,
+      );
     } catch (error: unknown) {
-      showToast('error', 'Could not create organization', getErrorMessage(error));
+      showToast(
+        'error',
+        'Could not create organization',
+        getErrorMessage(error),
+      );
     }
   };
 

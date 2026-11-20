@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useMemo } from 'react';
+
+import React, { useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -44,12 +44,27 @@ export function OrganizationListScreen({
 }: OrganizationListScreenProps) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredOrgs = organizations.filter((org) =>
-    org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    org.roleTitle.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTab, setSelectedTab] = useState<OrgStatus>('Active');
+
+  const activeCount = organizations.filter(
+    (org) => org.status === 'Active',
+  ).length;
+
+  const inactiveCount = organizations.filter(
+    (org) => org.status === 'Inactive',
+  ).length;
+
+  const filteredOrgs = organizations.filter((org) => {
+    const matchesTab = org.status === selectedTab;
+
+    const matchesSearch =
+      org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      org.roleTitle.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesTab && matchesSearch;
+  });
 
   return (
     <View style={styles.root}>
@@ -58,9 +73,9 @@ export function OrganizationListScreen({
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Header */}
         <View style={styles.topHeader}>
           <Text style={styles.welcomeText}>Welcome, {userName}!</Text>
+
           <TouchableOpacity
             style={styles.profileAvatar}
             onPress={onOpenProfile}
@@ -68,7 +83,14 @@ export function OrganizationListScreen({
             accessibilityLabel="User profile"
           >
             <Svg width={22} height={22} viewBox="0 0 24 24">
-              <Circle cx="12" cy="8" r="4" fill="none" stroke={colors.text} strokeWidth={1.8} />
+              <Circle
+                cx="12"
+                cy="8"
+                r="4"
+                fill="none"
+                stroke={colors.text}
+                strokeWidth={1.8}
+              />
               <Path
                 d="M5 19 C5 15.5, 8 13.5, 12 13.5 C16 13.5, 19 15.5, 19 19"
                 fill="none"
@@ -80,7 +102,6 @@ export function OrganizationListScreen({
           </TouchableOpacity>
         </View>
 
-        {/* Successfully Joined Toast Banner */}
         {showJoinedToast && (
           <View style={styles.toastBanner}>
             <View style={styles.toastLeft}>
@@ -96,23 +117,117 @@ export function OrganizationListScreen({
                   />
                 </Svg>
               </View>
-              <Text style={styles.toastTitle}>Successfully joined!</Text>
+
+              <Text style={styles.toastTitle}>
+                Successfully joined!
+              </Text>
             </View>
-            <TouchableOpacity onPress={onDismissToast} style={styles.toastCloseBtn} hitSlop={8}>
+
+            <TouchableOpacity
+              onPress={onDismissToast}
+              style={styles.toastCloseBtn}
+              hitSlop={8}
+            >
               <Text style={styles.toastCloseIcon}>✕</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Section Title */}
         <Text style={styles.sectionTitle}>Your Organization</Text>
 
-        {/* Search Input */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              selectedTab === 'Active' && styles.selectedTabButton,
+            ]}
+            onPress={() => setSelectedTab('Active')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === 'Active' && styles.selectedTabText,
+              ]}
+            >
+              Active
+            </Text>
+
+            <View
+              style={[
+                styles.tabCount,
+                selectedTab === 'Active' && styles.selectedTabCount,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.tabCountText,
+                  selectedTab === 'Active' && styles.selectedTabCountText,
+                ]}
+              >
+                {activeCount}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              selectedTab === 'Inactive' && styles.selectedTabButton,
+            ]}
+            onPress={() => setSelectedTab('Inactive')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === 'Inactive' && styles.selectedTabText,
+              ]}
+            >
+              Inactive
+            </Text>
+
+            <View
+              style={[
+                styles.tabCount,
+                selectedTab === 'Inactive' && styles.selectedTabCount,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.tabCountText,
+                  selectedTab === 'Inactive' && styles.selectedTabCountText,
+                ]}
+              >
+                {inactiveCount}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.searchBar}>
-          <Svg width={16} height={16} viewBox="0 0 20 20" style={styles.searchIcon}>
-            <Circle cx="8.5" cy="8.5" r="5.5" stroke={colors.muted} strokeWidth={1.8} fill="none" />
-            <Path d="M12.8 12.8L17 17" stroke={colors.muted} strokeWidth={1.8} strokeLinecap="round" />
+          <Svg
+            width={16}
+            height={16}
+            viewBox="0 0 20 20"
+            style={styles.searchIcon}
+          >
+            <Circle
+              cx="8.5"
+              cy="8.5"
+              r="5.5"
+              stroke={colors.muted}
+              strokeWidth={1.8}
+              fill="none"
+            />
+            <Path
+              d="M12.8 12.8L17 17"
+              stroke={colors.muted}
+              strokeWidth={1.8}
+              strokeLinecap="round"
+            />
           </Svg>
+
           <TextInput
             style={styles.searchInput}
             placeholder="Search"
@@ -120,113 +235,234 @@ export function OrganizationListScreen({
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+
           {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={8}>
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              hitSlop={8}
+            >
               <Text style={styles.clearSearchIcon}>✕</Text>
             </TouchableOpacity>
           ) : null}
         </View>
 
-        {/* Organizations List */}
         <View style={styles.listContainer}>
           {isLoading ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Loading organizations...</Text>
+              <Text style={styles.emptyTitle}>
+                Loading organizations...
+              </Text>
             </View>
           ) : loadError ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Could not load organizations</Text>
-              <Text style={styles.emptySubtitle}>{loadError}</Text>
+              <Text style={styles.emptyTitle}>
+                Could not load organizations
+              </Text>
+
+              <Text style={styles.emptySubtitle}>
+                {loadError}
+              </Text>
+
               {onRetry && (
-                <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
-                  <Text style={styles.retryButtonText}>Try again</Text>
+                <TouchableOpacity
+                  onPress={onRetry}
+                  style={styles.retryButton}
+                >
+                  <Text style={styles.retryButtonText}>
+                    Try again
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
-          ) : filteredOrgs.length > 0 ? filteredOrgs.map((org) => (
-            <TouchableOpacity
-              key={org.id}
-              style={styles.card}
-              onPress={() => onSelectOrganization(org)}
-              activeOpacity={0.88}
-            >
-              <View style={styles.cardMain}>
-                {/* Org Avatar Letter */}
-                <View style={[styles.avatarBox, { backgroundColor: org.avatarBg }]}>
-                  <Text style={[styles.avatarLetter, { color: org.avatarTextColor }]}>
-                    {org.letter}
-                  </Text>
-                </View>
+          ) : filteredOrgs.length > 0 ? (
+            filteredOrgs.map((org) => {
+              const canManageStatus = org.role === 'Executive';
+              const isInactive = org.status === 'Inactive';
 
-                {/* Card Info */}
-                <View style={styles.cardInfo}>
-                  <Text style={styles.cardName}>{org.name}</Text>
-                  <Text style={styles.cardRole}>{org.roleTitle}</Text>
-                  <View style={styles.metaRow}>
-                    <Svg width={12} height={12} viewBox="0 0 20 20" style={styles.memberIcon}>
-                      <Circle cx="8" cy="6" r="3" fill="none" stroke={colors.muted} strokeWidth={1.6} />
-                      <Path
-                        d="M3 16 C3 13, 5 11, 8 11 C11 11, 13 13, 13 16"
-                        fill="none"
-                        stroke={colors.muted}
-                        strokeWidth={1.6}
-                      />
-                      <Circle cx="15" cy="7" r="2.2" fill="none" stroke={colors.muted} strokeWidth={1.4} />
-                      <Path d="M14 12 C15.5 12.5, 17 13.5, 17 15" fill="none" stroke={colors.muted} strokeWidth={1.4} />
-                    </Svg>
-                    <Text style={styles.memberCount}>{org.memberCount} members</Text>
+              return (
+                <TouchableOpacity
+                  key={org.id}
+                  style={[
+                    styles.card,
+                    isInactive && styles.inactiveCard,
+                  ]}
+                  onPress={() => {
+                    if (!isInactive) {
+                      onSelectOrganization(org);
+                    }
+                  }}
+                  activeOpacity={isInactive ? 1 : 0.88}
+                  disabled={isInactive}
+                >
+                  <View style={styles.cardMain}>
+                    <View
+                      style={[
+                        styles.avatarBox,
+                        { backgroundColor: org.avatarBg },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.avatarLetter,
+                          { color: org.avatarTextColor },
+                        ]}
+                      >
+                        {org.letter}
+                      </Text>
+                    </View>
+
+                    <View style={styles.cardInfo}>
+                      <Text style={styles.cardName}>
+                        {org.name}
+                      </Text>
+
+                      <Text style={styles.cardRole}>
+                        {org.roleTitle}
+                      </Text>
+
+                      <View style={styles.metaRow}>
+                        <Svg
+                          width={12}
+                          height={12}
+                          viewBox="0 0 20 20"
+                          style={styles.memberIcon}
+                        >
+                          <Circle
+                            cx="8"
+                            cy="6"
+                            r="3"
+                            fill="none"
+                            stroke={colors.muted}
+                            strokeWidth={1.6}
+                          />
+                          <Path
+                            d="M3 16 C3 13, 5 11, 8 11 C11 11, 13 13, 13 16"
+                            fill="none"
+                            stroke={colors.muted}
+                            strokeWidth={1.6}
+                          />
+                          <Circle
+                            cx="15"
+                            cy="7"
+                            r="2.2"
+                            fill="none"
+                            stroke={colors.muted}
+                            strokeWidth={1.4}
+                          />
+                          <Path
+                            d="M14 12 C15.5 12.5, 17 13.5, 17 15"
+                            fill="none"
+                            stroke={colors.muted}
+                            strokeWidth={1.4}
+                          />
+                        </Svg>
+
+                        <Text style={styles.memberCount}>
+                          {org.memberCount} members
+                        </Text>
+                      </View>
+
+                      {canManageStatus ? (
+                        <TouchableOpacity
+                          style={[
+                            styles.statusBadge,
+                            { backgroundColor: org.badgeBg },
+                          ]}
+                          onPress={() => onOpenStatusModal(org)}
+                          activeOpacity={0.7}
+                        >
+                          <Text
+                            style={[
+                              styles.statusText,
+                              { color: org.badgeTextColor },
+                            ]}
+                          >
+                            {org.status} {'>'}
+                          </Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <View
+                          style={[
+                            styles.statusBadge,
+                            { backgroundColor: org.badgeBg },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.statusText,
+                              { color: org.badgeTextColor },
+                            ]}
+                          >
+                            {org.status}
+                          </Text>
+                        </View>
+                      )}
+
+                      {isInactive && (
+                        <Text style={styles.inactiveHint}>
+                          Only an Executive can restore this organization.
+                        </Text>
+                      )}
+                    </View>
+
+                    {!isInactive && (
+                      <View
+                        style={[
+                          styles.arrowCircle,
+                          { borderColor: org.avatarTextColor },
+                        ]}
+                      >
+                        <Svg width={12} height={12} viewBox="0 0 20 20">
+                          <Path
+                            d="M7 4L13 10L7 16"
+                            fill="none"
+                            stroke={org.avatarTextColor}
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </Svg>
+                      </View>
+                    )}
                   </View>
-
-                  {/* Status Badge */}
-                  <TouchableOpacity
-                    style={[styles.statusBadge, { backgroundColor: org.badgeBg }]}
-                    onPress={() => onOpenStatusModal(org)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.statusText, { color: org.badgeTextColor }]}>
-                      {org.status} &gt;
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Right Arrow Chevron Circle */}
-                <View style={[styles.arrowCircle, { borderColor: org.avatarTextColor }]}>
-                  <Svg width={12} height={12} viewBox="0 0 20 20">
-                    <Path
-                      d="M7 4L13 10L7 16"
-                      fill="none"
-                      stroke={org.avatarTextColor}
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                </View>
-              </View>
-            </TouchableOpacity>
-          )) : (
+                </TouchableOpacity>
+              );
+            })
+          ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>
-                {organizations.length === 0 ? 'No organizations yet' : 'No organizations found'}
+                {organizations.length === 0
+                  ? 'No organizations yet'
+                  : searchQuery
+                    ? 'No organizations found'
+                    : selectedTab === 'Active'
+                      ? 'No active organizations'
+                      : 'No inactive organizations'}
               </Text>
+
               <Text style={styles.emptySubtitle}>
                 {organizations.length === 0
                   ? 'Create a new organization or join one with an invite code.'
-                  : 'Try a different search term.'}
+                  : searchQuery
+                    ? 'Try a different search term.'
+                    : selectedTab === 'Active'
+                      ? 'Your active organizations will appear here.'
+                      : 'Archived organizations will appear here.'}
               </Text>
             </View>
           )}
         </View>
       </ScrollView>
 
-      {/* Bottom Sticky Action Buttons */}
       <View style={styles.bottomBar}>
         <TouchableOpacity
           style={styles.createBtn}
           onPress={onOpenCreateOrg}
           activeOpacity={0.85}
         >
-          <Text style={styles.createBtnText}>+ Create Organization</Text>
+          <Text style={styles.createBtnText}>
+            + Create Organization
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -234,7 +470,12 @@ export function OrganizationListScreen({
           onPress={onOpenJoinOrg}
           activeOpacity={0.8}
         >
-          <Svg width={16} height={16} viewBox="0 0 24 24" style={styles.joinIcon}>
+          <Svg
+            width={16}
+            height={16}
+            viewBox="0 0 24 24"
+            style={styles.joinIcon}
+          >
             <Path
               d="M14 4H19C20.1 4 21 4.9 21 6V18C21 19.1 20.1 20 19 20H14"
               stroke={colors.primary}
@@ -258,7 +499,10 @@ export function OrganizationListScreen({
               fill="none"
             />
           </Svg>
-          <Text style={styles.joinBtnText}>Join an Organization</Text>
+
+          <Text style={styles.joinBtnText}>
+            Join an Organization
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -341,8 +585,57 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: colors.muted,
-    marginBottom: 10,
+    marginBottom: 12,
     marginTop: 4,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 4,
+    marginBottom: 16,
+  },
+  tabButton: {
+    flex: 1,
+    height: 40,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  selectedTabButton: {
+    backgroundColor: colors.primary,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.muted,
+  },
+  selectedTabText: {
+    color: colors.surface,
+  },
+  tabCount: {
+    minWidth: 21,
+    height: 21,
+    paddingHorizontal: 5,
+    borderRadius: 11,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedTabCount: {
+    backgroundColor: colors.surface,
+  },
+  tabCountText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.muted,
+  },
+  selectedTabCountText: {
+    color: colors.primary,
   },
   searchBar: {
     flexDirection: 'row',
@@ -417,6 +710,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
+  inactiveCard: {
+    opacity: 0.8,
+  },
   cardMain: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -462,12 +758,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   statusBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingVertical: 5,
     borderRadius: 8,
   },
   statusText: {
     fontSize: 10,
     fontWeight: '700',
+  },
+  inactiveHint: {
+    color: colors.muted,
+    fontSize: 10,
+    marginTop: 8,
   },
   arrowCircle: {
     width: 28,
