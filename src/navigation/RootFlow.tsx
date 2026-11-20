@@ -8,8 +8,10 @@ import { useAuthFlow } from '../features/auth/hooks/useAuthFlow';
 import { SplashScreen } from '../features/auth/screens/SplashScreen';
 import { LoginScreen } from '../features/auth/screens/LoginScreen';
 import { SignUpScreen } from '../features/auth/screens/SignUpScreen';
+import { ForgotPasswordEmailScreen } from '../features/auth/screens/ForgotPasswordEmailScreen';
 import { ForgotPasswordScreen } from '../features/auth/screens/ForgotPasswordScreen';
 import { ResetPasswordScreen } from '../features/auth/screens/ResetPasswordScreen';
+import { PasswordResetSuccessScreen } from '../features/auth/screens/PasswordResetSuccessScreen';
 import { ToastHost } from '../features/auth/components/ToastHost';
 import { ConfirmationHost } from '../features/auth/components/ConfirmationHost';
 
@@ -314,7 +316,9 @@ export function RootFlow() {
     return <SplashScreen />;
   }
 
-  if (!auth.isAuthenticated) {
+  // A recovery session is also "authenticated"; keep the auth tree mounted while
+  // the user finishes the OTP reset so the password sheet is not unmounted.
+  if (!auth.isAuthenticated || auth.isRecovering) {
     return (
       <View style={styles.root}>
         {auth.mainScreen === 'login' ? (
@@ -346,14 +350,26 @@ export function RootFlow() {
           />
         )}
 
+        <ForgotPasswordEmailScreen
+          visible={auth.passwordSheet === 'email'}
+          email={auth.resetEmail}
+          onEmailChange={auth.setResetEmail}
+          onClose={auth.closePasswordSheet}
+          onSendCode={auth.handleSendResetCode}
+          loading={auth.isSendingResetCode}
+        />
+
         <ForgotPasswordScreen
           visible={auth.passwordSheet === 'verify'}
           email={auth.resetEmail}
           code={auth.verificationCode}
           onCodeChange={auth.setVerificationCode}
-          onClose={() => auth.setPasswordSheet('none')}
+          onClose={auth.closePasswordSheet}
           onContinue={auth.handleVerifyCode}
           onResend={auth.handleResendCode}
+          onChangeEmail={() => auth.setPasswordSheet('email')}
+          resendSecondsLeft={auth.resendSecondsLeft}
+          loading={auth.isVerifyingCode}
         />
 
         <ResetPasswordScreen
@@ -363,8 +379,15 @@ export function RootFlow() {
           confirmPassword={auth.confirmNewPassword}
           onPasswordChange={auth.setNewPassword}
           onConfirmPasswordChange={auth.setConfirmNewPassword}
-          onClose={() => auth.setPasswordSheet('none')}
+          onClose={auth.closePasswordSheet}
           onFinish={auth.handleFinishReset}
+          loading={auth.isUpdatingPassword}
+        />
+
+        <PasswordResetSuccessScreen
+          visible={auth.passwordSheet === 'success'}
+          onClose={auth.closePasswordSheet}
+          onReturnToLogin={auth.handleReturnToLogin}
         />
 
         <ToastHost />

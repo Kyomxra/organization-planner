@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../../lib/supabase';
 import { showMessage, showToast } from '../utils/feedback';
-import { isValidEmail } from '../utils/validation';
+import { isValidEmail, isValidPassword } from '../utils/validation';
 
 type MainScreen = 'login' | 'signup';
-type PasswordSheet = 'none' | 'verify' | 'reset';
+type PasswordSheet = 'none' | 'email' | 'verify' | 'reset' | 'success';
+
+/** Seconds a user must wait before requesting another reset code. */
+const RESEND_COOLDOWN_SECONDS = 60;
 
 export function useAuthFlow() {
   const [splashDone, setSplashDone] = useState(false);
@@ -29,6 +32,11 @@ export function useAuthFlow() {
   const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [isRecovering, setIsRecovering] = useState(false);
+  const [isSendingResetCode, setIsSendingResetCode] = useState(false);
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [resendSecondsLeft, setResendSecondsLeft] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -69,30 +77,62 @@ export function useAuthFlow() {
     };
   }, []);
 
-  const openForgotPassword = async () => {
-    if (!isValidEmail(loginEmail)) {
-      showMessage('Email required', 'Enter your email address first, then tap Forgot password? again.');
+  useEffect(() => {
+    if (resendSecondsLeft <= 0) return;
+    const timer = setTimeout(() => {
+      setResendSecondsLeft((seconds) => (seconds <= 1 ? 0 : seconds - 1));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [resendSecondsLeft]);
+
+  const openForgotPassword = () => {
+    setResetEmail(loginEmail.trim());
+    setVerificationCode('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setPasswordSheet('email');
+  };
+
+  const closePasswordSheet = () => {
+    setPasswordSheet('none');
+    setVerificationCode('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setResendSecondsLeft(0);
+    if (isRecovering) {
+      setIsRecovering(false);
+      void supabase.auth.signOut();
+    }
+  };
+
+  const handleSendResetCode = async () => {
+    if (isSendingResetCode) return;
+    const email = resetEmail.trim();
+    if (!isValidEmail(email)) {
+      showMessage('Check your email', 'Please enter a valid email address.');
       return;
     }
 
-    const email = loginEmail.trim();
+    setIsSendingResetCode(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email);
       if (error) {
-        showMessage('Could not send reset email', error.message);
+        showMessage('Could not send reset code', error.message);
         return;
       }
-
       setResetEmail(email);
       setVerificationCode('');
-      setNewPassword('');
-      setConfirmNewPassword('');
+      setIsRecovering(true);
+      setResendSecondsLeft(RESEND_COOLDOWN_SECONDS);
       setPasswordSheet('verify');
+      showToast('info', 'Code sent', `We sent a 6-digit code to ${email}.`);
     } catch (error: unknown) {
       showMessage(
-        'Could not send reset email',
+        'Could not send reset code',
         error instanceof Error ? error.message : 'Could not connect to Supabase.',
       );
+    } finally {
+      setIsSendingResetCode(false);
     }
   };
 
@@ -198,30 +238,40 @@ export function useAuthFlow() {
   };
 
   const handleResendCode = async () => {
+    if (resendSecondsLeft > 0) return;
+    const email = resetEmail.trim();
+    if (!isValidEmail(email)) {
+      showMessage('Check your email', 'Please enter a valid email address.');
+      return;
+    }
+
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail);
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
       if (error) {
-        showMessage('Could not resend reset email', error.message);
+        showMessage('Could not resend code', error.message);
         return;
       }
-      showMessage('Email sent', 'A new password-reset email has been sent.');
+      setResendSecondsLeft(RESEND_COOLDOWN_SECONDS);
+      showToast('info', 'Code resent', `A new 6-digit code was sent to ${email}.`);
     } catch (error: unknown) {
       showMessage(
-        'Could not resend reset email',
+        'Could not resend code',
         error instanceof Error ? error.message : 'Could not connect to Supabase.',
       );
     }
   };
 
   const handleVerifyCode = async () => {
+    if (isVerifyingCode) return;
     if (!/^\d{6}$/.test(verificationCode)) {
       showMessage('Incomplete code', 'Enter all six digits to continue.');
       return;
     }
 
+    setIsVerifyingCode(true);
     try {
       const { error } = await supabase.auth.verifyOtp({
-        email: resetEmail,
+        email: resetEmail.trim(),
         token: verificationCode,
         type: 'recovery',
       });
@@ -236,11 +286,14 @@ export function useAuthFlow() {
         'Could not verify code',
         error instanceof Error ? error.message : 'Could not connect to Supabase.',
       );
+    } finally {
+      setIsVerifyingCode(false);
     }
   };
 
   const handleFinishReset = async () => {
-    if (newPassword.length < 8) {
+    if (isUpdatingPassword) return;
+    if (!isValidPassword(newPassword)) {
       showMessage('Password is too short', 'Your new password should be at least 8 characters.');
       return;
     }
@@ -249,6 +302,7 @@ export function useAuthFlow() {
       return;
     }
 
+    setIsUpdatingPassword(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) {
@@ -256,19 +310,35 @@ export function useAuthFlow() {
         return;
       }
 
-      showToast('success', 'Password updated', 'Your password has been changed.');
-      setPasswordSheet('none');
-      setLoginPassword('');
       setVerificationCode('');
       setNewPassword('');
       setConfirmNewPassword('');
+      setResendSecondsLeft(0);
+      setPasswordSheet('success');
     } catch (error: unknown) {
       showToast(
         'error',
         'Password update failed',
         error instanceof Error ? error.message : 'Could not connect to Supabase.',
       );
+    } finally {
+      setIsUpdatingPassword(false);
     }
+  };
+
+  const handleReturnToLogin = async () => {
+    setPasswordSheet('none');
+    setVerificationCode('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setResendSecondsLeft(0);
+    setLoginPassword('');
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      setIsRecovering(false);
+    }
+    showToast('success', 'Password updated', 'Sign in with your new password.');
   };
 
   return {
@@ -292,23 +362,32 @@ export function useAuthFlow() {
     confirmPassword,
     setConfirmPassword,
     resetEmail,
+    setResetEmail,
     verificationCode,
     setVerificationCode,
     newPassword,
     setNewPassword,
     confirmNewPassword,
     setConfirmNewPassword,
+    isRecovering,
+    isSendingResetCode,
+    isVerifyingCode,
+    isUpdatingPassword,
+    resendSecondsLeft,
     isAuthenticated,
     setIsAuthenticated,
     userId,
     userName,
     userEmail,
     openForgotPassword,
+    closePasswordSheet,
+    handleSendResetCode,
     handleSignIn,
     handleSignOut,
     handleCreateAccount,
     handleVerifyCode,
     handleResendCode,
     handleFinishReset,
+    handleReturnToLogin,
   };
 }
