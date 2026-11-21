@@ -23,6 +23,7 @@ type LoginScreenProps = {
   onSignIn: () => void;
   onForgotPassword: () => void;
   onCreateAccount: () => void;
+  loading?: boolean;
 };
 
 export function LoginScreen({
@@ -35,6 +36,7 @@ export function LoginScreen({
   onSignIn,
   onForgotPassword,
   onCreateAccount,
+  loading = false,
 }: LoginScreenProps) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -80,7 +82,7 @@ export function LoginScreen({
             </TouchableOpacity>
           </View>
 
-          <PrimaryButton title="Sign in  →" onPress={onSignIn} />
+          <PrimaryButton title="Sign in  →" onPress={onSignIn} loading={loading} />
         </View>
 
         <View style={styles.footer}>

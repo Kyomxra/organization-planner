@@ -37,6 +37,9 @@ export function useAuthFlow() {
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [resendSecondsLeft, setResendSecondsLeft] = useState(0);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [isResendingCode, setIsResendingCode] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -101,7 +104,8 @@ export function useAuthFlow() {
     setResendSecondsLeft(0);
     if (isRecovering) {
       setIsRecovering(false);
-      void supabase.auth.signOut();
+      // Only drop a session if verifyOtp actually established a recovery session.
+      if (isAuthenticated) void supabase.auth.signOut();
     }
   };
 
@@ -137,6 +141,7 @@ export function useAuthFlow() {
   };
 
   const handleSignIn = async () => {
+    if (isSigningIn) return;
     if (!isValidEmail(loginEmail)) {
       showMessage('Check your email', 'Please enter a valid email address.');
       return;
@@ -146,6 +151,7 @@ export function useAuthFlow() {
       return;
     }
 
+    setIsSigningIn(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email: loginEmail.trim(),
@@ -162,6 +168,8 @@ export function useAuthFlow() {
         'Sign in failed',
         error instanceof Error ? error.message : 'Could not connect to Supabase.',
       );
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
@@ -174,6 +182,11 @@ export function useAuthFlow() {
       }
       setIsAuthenticated(false);
       setLoginPassword('');
+      setResetEmail('');
+      setVerificationCode('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setResendSecondsLeft(0);
       showToast('success', 'Signed out', 'You have been logged out.');
       return true;
     } catch (error: unknown) {
@@ -187,6 +200,7 @@ export function useAuthFlow() {
   };
 
   const handleCreateAccount = async () => {
+    if (isCreatingAccount) return;
     if (!fullName.trim()) {
       showMessage('Name required', 'Please enter your full name.');
       return;
@@ -204,6 +218,7 @@ export function useAuthFlow() {
       return;
     }
 
+    setIsCreatingAccount(true);
     try {
       const { data, error } = await supabase.auth.signUp({
         email: signupEmail.trim(),
@@ -234,17 +249,20 @@ export function useAuthFlow() {
         'Account creation failed',
         error instanceof Error ? error.message : 'Could not connect to Supabase.',
       );
+    } finally {
+      setIsCreatingAccount(false);
     }
   };
 
   const handleResendCode = async () => {
-    if (resendSecondsLeft > 0) return;
+    if (isResendingCode || resendSecondsLeft > 0) return;
     const email = resetEmail.trim();
     if (!isValidEmail(email)) {
       showMessage('Check your email', 'Please enter a valid email address.');
       return;
     }
 
+    setIsResendingCode(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email);
       if (error) {
@@ -258,6 +276,8 @@ export function useAuthFlow() {
         'Could not resend code',
         error instanceof Error ? error.message : 'Could not connect to Supabase.',
       );
+    } finally {
+      setIsResendingCode(false);
     }
   };
 
@@ -374,6 +394,9 @@ export function useAuthFlow() {
     isVerifyingCode,
     isUpdatingPassword,
     resendSecondsLeft,
+    isSigningIn,
+    isCreatingAccount,
+    isResendingCode,
     isAuthenticated,
     setIsAuthenticated,
     userId,

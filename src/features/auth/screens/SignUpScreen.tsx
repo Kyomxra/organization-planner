@@ -18,6 +18,7 @@ type SignUpScreenProps = {
   onConfirmPasswordChange: (value: string) => void;
   onCreateAccount: () => void;
   onSignIn: () => void;
+  loading?: boolean;
 };
 
 export function SignUpScreen({
@@ -31,6 +32,7 @@ export function SignUpScreen({
   onConfirmPasswordChange,
   onCreateAccount,
   onSignIn,
+  loading = false,
 }: SignUpScreenProps) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -87,7 +89,7 @@ export function SignUpScreen({
             secureTextEntry
             error={passwordMismatch ? 'Password does not match' : undefined}
           />
-          <PrimaryButton title="Create account" onPress={onCreateAccount} style={styles.submit} />
+          <PrimaryButton title="Create account" onPress={onCreateAccount} loading={loading} style={styles.submit} />
         </View>
 
         <View style={styles.footer}>

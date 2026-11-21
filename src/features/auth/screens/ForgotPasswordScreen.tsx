@@ -18,6 +18,7 @@ type ForgotPasswordScreenProps = {
   onResend: () => void;
   onChangeEmail?: () => void;
   resendSecondsLeft?: number;
+  resending?: boolean;
   loading?: boolean;
 };
 
@@ -32,6 +33,7 @@ export function ForgotPasswordScreen({
   onResend,
   onChangeEmail,
   resendSecondsLeft = 0,
+  resending = false,
   loading = false,
 }: ForgotPasswordScreenProps) {
   const { colors } = useAppTheme();
@@ -50,11 +52,11 @@ export function ForgotPasswordScreen({
         <Text style={styles.resendText}>Didn't receive a code? </Text>
         <TouchableOpacity
           onPress={onResend}
-          disabled={!canResend}
+          disabled={!canResend || resending}
           accessibilityRole="button"
           accessibilityLabel="Resend verification code"
         >
-          <Text style={[styles.link, canResend ? null : styles.linkDisabled]}>Resend</Text>
+          <Text style={[styles.link, canResend && !resending ? null : styles.linkDisabled]}>Resend</Text>
         </TouchableOpacity>
       </View>
       {canResend ? (

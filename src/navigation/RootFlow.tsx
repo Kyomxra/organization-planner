@@ -203,6 +203,17 @@ export function RootFlow() {
   }, [activeView, isCoordinator, isExecutive, isMember, selectedRundown]);
 
   useEffect(() => {
+    if (auth.isAuthenticated || auth.isRecovering) return;
+
+    setActiveView('org-list');
+    setSelectedRundown(null);
+    setSelectedCalendarEvent(null);
+    setSelectedTask(null);
+    setEditingNote(null);
+    setIsInvitesModalVisible(false);
+  }, [auth.isAuthenticated, auth.isRecovering]);
+
+  useEffect(() => {
     if (activeView !== 'divisions' || !selectedOrg) return;
 
     let active = true;
@@ -334,6 +345,7 @@ export function RootFlow() {
             onSignIn={auth.handleSignIn}
             onForgotPassword={auth.openForgotPassword}
             onCreateAccount={() => auth.setMainScreen('signup')}
+            loading={auth.isSigningIn}
           />
         ) : (
           <SignUpScreen
@@ -347,6 +359,7 @@ export function RootFlow() {
             onConfirmPasswordChange={auth.setConfirmPassword}
             onCreateAccount={auth.handleCreateAccount}
             onSignIn={() => auth.setMainScreen('login')}
+            loading={auth.isCreatingAccount}
           />
         )}
 
@@ -369,6 +382,7 @@ export function RootFlow() {
           onResend={auth.handleResendCode}
           onChangeEmail={() => auth.setPasswordSheet('email')}
           resendSecondsLeft={auth.resendSecondsLeft}
+          resending={auth.isResendingCode}
           loading={auth.isVerifyingCode}
         />
 
